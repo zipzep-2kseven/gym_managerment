@@ -1,0 +1,17 @@
+{
+  "name": "multi-gym",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Multi-tenant gym management platform monorepo",
+  "workspaces": [
+    "apps/web",
+    "apps/api",
+    "packages/shared"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspaces",
+    "build": "npm run build --workspaces",
+    "typecheck": "npm run typecheck --workspaces",
+    "lint": "echo \"Linting workspaces...\""
+  }
+}
