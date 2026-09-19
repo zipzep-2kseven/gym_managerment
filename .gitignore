@@ -1,33 +1,109 @@
-# Dependencies
-node_modules/
-.pnp
-.pnp.js
+# ==========================================
+# Multi-Gym Monorepo .gitignore
+# ==========================================
 
-# Build outputs
-dist/
-build/
-*.tsbuildinfo
-
-# Environment variables
+# ------------------------------------------
+# Environment Variables & Secrets
+# ------------------------------------------
 .env
 .env.*
 !.env.example
+!.env.sample
 
-# Logs
+# Private keys, certificates, and credentials
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*.cer
+*.pub
+credentials.json
+secrets.json
+service-account*.json
+.git-credentials
+
+# Local environment & override configs
+config.local.*
+*.local.*
+*.local
+
+# ------------------------------------------
+# Dependencies & Package Managers
+# ------------------------------------------
+node_modules/
+vendor/
+.pnp/
+.pnp.js
+.npm/
+.yarn/
+package-lock.json.bak
+
+# ------------------------------------------
+# Build Outputs & Generated Artifacts
+# ------------------------------------------
+dist/
+build/
+out/
+.vite/
+*.tsbuildinfo
+*.d.ts.map
+
+# Framework specific cache
+.next/
+.nuxt/
+
+# Testing & Code Coverage
+coverage/
+.nyc_output/
+
+# ------------------------------------------
+# Logs & Process Dumps
+# ------------------------------------------
 logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
 
-# OS and Editor files
-.DS_Store
-Thumbs.db
+# ------------------------------------------
+# IDE & Code Editors
+# ------------------------------------------
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
 .idea/
-.vscode/
+*.iml
+*.sublime-project
+*.sublime-workspace
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+
+# ------------------------------------------
+# Operating System & Temporary Files
+# ------------------------------------------
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# ------------------------------------------
+# Local Temporary & Database Dumps
+# ------------------------------------------
+*.sqlite
+*.sqlite3
+*.db
+*.sql.gz
+*.dump
+
+# ------------------------------------------
+# Project Specific Exclusions
+# ------------------------------------------
 agentic-awesome-skills/

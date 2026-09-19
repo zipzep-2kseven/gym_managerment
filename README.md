@@ -102,3 +102,35 @@ npm run build
 ```bash
 npm run typecheck
 ```
+
+---
+
+## 6. Docker & PostgreSQL Development Workflow
+
+### 1. Khởi động PostgreSQL và Backend API bằng Docker Compose
+Sau khi tạo file `.env` từ `.env.example`:
+```bash
+# Build và chạy ngầm (detached mode)
+docker compose up -d
+
+# Xem trạng thái các containers
+docker compose ps
+
+# Xem logs theo thời gian thực
+docker compose logs -f
+docker compose logs -f api
+docker compose logs -f postgres
+
+# Dừng hệ thống
+docker compose down
+
+# Dừng và xóa volumes (lưu ý: sẽ xóa dữ liệu database)
+docker compose down -v
+```
+
+### 2. Frontend Development
+Khởi chạy Frontend trực tiếp trên máy host với Vite để tận dụng Fast HMR:
+```bash
+npm run dev --workspace=@multi-gym/web
+```
+Frontend kết nối trực tiếp với Backend API đang chạy trong Docker tại `http://localhost:4000`.

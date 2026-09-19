@@ -1,0 +1,29 @@
+# Ignore dependencies and build outputs
+node_modules
+dist
+build
+out
+.vite
+*.tsbuildinfo
+*.d.ts.map
+
+# Ignore environment variables & secrets
+.env
+.env.*
+!.env.example
+
+# Git and IDE
+.git
+.gitignore
+.dockerignore
+.vscode
+.idea
+*.swp
+
+# Agent & documentation
+.agent
+agentic-awesome-skills
+*.md
+coverage
+logs
+*.log
