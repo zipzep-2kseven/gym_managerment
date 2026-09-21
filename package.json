@@ -13,5 +13,8 @@
     "build": "npm run build --workspaces",
     "typecheck": "npm run typecheck --workspaces",
     "lint": "echo \"Linting workspaces...\""
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.45.2"
   }
 }

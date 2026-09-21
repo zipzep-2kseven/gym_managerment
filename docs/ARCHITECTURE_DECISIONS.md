@@ -96,7 +96,7 @@ PostgreSQL Database (multi_gym_db)
 
 Hệ thống áp dụng mô hình kết hợp: **RBAC (Role-Based Access Control) + Gym Scope Enforcement**.
 
-### 6.1. 5 Roles cốt lõi
+### 6.1. 5 Actors và 4 roles lưu trữ
 1. `Guest` (Unauthenticated)
 2. `Customer`
 3. `PT`
@@ -108,7 +108,7 @@ Hệ thống áp dụng mô hình kết hợp: **RBAC (Role-Based Access Control
 - **Xác thực 2 bước bắt buộc (Two-tier Check):**
   $$\text{User Request} \longrightarrow \text{Step 1: Check Role Permission} \longrightarrow \text{Step 2: Check Gym Scope Permission} \longrightarrow \text{Resource Access}$$
   1. *Bước 1 (Role Check):* User có quyền thực hiện hành động này không? (Ví dụ: Chỉ `Manager` mới có quyền duyệt PT hoặc tạo Package).
-  2. *Bước 2 (Gym Scope Check):* User có thẩm quyền trên đúng phòng gym sở hữu tài nguyên này không? (`user.gym_id === resource.gym_id`).
+  2. *Bước 2 (Gym Scope Check):* User có thẩm quyền trên đúng phòng gym sở hữu tài nguyên này không? (đối chiếu gym_managers/gym_trainers hoặc ownership qua Membership; users không có gym_id).
 - **Quy tắc ranh giới Manager:** Manager của Gym A **TUYỆT ĐỐI KHÔNG ĐƯỢC PHÉP** đọc, sửa, xóa bất kỳ dữ liệu nào thuộc về Gym B.
 - **Quy tắc ranh giới PT:** Huấn luyện viên chỉ được xem danh sách học viên và lịch hẹn được phân công tại Gym mà mình ký hợp đồng.
 
@@ -118,9 +118,9 @@ Hệ thống áp dụng mô hình kết hợp: **RBAC (Role-Based Access Control
 
 Hệ thống triển khai mô hình **Shared-Database, Shared-Schema với Application-Level Multi-Gym Isolation**:
 
-1. **Gym Scope Key:** Mọi thực thể dữ liệu thuộc phạm vi vận hành phòng tập bắt buộc phải có cột định danh `gym_id NOT NULL` và được đánh index để tối ưu truy vấn.
-2. **Scoping Middleware:** Backend xây dựng middleware chuyên trách `enforceGymScope` nhằm trích xuất `gym_id` từ route parameters / query / body và đối chiếu với danh sách phòng gym mà token của user có quyền truy cập.
-3. **Repository Scoping:** Tầng Drizzle ORM luôn bắt buộc áp dụng điều kiện `eq(table.gymId, currentGymId)` trong mọi câu lệnh `SELECT`, `UPDATE`, `DELETE`.
+1. **Gym Scope Key:** Dữ liệu Gym-scoped phải có đường xác định Gym rõ ràng: gym_id trực tiếp trên gym_managers, gym_trainers, packages, payments, memberships, equipments, gym_reports; pt_registrations qua Membership/Gym Trainer; pt_appointments qua Registration. Không thêm cột ngoài ERD. Chốt index và bảo vệ xuyên bảng ở bước constraints.
+2. **Scoping Middleware:** Backend xây dựng middleware chuyên trách `enforceGymScope` nhằm trích xuất `gym_id` từ route parameters / query / body và đối chiếu với phân công/ownership còn hiệu lực trong database của User đăng nhập; không lấy token hoặc gym_id frontend làm nguồn quyền duy nhất.
+3. **Repository Scoping:** SELECT/UPDATE/DELETE dữ liệu thuộc Gym phải lọc gym_id trực tiếp hoặc JOIN/EXISTS qua quan hệ nguồn. Registration/Appointment không có gym_id trực tiếp; scope đi qua Membership và đối chiếu Gym Trainer. Bảng system-scoped áp dụng ownership/quyền tương ứng, không ép gym_id giả.
 4. **Ngăn chặn Single-Gym Assumption:** Cấm mọi giả định trong code rằng hệ thống chỉ có một phòng tập (không hardcode `gym_id`, không viết query thiếu điều kiện lọc theo gym).
 
 ---
@@ -203,49 +203,43 @@ Mục tiêu: Đảm bảo toàn bộ thành viên clone dự án về máy đề
 
 ---
 
-## 13. Current Domain Scope (12 Approved Entities)
+## 13. Current Domain Scope (15 Approved Tables)
 
-Phạm vi mô hình dữ liệu trong giai đoạn hiện tại được giới hạn chính xác trong **12 thực thể nghiệp vụ cốt lõi**:
+Theo yêu cầu cập nhật ERD và đồng bộ tài liệu, phạm vi mới gồm đúng 15 bảng trong [DATABASE_SPEC.md](DATABASE_SPEC.md):
 
-1. `User`: Tài khoản đăng nhập hệ thống (email, password_hash, status, audit timestamps).
-2. `User_Profile`: Thông tin hồ sơ cá nhân của người dùng (họ tên, số điện thoại, ngày sinh, giới tính, avatar).
-3. `Role`: Danh mục các vai trò trong hệ thống (`Guest`, `Customer`, `PT`, `Manager`, `Admin`).
-4. `User_Role`: Bảng quan hệ gán vai trò cho người dùng.
-5. `Gym`: Thông tin cơ sở phòng tập (tên phòng gym, địa chỉ, hotline, mô tả, trạng thái hoạt động).
-6. `Gym_Manager`: Bảng quan hệ bổ nhiệm người dùng làm Quản lý điều hành một Gym cụ thể.
-7. `Gym_Trainer`: Bảng quan hệ chỉ định người dùng làm Huấn luyện viên (PT) trực thuộc một Gym cụ thể.
-8. `Package`: Gói tập thể thao do một Gym cụ thể ban hành (tên gói, thời hạn ngày/tháng, giá, số buổi PT đi kèm, mô tả).
-9. `Membership`: Hợp đồng hội viên của Customer tại một Gym cụ thể gắn với Package đã đăng ký (ngày bắt đầu, ngày hết hạn, trạng thái kích hoạt).
-10. `PT_Registration`: Đăng ký dịch vụ huấn luyện viên cá nhân của Customer tại Gym (gán Customer với PT cụ thể, số buổi tập).
-11. `PT_Appointment`: Lịch hẹn buổi tập cụ thể giữa Customer và PT (thời gian bắt đầu, thời gian kết thúc, trạng thái ca tập: đặt lịch, hoàn thành, hủy).
-12. `Gym_Report`: Báo cáo phản ánh sự cố từ Customer gửi tới ban quản lý Gym (liên kết `gym_id`, `user_id`, nội dung text, tối đa 1 ảnh, trạng thái xử lý).
+1. `users` — PK `user_id`.
+2. `user_profiles` — PK `profile_id`.
+3. `roles` — PK `role_id`.
+4. `user_roles` — PK tổ hợp `(user_id, role_id)`.
+5. `gyms` — PK `gym_id`.
+6. `gym_managers` — PK `gym_manager_id`.
+7. `gym_trainers` — PK `gym_trainer_id`.
+8. `packages` — PK `package_id`.
+9. `payments` — PK `payment_id`.
+10. `memberships` — PK `membership_id`.
+11. `pt_registrations` — PK `registration_id`.
+12. `pt_appointments` — PK `appointment_id`.
+13. `equipment_types` — PK `equipment_type_id`.
+14. `equipments` — PK `equipment_id`.
+15. `gym_reports` — PK `report_id`.
 
-> [!CAUTION]
-> Tuyệt đối không tự ý thêm thực thể mới vào mô hình dữ liệu hiện tại khi chưa có sự phê duyệt kiến trúc chính thức.
+Role lưu trữ gồm ADMIN, MANAGER, PT, CUSTOMER; Guest là actor chưa đăng nhập. Role không xác định Gym. Payment → Membership, quản lý thiết bị và report gắn thiết bị thuộc phạm vi thiết kế mới. PT Registration dựa trên Membership; Appointment suy ra Customer/PT/Gym qua quan hệ.
 
----
+Status/enum ở DATABASE_SPEC.md §11 là dự kiến. ERD không còn mô hình quota buổi PT. Giữ nguyên giới hạn quyền Manager của kiến trúc trước: tối đa một Gym ACTIVE mỗi Manager và một Manager ACTIVE mỗi Gym; cách thực thi/tái bổ nhiệm theo khóa cặp chờ chốt.
 
-## 14. Out of Scope
 
-### 14.1. Payment Scope: OUT OF SCOPE — CURRENT PHASE
-Theo quyết định kiến trúc chính thức:
-- **Thanh toán (Payment) KHÔNG THUỘC phạm vi triển khai của phase hiện tại.**
-- **Tuyệt đối không tạo:**
-  - Không tạo `Payment` entity hoặc bảng cơ sở dữ liệu `payments`.
-  - Không tạo Payment API endpoints hoặc Payment controllers.
-  - Không tạo Payment business services.
-  - Không tạo Payment UI components hoặc payment forms.
-  - Không tích hợp Webhook hoặc Payment Gateways (Stripe, VNPay, MoMo).
-- **Định vị tương lai (Future Extension):**
-  - Mặc dù không hiện thực trong phase này, kiến trúc dữ liệu của `Package` và `Membership` phải giữ trạng thái độc lập (ví dụ: `Membership` có trạng thái `PENDING_ACTIVATION` / `ACTIVE`) để khi bổ sung mô-đun Payment trong tương lai, hệ thống có thể tích hợp mượt mà mà không phải đập đi xây lại.
+## 14. Phạm vi thiết kế và giới hạn triển khai
 
-### 14.2. Các tính năng nghiệp vụ ngoài phạm vi khác
-- Không tích hợp AI / Machine Learning / Deep Learning.
-- Không tự động sinh lịch tập (no workout auto-routing/generation).
-- Không theo dõi số đo cơ thể hoặc biểu đồ thể lực (no body metrics / fitness tracking).
-- Không xây dựng module quản lý kho thiết bị phòng tập phức tạp (no equipment inventory management).
+### 14.1. Payment và thiết bị trong phạm vi mới
 
----
+Cho phép đặc tả payments, equipment_types, equipments và các luồng trong ERD. Thay thế quyết định cũ loại Payment khỏi phạm vi. Chưa chọn payment gateway, webhook contract, phương thức thanh toán hoặc cơ chế xác minh thành công; các mục phụ thuộc Q-01/Q-02 phải chờ quyết định trước triển khai.
+
+### 14.2. Ngoài phạm vi
+
+Không thêm Invoice, Transaction, Audit_Log, Report_Attachment hoặc bảng thứ 16. Không thêm subscription billing, kho vật tư/bảo trì phức tạp, AI/ML, sinh lịch tự động hoặc theo dõi thể lực. Quản lý thiết bị cơ bản đã thuộc phạm vi; không đồng nghĩa có quản lý kho nâng cao.
+
+Lần cập nhật này chỉ đồng bộ tài liệu trong docs; không tạo code, schema/migration hay chạy database.
+
 
 ## 15. Architectural Principles
 
@@ -257,7 +251,7 @@ Toàn bộ quá trình thiết kế và viết mã phải tuân thủ 7 nguyên 
 4. **Principle 4 — Separation of Concerns:** Tách bạch rạch ròi trách nhiệm giữa các tầng: `Route` $\rightarrow$ `Controller` $\rightarrow$ `Service` $\rightarrow$ `Data Access (Drizzle)` $\rightarrow$ `PostgreSQL`. Không nhồi nhét logic nghiệp vụ vào Controller hay UI Component.
 5. **Principle 5 — Explicit Contracts:** Hợp đồng dữ liệu giữa Client và Server phải tường minh, có type-safety và validation hai đầu thông qua Zod schemas và OpenAPI.
 6. **Principle 6 — Consistency Over Complexity:** Ưu tiên tính nhất quán, đơn giản, dễ hiểu và dễ bảo trì hơn là cố tình áp dụng các mẫu trừu tượng (abstractions) quá sớm hoặc công nghệ phức tạp không cần thiết.
-7. **Principle 7 — Future Extensibility Without Premature Implementation:** Thiết kế hệ thống sạch sẽ, có khả năng mở rộng trong tương lai nhưng kiên quyết không hiện thực hóa các tính năng chưa thuộc phạm vi hiện tại (đặc biệt là Payment).
+7. **Principle 7 — Future Extensibility Without Premature Implementation:** Thiết kế hệ thống sạch sẽ, có khả năng mở rộng trong tương lai nhưng kiên quyết không hiện thực hóa các tính năng chưa thuộc phạm vi hiện tại (ví dụ subscription billing và kho vật tư nâng cao).
 
 ---
 
@@ -275,7 +269,4 @@ Toàn bộ quá trình thiết kế và viết mã phải tuân thủ 7 nguyên 
 
 ## 17. Open Questions
 
-Hiện tại toàn bộ các quyết định nền tảng (Framework, Database, ORM, Auth, Styling, Testing, Phân quyền, Scope) đã được chốt dứt khoát.
-
-- **Trạng thái:** **No blocking architecture decisions remain.** (Không còn quyết định kiến trúc nào gây nghẽn tiến độ).
-- Các câu hỏi chi tiết về nghiệp vụ cụ thể (như: thời hạn mặc định của tài khoản dùng thử, quy định về số buổi tập tối đa của 1 PT trong ngày) sẽ được giải quyết chi tiết trong từng bản đặc tả tính năng (`FEATURE_SPEC`) tương ứng ở các phase tiếp theo.
+Stack, ORM và cơ chế xác thực giữ nguyên. Các quyết định nghiệp vụ/kỹ thuật còn mở được quản lý duy nhất tại [DOMAIN_RULES.md §9](DOMAIN_RULES.md#9-câu-hỏi-mở-và-phạm-vi-chặn), mã Q-01–Q-13. Chỉ chặn công việc phụ thuộc; không tự chuyển giá trị dự kiến thành policy đã phê duyệt.

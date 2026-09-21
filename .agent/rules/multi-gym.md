@@ -1,5 +1,15 @@
 # Multi-Gym Project Rules & Architectural Guidelines
 
+Bộ hướng dẫn cho AI áp dụng trên toàn bộ monorepo (`apps/api`, `apps/web`, `packages/shared`, `docker-compose.yml`, `docs`). Nội dung các mục bên dưới đồng bộ với [docs/PROJECT_RULES.md](../../docs/PROJECT_RULES.md); đây không phải một nguồn quy tắc nghiệp vụ độc lập.
+
+Trước khi thực hiện công việc, đọc các phần liên quan trong [Architecture Decisions](../../docs/ARCHITECTURE_DECISIONS.md), [Domain Rules](../../docs/DOMAIN_RULES.md), [Database Spec](../../docs/DATABASE_SPEC.md), [Feature Spec](../../docs/FEATURE_SPEC.md), [API Spec](../../docs/API_SPEC.md), [UI/UX Spec](../../docs/UI_UX_SPEC.md) và [Implementation Plan](../../docs/IMPLEMENTATION_PLAN.md). Tuân thủ thứ tự ưu tiên tại mục 3.
+
+Thiết kế hiện tại gồm **15 bảng**, có Payment và Equipment; Registration/Appointment xác định Gym Scope qua quan hệ. Các quyết định **Q-01–Q-13** tại Domain §9 chưa chốt không được tự suy diễn thành policy hoặc constraint đã duyệt. Chỉ chặn phần việc phụ thuộc; tác vụ chỉnh tài liệu không tự mở quyền tạo code/migration hay chạy database.
+
+`.agents` trỏ tới `.agent`; hai đường dẫn rule truy cập cùng một file. Khi sửa quy tắc, cập nhật file này và PROJECT_RULES.md cùng lượt để tránh lệch nội dung.
+
+## 1. Mục Đích & Phạm Vi Áp Dụng
+
 Tài liệu này xác lập bộ quy tắc dự án (**Project Rules**) chính thức cho toàn bộ quá trình phát triển nền tảng **Multi-Gym**.
 
 Mọi lập trình viên và AI coding agent tham gia vào dự án bắt buộc phải tuân thủ nghiêm ngặt các quy tắc này như **luật vận hành bắt buộc** khi:
@@ -12,24 +22,22 @@ Mọi lập trình viên và AI coding agent tham gia vào dự án bắt buộc
 - Kiểm tra giao diện và trải nghiệm người dùng (Verify UI/UX)
 - Đánh giá hoàn thành task (Definition of Done)
 
-Tài liệu này cụ thể hóa các quyết định trong [`docs/ARCHITECTURE_DECISIONS.md`](file:///srv/gym/docs/ARCHITECTURE_DECISIONS.md) thành các quy tắc thực thi có thể kiểm chứng được.
-
----
-
-## 1. Mục Đích & Phạm Vi Áp Dụng
-Mọi quy tắc trong tài liệu này có hiệu lực trên toàn bộ monorepo (`apps/api`, `apps/web`, `packages/shared`, `docker-compose.yml`, `docs/`).
+Tài liệu này cụ thể hóa các quyết định trong [`docs/ARCHITECTURE_DECISIONS.md`](../../docs/ARCHITECTURE_DECISIONS.md) thành các quy tắc thực thi có thể kiểm chứng được.
 
 ---
 
 ## 2. Nguyên Tắc Của Project Rules
-Mọi quy tắc phải ngắn gọn, rõ ràng, cụ thể và có tính thực thi:
+
+Mọi quy tắc trong tài liệu này phải ngắn gọn, rõ ràng, cụ thể và có tính thực thi:
 - **Không viết quy tắc cảm tính:** Cấm các câu chung chung như *"Code phải tốt"*, *"Code phải sạch"*, *"UI phải đẹp"*.
 - **Viết quy tắc kiểm chứng được:** Mọi quy tắc phải có tiêu chí rõ ràng để AI hoặc linter/test có thể kiểm tra Đúng/Sai (ví dụ: *"Mọi endpoint private bắt buộc phải đi qua middleware authentication trước khi chuyển tiếp vào controller"*).
 
 ---
 
 ## 3. Thứ Bậc Chân Lý (Source of Truth Hierarchy)
+
 Khi có sự xung đột thông tin giữa các tài liệu hoặc giữa tài liệu và mã nguồn hiện có, áp dụng thứ tự ưu tiên tuyệt đối từ cao xuống thấp:
+
 ```text
 1. Explicit user requirement của task hiện tại
    ↓
@@ -45,12 +53,14 @@ Khi có sự xung đột thông tin giữa các tài liệu hoặc giữa tài l
    ↓
 7. AI assumptions (Giả định của AI - Luôn có độ ưu tiên thấp nhất)
 ```
+
 - **Quy tắc bất biến:** Không bao giờ dùng mã nguồn hiện tại làm lý do để phá vỡ `Architecture Decisions` hoặc `Project Rules`.
 - **Xử lý xung đột:** Nếu yêu cầu mới từ người dùng mâu thuẫn trực tiếp với `Architecture Decisions`, AI **không được tự ý sửa kiến trúc**, phải báo cáo xung đột và đề xuất quy trình cập nhật `Architecture Decision Change`.
 
 ---
 
 ## 4. Cơ Chế Phân Loại Task (Task Dispatcher)
+
 Trước khi viết bất kỳ dòng code nào, AI bắt buộc phải phân loại task vào một hoặc nhiều nhóm sau để kích hoạt đúng tập quy tắc tương ứng:
 
 | Nhóm Task | Phạm vi công việc | Quy tắc & Kỹ năng bắt buộc áp dụng |
@@ -82,7 +92,7 @@ Trước khi chạm vào code:
 ### Rule 5.2 — Không tự ý mở rộng scope (No Scope Creep)
 Tuyệt đối không tự ý:
 - Thêm tính năng không được yêu cầu.
-- Thêm entity mới ngoài 12 entity đã duyệt.
+- Thêm entity mới ngoài 15 bảng đã duyệt.
 - Thêm endpoint API không có trong spec.
 - Cài thêm thư viện (npm package) khi chưa thảo luận.
 - Đổi công nghệ hoặc thay đổi kiến trúc.
@@ -125,7 +135,7 @@ Mọi truy vấn Drizzle ORM liên quan đến tài nguyên Gym-scoped bắt bu�
 // BẮT BUỘC:
 where(eq(packages.gymId, currentGymId))
 ```
-Cấm viết các câu lệnh `SELECT`, `UPDATE`, `DELETE` thiếu điều kiện lọc `gym_id` dẫn đến nguy cơ rò rỉ dữ liệu chéo.
+Cấm SELECT/UPDATE/DELETE không giới hạn Gym Scope. Ví dụ trên áp dụng bảng có gym_id trực tiếp; Registration/Appointment phải lọc qua Membership và xác minh Gym Trainer cùng Gym. Không dùng cột gym_id không tồn tại trên hai bảng này.
 
 ### Rule 6.5 — Cấm hard-code Gym
 - Cấm hard-code `gym_id` dạng hằng số cố định trong code.
@@ -162,7 +172,7 @@ Frontend không được tự quyết định rằng người dùng "đã đăng
 ## 8. Quy Tắc Phân Quyền (Authorization Rules)
 
 - **Mô hình:** RBAC (Role-Based Access Control) kết hợp chặt chẽ với Gym Scope Enforcement.
-- **5 Roles chính thức:** `Guest`, `Customer`, `PT`, `Manager`, `Admin`.
+- **5 Actors:** Guest, Customer, PT, Manager, Admin. Chỉ lưu 4 roles: CUSTOMER, PT, MANAGER, ADMIN; role_name unique.
 
 ### Rule 8.1 — Role không bao giờ là yếu tố duy nhất
 Cấm viết code kiểu:
@@ -180,7 +190,7 @@ Manager chỉ có quyền quản trị phòng Gym duy nhất mà mình được 
 PT chỉ có quyền truy cập học viên, gói tập và lịch hẹn trong phạm vi Gym mà mình được chỉ định hợp đồng (`Gym_Trainer`).
 
 ### Rule 8.4 — Quyền hạn Admin
-Admin có thẩm quyền toàn hệ thống nhưng mọi thao tác vẫn phải đi qua pipeline xác thực và ghi vết audit log đầy đủ.
+Admin có thẩm quyền toàn hệ thống nhưng mọi thao tác vẫn phải đi qua pipeline xác thực và ghi vết vận hành phù hợp (không thêm bảng Audit_Log ngoài 15 bảng).
 
 ### Rule 8.5 — Frontend không phải ranh giới an toàn (Security Boundary)
 Việc Frontend ẩn nút, disable link, hoặc redirect trang chỉ là tối ưu UX. Backend luôn luôn phải kiểm tra lại quyền hạn độc lập trên từng request.
@@ -236,10 +246,10 @@ Không cài đặt hay sử dụng thêm bất kỳ thư viện ORM nào khác n
 Bảng cơ sở dữ liệu phải bám sát chính xác các Domain Entities đã duyệt. Cấm tạo bảng tùy tiện chỉ để lưu object tạm của frontend.
 
 ### Rule 10.3 — Toàn vẹn dữ liệu quan hệ
-Mọi quan hệ dữ liệu phải có Foreign Key, ràng buộc `NOT NULL`, Unique Constraint và Index phù hợp (đặc biệt là index trên các trường `gym_id`, `user_id`).
+Mọi quan hệ phải có FK và ràng buộc phù hợp sau khi chốt constraints. Không ép NOT NULL lên các quan hệ tùy chọn payment_id, equipment_id hoặc resolved_by. UNIQUE và index phải đúng cardinality/query, không áp dụng máy móc cho mọi FK; chi tiết ở DATABASE_SPEC.md §12 (Q-11).
 
 ### Rule 10.4 — Chiến lược Gym-Scoped Data
-Mọi bảng lưu trữ dữ liệu thuộc về Gym bắt buộc phải có cột `gym_id UUID NOT NULL REFERENCES gyms(id)`.
+Các bảng gym_managers, gym_trainers, packages, payments, memberships, equipments, gym_reports có gym_id trực tiếp. pt_registrations xác định Gym qua memberships và gym_trainers; pt_appointments qua pt_registrations. users, user_profiles, roles, user_roles, equipment_types là system-scoped. Truy vấn phải lọc scope trên bảng sở hữu hoặc qua JOIN/EXISTS tương ứng; không tự thêm gym_id ngoài ERD.
 
 ### Rule 10.5 — Quy trình Migration duy nhất
 Mọi thay đổi cấu trúc bảng phải được tạo qua file migration của Drizzle (`drizzle-kit generate` $\rightarrow$ `drizzle-kit migrate`). Cấm sửa bảng trực tiếp bằng tay trên database production/dev mà không có file migration.
@@ -302,7 +312,7 @@ Mọi API call phải được định nghĩa tập trung trong tầng `src/serv
   - **Light Gray (`#F1F5F9` / `#E2E8F0`)**: Nền phụ, viền mảnh tinh tế.
 
 ### Rule 13.1 — Tự động tuân thủ Taste Skill
-Mọi tác vụ giao diện bắt buộc phải đọc và tuân thủ các quy tắc anti-slop chi tiết trong [`.taste-skill/skills/taste-skill/SKILL.md`](file:///srv/gym/.taste-skill/skills/taste-skill/SKILL.md).
+Mọi tác vụ giao diện bắt buộc phải đọc và tuân thủ các quy tắc anti-slop chi tiết trong [`.taste-skill/skills/taste-skill/SKILL.md`](../../.taste-skill/skills/taste-skill/SKILL.md).
 
 ### Rule 13.2 — Nhất quán Design Tokens
 Cấm tự ý pha màu mới, cấm dùng font tùy tiện ngoài hệ thống, cấm đổi bán kính bo góc lộn xộn. Tuân thủ bảng màu và scale token đã định.
@@ -370,44 +380,17 @@ Tuyệt đối không sửa đổi hay xóa bỏ test case hợp lệ chỉ đ�
 
 ---
 
-## 17. Quy Tắc Về Thanh Toán (Payment Rule — STRICT OUT OF SCOPE)
+## 17. Quy tắc Payment
 
-> [!CAUTION]
-> **PAYMENT HIỆN TẠI LÀ: OUT OF SCOPE — CURRENT PHASE**
+Payment và luồng Payment → Membership nằm trong phạm vi 15 bảng đã yêu cầu. Backend không tin kết quả thanh toán do Customer tự khai; phải xác minh nguồn, số tiền và quan hệ User/Gym/Package. Một Payment tối đa một Membership; giữ giá mua lịch sử.
 
-AI **TUYỆT ĐỐI KHÔNG ĐƯỢC PHÉP** tự ý tạo:
-- Entity hoặc bảng dữ liệu `Payment` / `Invoice` / `Transaction`.
-- Payment API endpoints hoặc controllers.
-- Payment business services hoặc helpers.
-- Payment UI components hoặc form thanh toán.
-- Webhooks hoặc tích hợp các cổng thanh toán (Stripe, VNPay, MoMo, VietQR).
+Gateway, callback/webhook, phương thức thanh toán, kích hoạt thẻ và refund chờ Q-01/Q-02 tại DOMAIN_RULES.md §9. Không tự thêm Invoice/Transaction, billing định kỳ hoặc đường cấp Membership miễn thanh toán để thay thế phần chưa chốt.
 
-Nếu một tính năng yêu cầu kích hoạt dịch vụ, xử lý dưới dạng trạng thái hợp đồng (ví dụ: `Membership` kích hoạt trực tiếp ở trạng thái test hoặc chờ duyệt), không triển khai module thanh toán.
+## 18. Giới hạn domain
 
----
+Đúng 15 bảng theo DATABASE_SPEC.md: users, user_profiles, roles, user_roles, gyms, gym_managers, gym_trainers, packages, payments, memberships, pt_registrations, pt_appointments, equipment_types, equipments, gym_reports.
 
-## 18. Quy Tắc Giới Hạn Phạm Vi Domain (Domain Scope Rule)
-
-Hệ thống chỉ bao gồm chính xác **12 thực thể nghiệp vụ cốt lõi**:
-1. `User`
-2. `User_Profile`
-3. `Role`
-4. `User_Role`
-5. `Gym`
-6. `Gym_Manager`
-7. `Gym_Trainer`
-8. `Package`
-9. `Membership`
-10. `PT_Registration`
-11. `PT_Appointment`
-12. `Gym_Report`
-
-**Cấm tự ý tạo thực thể thứ 13.** Nếu phát hiện yêu cầu nghiệp vụ đòi hỏi thực thể mới:
-1. Dừng việc tạo bảng/entity.
-2. Báo cáo và giải trình tại sao 12 entity hiện tại không đáp ứng được.
-3. Chờ quyết định phê duyệt chính thức từ User/Lead.
-
----
+Không tự tạo bảng thứ 16. Nếu có nghiệp vụ cần mô hình khác, báo tác động và chờ quyết định cho phần đó. Không chặn các công việc độc lập đã được yêu cầu.
 
 ## 19. Quy Chuẩn Chất Lượng Mã Nguồn (Code Quality Rules)
 
@@ -441,7 +424,7 @@ Hệ thống chỉ bao gồm chính xác **12 thực thể nghiệp vụ cốt l
 
 ## 22. Quy Tắc Tài Liệu Hóa (Documentation Rules)
 
-- Mọi quyết định kiến trúc phải được ghi nhận tại [`docs/ARCHITECTURE_DECISIONS.md`](file:///srv/gym/docs/ARCHITECTURE_DECISIONS.md).
+- Mọi quyết định kiến trúc phải được ghi nhận tại [`docs/ARCHITECTURE_DECISIONS.md`](../../docs/ARCHITECTURE_DECISIONS.md).
 - Mọi hợp đồng API phải được cập nhật vào tài liệu OpenAPI / API Contract.
 - Không để các quy tắc nghiệp vụ quan trọng chỉ nằm trong prompt chat hoặc trí nhớ tạm thời của AI.
 
@@ -449,7 +432,7 @@ Hệ thống chỉ bao gồm chính xác **12 thực thể nghiệp vụ cốt l
 
 ## 23. Quy Trình Quản Lý Thay Đổi (Change Management)
 
-Nếu một yêu cầu phát sinh đòi hỏi thay đổi các quyết định kiến trúc nền tảng (đổi ORM, đổi Database, đổi cơ chế Auth, mở rộng Domain Scope, kích hoạt Payment):
+Nếu một yêu cầu phát sinh đòi hỏi thay đổi các quyết định kiến trúc nền tảng (đổi ORM, đổi Database, đổi cơ chế Auth, mở rộng Domain Scope, đổi phương thức/cơ chế thanh toán đã phê duyệt):
 1. **Dừng triển khai ngay lập tức.**
 2. Báo cáo xung đột kỹ thuật (Conflict Notification).
 3. Phân tích tác động chi tiết (Impact Analysis).
@@ -462,7 +445,7 @@ Nếu một yêu cầu phát sinh đòi hỏi thay đổi các quyết định k
 
 Trước khi công bố một task đã hoàn thành, AI bắt buộc phải tự rà soát theo 8 câu hỏi kiểm định:
 1. **Architecture:** Code có vi phạm bất kỳ quyết định nào trong `docs/ARCHITECTURE_DECISIONS.md` không?
-2. **Scope:** Có phát sinh entity hoặc feature ngoài phạm vi (như Payment) không?
+2. **Scope:** Có phát sinh entity hoặc feature ngoài phạm vi (như subscription billing) không?
 3. **Security:** Authentication, Authorization và Gym Scope đã được thẩm định an toàn tại Backend chưa?
 4. **Database:** Query có khả năng làm lộ dữ liệu chéo giữa các Gym không? Migration có chạy mượt mà không?
 5. **API:** Validation Zod có đầy đủ không? Có làm gãy API contract hiện có không?
@@ -484,11 +467,11 @@ Một task chỉ được coi là hoàn tất khi thỏa mãn đầy đủ các 
 - [ ] Toàn bộ input từ client được validate bằng Zod schemas.
 - [ ] Business logic nằm đúng tại tầng Service, không nằm trong Controller hay UI Component.
 - [ ] API Contract / OpenAPI được cập nhật nếu có thay đổi endpoint.
-- [ ] Database migration được tạo và kiểm tra nếu có thay đổi cấu trúc bảng.
+- [ ] Khi triển khai thay đổi cấu trúc bảng: migration được tạo và kiểm tra; tác vụ chỉ sửa docs không tự tạo/chạy migration.
 - [ ] Test cases tương ứng (Unit, Integration hoặc Cross-Gym check) đã được viết và pass.
 - [ ] Tác vụ UI/UX đã áp dụng triệt để Taste Skill và kiểm tra Responsive (Desktop, Tablet, Mobile).
 - [ ] Không hard-code bất kỳ secret hoặc thông tin xác thực nào.
-- [ ] Không tự ý tạo entity thứ 13 hoặc tính năng Payment.
+- [ ] Không tự ý tạo bảng thứ 16 hoặc tính năng ngoài phạm vi 15 bảng đã duyệt.
 - [ ] Đã chạy quy trình Verification kiểm tra thực tế.
 
 ---
@@ -534,3 +517,13 @@ Khi phát hiện thiếu thông tin hoặc yêu cầu không rõ ràng:
 - Không tự ý mở rộng phạm vi.
 - Không tự ý sửa đổi kiến trúc.
 - Dừng lại, nêu rõ giả định hoặc đặt câu hỏi để nhận chỉ đạo chính xác từ Lead/User.
+
+## 28. Quy tắc đồng bộ ERD 15 bảng
+
+- Dùng tên PK riêng của từng bảng; user_roles dùng khóa (user_id, role_id), không có id riêng. DTO dùng đúng tên cột tại DATABASE_SPEC; không trả password_hash.
+- Payment → Membership: tối đa một Membership mỗi Payment; purchase_price giữ giá lịch sử. Không có endpoint cho Customer tự đánh dấu thanh toán thành công.
+- Report dùng content, report_type, equipment_id, resolved_by, resolved_at, resolution_note; thiết bị và report phải cùng Gym.
+- Không áp dụng công thức quota PT hoặc exclusion constraint cũ dựa trên cột không còn tồn tại. Cơ chế thay thế phải giải quyết Q-05/Q-06/Q-11 trước triển khai phần phụ thuộc.
+- Status/enum là dự kiến; không tự chốt PostgreSQL ENUM/VARCHAR + CHECK, FK actions hoặc indexes ngoài bước constraints.
+- Các câu hỏi mở dùng Q-01–Q-13 ở DOMAIN_RULES.md §9. API/UI/plan phải cùng tham chiếu; không tự đặt các đáp án khác nhau.
+- Phạm vi 15 bảng và Payment/Equipment đã được người dùng yêu cầu cập nhật. `.agent/rules/multi-gym.md` là bản hướng dẫn cho AI đồng bộ với tài liệu này; khi thay đổi quy tắc, cập nhật cả hai trong cùng lượt sửa. `.agents` là symlink tới `.agent`, không phải bản quy tắc thứ ba.
