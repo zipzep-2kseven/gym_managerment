@@ -44,3 +44,9 @@ export interface LoginResult {
   token: string;
   session: UserSession;
 }
+
+export interface UserProfileView {
+  phone: string | null;
+  profile: UserProfileDto | null;
+}
+

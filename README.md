@@ -134,3 +134,7 @@ Khởi chạy Frontend trực tiếp trên máy host với Vite để tận dụ
 npm run dev --workspace=@multi-gym/web
 ```
 Frontend kết nối trực tiếp với Backend API đang chạy trong Docker tại `http://localhost:4000`.
+
+### Email & Password Admin
+admin@multigym.com
+Admin123
