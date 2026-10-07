@@ -91,6 +91,7 @@ export const gymTrainers = pgTable(
     specialization: text('specialization'),
     experienceYears: integer('experience_years'),
     bio: text('bio'),
+    availability: varchar('availability', { length: 20 }).notNull().default('NOT_ACCEPTING'),
     status: varchar('status', { length: 20 }).notNull().default('ACTIVE'),
     joinedAt: timestamp('joined_at', { precision: 3, withTimezone: true }).notNull().defaultNow(),
     createdAt: timestamp('created_at', { precision: 3, withTimezone: true }).notNull().defaultNow(),
@@ -112,7 +113,10 @@ export const gymTrainers = pgTable(
       .onDelete('restrict')
       .onUpdate('restrict'),
     unique('gym_trainers_gym_user_key').on(table.gymId, table.userId),
+    // Q-08: only one ACTIVE Gym assignment per PT across the system.
+    uniqueIndex('gym_trainers_active_user_key').on(table.userId).where(sql`status = 'ACTIVE'`),
     check('gym_trainers_experience_years_check', sql`experience_years IS NULL OR experience_years >= 0`),
+    check('gym_trainers_availability_check', sql`availability IN ('ACCEPTING', 'ALMOST_FULL', 'NOT_ACCEPTING')`),
     check('gym_trainers_status_check', sql`status IN ('ACTIVE', 'INACTIVE')`),
     index('gym_trainers_user_idx').on(table.userId),
   ]

@@ -1,3 +1,4 @@
+import type { PageResult } from '../types/gym.types';
 import { ApiResponse, ApiErrorPayload, ApiErrorDetail } from '../types/auth.types.js';
 
 export class ApiClientError extends Error {
@@ -33,7 +34,7 @@ class ApiClient {
    * and credentials: 'include' for HttpOnly cookie transport.
    * Strictly NO JavaScript access to JWT or client-side token storage.
    */
-  async request<T>(path: string, options: RequestInit = {}): Promise<T> {
+  async request<T>(path: string, options: RequestInit = {}, envelope = false): Promise<T> {
     const normalizedPath = path.startsWith('/') ? path : `/${path}`;
     const url = `${this.baseUrl}${normalizedPath}`;
 
@@ -95,7 +96,7 @@ class ApiClient {
         );
       }
 
-      return json.data;
+      return envelope ? json as unknown as T : json.data;
     }
 
     if (!response.ok) {
@@ -107,6 +108,14 @@ class ApiClient {
     }
 
     return undefined as unknown as T;
+  }
+
+  list<T>(path: string, options?: RequestOptions): Promise<PageResult<T>> {
+    const params = new URLSearchParams();
+    for (const [key, value] of Object.entries(options?.params ?? {})) {
+      if (value !== undefined) params.set(key, String(value));
+    }
+    return this.request<PageResult<T>>(`${path}?${params}`, { ...options, method: 'GET' }, true);
   }
 
   get<T>(path: string, options?: RequestOptions): Promise<T> {

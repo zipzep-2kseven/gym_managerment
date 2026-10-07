@@ -2,15 +2,15 @@
 
 ## 1. Mục Đích & Nguồn Chân Lý (Source of Truth)
 
-Tài liệu này xác lập thiết kế kỹ thuật chi tiết và hợp đồng giao tiếp (Contract) cho tầng Xác thực (Authentication) của dự án **Multi-Gym Platform** trước khi triển khai mã nguồn Login API (Giai đoạn 6B).
+Tài liệu này xác lập thiết kế kỹ thuật chi tiết và hợp đồng giao tiếp (Contract) cho tầng Xác thực (Authentication) của dự án **Multi-Gym Platform**. Auth API đã có; các contract mục tiêu và phần chưa triển khai được phân biệt với mã nguồn.
 
 Tài liệu được xây dựng dựa trên sự tuân thủ nghiêm ngặt các tài liệu nền tảng:
-- [`docs/PROJECT_RULES.md`](file:///srv/gym/docs/PROJECT_RULES.md) (Nhóm 7: Authentication Rules, Nhóm 8: Authorization Rules)
-- [`docs/ARCHITECTURE_DECISIONS.md`](file:///srv/gym/docs/ARCHITECTURE_DECISIONS.md) (Mục 4: Technology Decisions, Mục 5: Authentication Decision)
-- [`docs/DATABASE_SPEC.md`](file:///srv/gym/docs/DATABASE_SPEC.md) (Mục 6.1: `users`, 6.2: `user_profiles`, 6.3: `roles`, 6.4: `user_roles`)
-- [`docs/DOMAIN_RULES.md`](file:///srv/gym/docs/DOMAIN_RULES.md) (Mục 2: Actors & Roles, Mục 6: Bất biến nghiệp vụ INV-011)
-- [`docs/FEATURE_SPEC.md`](file:///srv/gym/docs/FEATURE_SPEC.md) (FEAT-AUTH-002: Đăng nhập, FEAT-AUTH-003: Đăng xuất, FEAT-AUTH-004: Thông tin phiên)
-- [`docs/API_SPEC.md`](file:///srv/gym/docs/API_SPEC.md) (Mục 2, 3: Envelope Standard, Mục 4: Kiến trúc xác thực JWT + Cookie, Mục 6 & 7: Catalog & Quy tắc endpoint)
+- [`docs/PROJECT_RULES.md`](PROJECT_RULES.md) (Nhóm 7: Authentication Rules, Nhóm 8: Authorization Rules)
+- [`docs/ARCHITECTURE_DECISIONS.md`](ARCHITECTURE_DECISIONS.md) (Mục 4: Technology Decisions, Mục 5: Authentication Decision)
+- [`docs/DATABASE_SPEC.md`](DATABASE_SPEC.md) (Mục 4.1–4.4: `users`, `user_profiles`, `roles`, `user_roles`)
+- [`docs/DOMAIN_RULES.md`](DOMAIN_RULES.md) (Mục 2: Actors & Roles, Mục 6: Bất biến nghiệp vụ INV-011)
+- [`docs/FEATURE_SPEC.md`](FEATURE_SPEC.md) (FEAT-AUTH-002: Đăng nhập, FEAT-AUTH-003: Đăng xuất, FEAT-AUTH-004: Thông tin phiên)
+- [`docs/API_SPEC.md`](API_SPEC.md) (Mục 2, 3: Envelope Standard, Mục 4: Kiến trúc xác thực JWT + Cookie, Mục 6 & 7: Catalog & Quy tắc endpoint)
 
 ---
 
@@ -127,7 +127,7 @@ Khi thông tin đăng nhập không hợp lệ, hệ thống phải xử lý ph�
 
 ### 4.1. Quyết Định Kiến Trúc: JWT + HttpOnly Cookie
 
-Theo [`docs/ARCHITECTURE_DECISIONS.md`](file:///srv/gym/docs/ARCHITECTURE_DECISIONS.md) (Mục 4 & 5) và [`docs/PROJECT_RULES.md`](file:///srv/gym/docs/PROJECT_RULES.md) (Rule 7.1, 7.2):
+Theo [`docs/ARCHITECTURE_DECISIONS.md`](ARCHITECTURE_DECISIONS.md) (Mục 4 & 5) và [`docs/PROJECT_RULES.md`](PROJECT_RULES.md) (Rule 7.1, 7.2):
 
 - **Chiến lược xác thực:** JSON Web Token (JWT) có chữ ký số bí mật (Secret Key HMAC-SHA256).
 - **Phương thức vận chuyển (Transport):** **HttpOnly, Secure, SameSite Cookie**.
@@ -161,10 +161,10 @@ Theo [`docs/ARCHITECTURE_DECISIONS.md`](file:///srv/gym/docs/ARCHITECTURE_DECISI
 - `iat` (Issued At): Unix timestamp tại thời điểm tạo token.
 - `exp` (Expiration): Unix timestamp hết hạn (+7 ngày kể từ thời điểm tạo).
 
-### 4.3. Dependencies Kỹ Thuật (Sẽ cài đặt ở Giai đoạn 6B)
-- Ký và kiểm tra JWT: `jsonwebtoken` + `@types/jsonwebtoken` (hoặc `jose`).
+### 4.3. Dependencies kỹ thuật hiện có
+- Ký và kiểm tra JWT: `jsonwebtoken` + `@types/jsonwebtoken`.
 - Đọc cookie từ Express Request: `cookie-parser` + `@types/cookie-parser`.
-- *Lưu ý:* Không cài đặt trước ở bước 6A này; sẽ cài đặt đúng thời điểm implement 6B.
+- Tái sử dụng dependencies trong apps/api/package.json; cập nhật nghiệp vụ không yêu cầu đổi thư viện xác thực.
 
 ---
 
@@ -172,7 +172,7 @@ Theo [`docs/ARCHITECTURE_DECISIONS.md`](file:///srv/gym/docs/ARCHITECTURE_DECISI
 
 ### 5.1. Mô Hình `UserSession` (Phản hồi cho Authentication)
 
-Khi xác thực thành công hoặc truy vấn `/auth/me`, Backend trả về đối tượng `UserSession` tuân thủ bảng đặc tả tại [`docs/API_SPEC.md §5.1`](file:///srv/gym/docs/API_SPEC.md):
+Khi xác thực thành công hoặc truy vấn `/auth/me`, Backend trả về đối tượng `UserSession` tuân thủ bảng đặc tả tại [`docs/API_SPEC.md §5.1`](API_SPEC.md):
 
 ```typescript
 export interface UserSession {
@@ -212,7 +212,7 @@ export interface ActiveGymAssignment {
 
 ### 5.2. Danh Sách Thuộc Tính Tuyệt Đối Không Expose
 - `password_hash`
-- Plaintext password
+- Plaintext password trong UserSession/projection thông thường (ngoại lệ provisioning Q-10 được mô tả bên dưới)
 - Salt
 - Internal database cursor / query metadata
 - Secret keys
@@ -221,7 +221,7 @@ export interface ActiveGymAssignment {
 
 ## 6. Error Contract (Chuẩn Envelope Bắt Buộc)
 
-Toàn bộ phản hồi lỗi từ Authentication tuân thủ Envelope Standard quy định tại [`docs/API_SPEC.md §3.3 & §3.4`](file:///srv/gym/docs/API_SPEC.md):
+Toàn bộ phản hồi lỗi từ Authentication tuân thủ Envelope Standard quy định tại [`docs/API_SPEC.md §3.3 & §3.4`](API_SPEC.md):
 
 ```json
 {
@@ -343,19 +343,18 @@ Trong luồng Authentication, tầng xác thực **chỉ được phép thực h
   ```
 - `roles` & `user_roles`: Đọc danh sách vai trò của user:
   ```sql
-  SELECT r.role_name 
-  FROM roles r 
-  JOIN user_roles ur ON r.role_id = ur.role_id 
+  SELECT r.role_name
+  FROM roles r
+  JOIN user_roles ur ON r.role_id = ur.role_id
   WHERE ur.user_id = $1;
   ```
 - `user_profiles`: Đọc thông tin hồ sơ của user (nếu có).
 - `gym_managers` & `gym_trainers`: Đọc phân công phòng tập còn hiệu lực (`status = 'ACTIVE'`).
 
-**Ranh giới bất biến:**
-- **KHÔNG** tạo thêm bất kỳ bảng cơ sở dữ liệu nào ở giai đoạn này.
-- **KHÔNG** sửa đổi migration SQL hiện tại (`0000_stiff_blur.sql`).
-- **KHÔNG** sửa đổi `DATABASE_SPEC.md` hay ERD.
-- **KHÔNG** thêm/bớt cột trên bảng `users`.
+**Ranh giới thay đổi:**
+- Auth giữ cấu trúc tài khoản/session hiện có; không thêm cột users hoặc role STAFF chỉ để xử lý nghiệp vụ chưa chốt.
+- Không sửa migration 0000/0001 đã áp dụng; thay đổi schema được yêu cầu phải tạo migration mới và đồng bộ Database Spec.
+- Schema/service mới không tự cấp quyền qua token. Authorization/scope cho endpoint nghiệp vụ phải kiểm tra tại backend theo §11.
 
 ---
 
@@ -387,7 +386,7 @@ Request Đến
 ```
 
 > [!NOTE]
-> Trong Giai đoạn 6A và 6B, phạm vi công việc **CHỈ DỪNG LẠI Ở TẦNG 1 (AUTHENTICATION)**. Tầng 2 (Authorization) và Tầng 3 (Gym Scope) sẽ được thiết kế và triển khai ở các giai đoạn tiếp theo.
+> Router hiện có Auth/User. Các endpoint nghiệp vụ mới phải nối đủ Authorization và Gym Scope; không coi phiên đăng nhập hợp lệ là đã có quyền đối với mọi Gym. Tham chiếu API Spec và Domain Rules.
 
 ---
 
@@ -563,3 +562,20 @@ Content-Type: application/json; charset=utf-8
   }
 }
 ```
+
+
+## 11. Ranh giới xác thực với nghiệp vụ Gym/PT mới
+
+- Role CUSTOMER hiện được cấp khi đăng ký tài khoản. Quyền hội viên tại một Gym phải kiểm tra Membership; không buộc mua thẻ để tạo tài khoản. Điểm login/register trong checkout chờ Q-17 tại [Domain Rules](DOMAIN_RULES.md).
+- Public Gym/Package/PT, gallery, lịch làm việc công khai và review VISIBLE không yêu cầu Membership hay login. Private thông tin liên hệ Consultation, audit moderation và lịch hẹn Customer không nằm trong DTO public.
+- POST Consultation là contract public có optional authentication: Guest lưu user_id NULL; phiên hợp lệ liên kết actor từ server. Không nhận user_id/assigned_to/status trong body. Cookie không hợp lệ không được dùng để mạo danh; cơ chế xử lý phải nhất quán với contract public trong API Spec.
+- Ghi review và đăng ký PT yêu cầu actor được xác thực, còn hoạt động, ownership và quan hệ sử dụng tại đúng Gym. Lấy actorId từ phiên server, không từ payload. Availability không thay thế trạng thái tài khoản hay phân công PT.
+- Hide review chỉ Admin hoạt động; hidden_by lấy từ actorId, hidden_at server tạo, hidden_reason bắt buộc. Không có quyền sửa nội dung hoặc DELETE review cho Gym/Manager/Staff/PT/Admin.
+- Staff chưa có role/assignment; không tự thêm STAFF vào JWT, UserSession hoặc RBAC allowlist trước Q-14. Quyền PT/Manager đổi profile/availability theo Q-16/Q-18.
+- Giữ nguyên cookie/JWT/password/must_change_password; không mở quyền private bằng middleware optional-auth. Guest gửi tư vấn không làm họ trở thành hội viên và không tạo Payment/Membership tự động.
+
+## 12. Q-10 provisioning — quyết định Product Owner
+
+Backend tự sinh mật khẩu tạm theo password policy, chỉ lưu Argon2id hash; actor không nhập password. Khi chưa có notification/email delivery, chỉ response provisioning thành công trả `temporary_password` một lần cho actor có quyền bàn giao. Không lưu/log plaintext, không API đọc lại, không đưa credential vào UserSession hoặc login/change-password response. Response provisioning dùng `Cache-Control: no-store`.
+
+Admin provision Manager/PT; Manager có role và assignment ACTIVE đúng Gym chỉ provision PT ở Gym đó. Provisioning đặt must_change_password=true. Không thêm gate xác minh email. Đổi mật khẩu phải từ chối mật khẩu mới trùng mật khẩu hiện tại để credential tạm không còn dùng được sau đổi thành công; chỉ cập nhật password_hash, must_change_password=false và updated_at. Không đổi account status, email_verified_at, role hoặc assignment.

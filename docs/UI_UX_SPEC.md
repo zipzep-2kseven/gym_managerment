@@ -1,6 +1,6 @@
 # Multi-Gym Platform — UI/UX Specification
 
-Đặc tả giao diện theo ERD 15 bảng, [API_SPEC.md](API_SPEC.md) và [FEATURE_SPEC.md](FEATURE_SPEC.md). Giữ phong cách, design tokens, responsive và accessibility hiện có; cập nhật dữ liệu/form/action theo thiết kế mới. Đây là tài liệu, không phải giao diện đã triển khai.
+Đặc tả giao diện theo ERD 21 bảng, [API_SPEC.md](API_SPEC.md) và [FEATURE_SPEC.md](FEATURE_SPEC.md). Giữ phong cách, design tokens, responsive và accessibility hiện có; cập nhật dữ liệu/form/action theo thiết kế mới. Đây là tài liệu, không phải giao diện đã triển khai.
 
 Các mã Q tham chiếu [DOMAIN_RULES.md §9](DOMAIN_RULES.md#9-câu-hỏi-mở-và-phạm-vi-chặn) là ghi chú cho đội phát triển, không hiển thị mã kỹ thuật hoặc lý do schema trên màn hình người dùng. Chức năng DRAFT chưa được phát hành; không tạo nút gọi API chưa có contract hoặc mô phỏng thành công.
 
@@ -180,22 +180,22 @@ Giữ các mã màn hình hiện có; thêm màn hình Payment và Equipment. Ro
 ### SCR-GST-003: Public Gym Detail (Chi Tiết Phòng Gym)
 
 - **Route:** `/gyms/:gymId`.
-- **Feature/API mapping:** `FEAT-GYM-002`.
-- **Dữ liệu và thao tác:** Hiển thị description, email, phone, address, logo_url, latitude/longitude, opening_time/closing_time từ API; không coi giờ mở cửa/logo là nội dung tĩnh nữa. Tabs gói tập và PT.
+- **Feature/API mapping:** `FEAT-GYM-002`, `FEAT-GIM-001`, `FEAT-REV-001`, `FEAT-CON-001`.
+- **Dữ liệu và thao tác:** Hiển thị description, email, phone, address, logo_url, latitude/longitude, opening_time/closing_time từ API; không coi giờ mở cửa/logo là nội dung tĩnh nữa. Gallery ảnh thực tế tách logo, mô tả/tiện ích hiện có, Package, review VISIBLE và PT thuộc Gym. Hai CTA chính: “Đăng ký ngay” → chọn Package; “Đặt lịch tư vấn” → form không bắt login. Liên kết xem PT là điều hướng phụ, không chen bước chọn PT vào checkout.
 - **Trạng thái và quyền:** Loading/empty/error/success theo §1; scope và các action DRAFT kế thừa API. Lỗi 401 dẫn đăng nhập; 403/404 không tiết lộ dữ liệu Gym khác.
 
 ### SCR-GST-004: Public Gym Packages (Danh Sách Gói Tập Cơ Sở)
 
 - **Route:** `/gyms/:gymId/packages`.
 - **Feature/API mapping:** `FEAT-PKG-001`, `FEAT-PKG-002`.
-- **Dữ liệu và thao tác:** Hiển thị package_name, duration_days, price, description. CTA mua gói dẫn luồng Payment sau đăng nhập; không hiển thị quota hoặc loại gói không có trong ERD.
+- **Dữ liệu và thao tác:** Hiển thị package_name, duration_days, price, description. CTA mua gói dẫn chọn/xác nhận Package; vị trí login/register theo Q-17 trước Payment cần user_id; không có bước chọn PT; không hiển thị quota hoặc loại gói không có trong ERD.
 - **Trạng thái và quyền:** Loading/empty/error/success theo §1; scope và các action DRAFT kế thừa API. Lỗi 401 dẫn đăng nhập; 403/404 không tiết lộ dữ liệu Gym khác.
 
 ### SCR-GST-005: Public Gym Trainers (Đội Ngũ Huấn Luyện Viên Cơ Sở)
 
 - **Route:** `/gyms/:gymId/trainers`.
 - **Feature/API mapping:** `FEAT-TRN-001`, `FEAT-TRN-002`.
-- **Dữ liệu và thao tác:** Họ tên/avatar công khai, specialization, experience_years, bio. CTA đăng ký PT yêu cầu chọn Membership cùng Gym; không yêu cầu nhập số buổi.
+- **Dữ liệu và thao tác:** Họ tên/avatar công khai, specialization, experience_years, bio, availability; liên kết xem profile chi tiết. Hiển thị “Liên hệ để trao đổi”, không chào giá PT cố định. Chỉ sau Membership và thống nhất mới sang đăng ký PT; không yêu cầu nhập số buổi quota.
 - **Trạng thái và quyền:** Loading/empty/error/success theo §1; scope và các action DRAFT kế thừa API. Lỗi 401 dẫn đăng nhập; 403/404 không tiết lộ dữ liệu Gym khác.
 
 ### SCR-GST-006: Customer Register (Đăng Ký Tài Khoản Khách Hàng)
@@ -244,7 +244,7 @@ Giữ các mã màn hình hiện có; thêm màn hình Payment và Equipment. Ro
 
 - **Route:** `/pt-registrations`.
 - **Feature/API mapping:** `FEAT-PTR-001`, `FEAT-PTR-002`.
-- **Dữ liệu và thao tác:** Danh sách RegistrationView và form chọn membership_id trước, rồi chọn gym_trainer_id đúng Gym. note tùy chọn; không nhập customer_id, gym_id hoặc tổng số buổi.
+- **Dữ liệu và thao tác:** Sau Membership và trao đổi/thống nhất với PT, hiển thị RegistrationView và form chọn membership_id trước, rồi gym_trainer_id đúng Gym. Đây là luồng bổ sung, không phải bước checkout Gym. note tùy chọn; không nhập customer_id, gym_id hoặc tổng số buổi.
 - **Trạng thái và quyền:** Loading/empty/error/success theo §1; scope và các action DRAFT kế thừa API. Lỗi 401 dẫn đăng nhập; 403/404 không tiết lộ dữ liệu Gym khác.
 
 ### SCR-CUS-006: Chi tiết đăng ký PT và lịch hẹn
@@ -310,11 +310,11 @@ Giữ các mã màn hình hiện có; thêm màn hình Payment và Equipment. Ro
 - **Dữ liệu và thao tác:** Chi tiết lịch và note; action hoàn thành theo policy, không tự tăng bộ đếm hay hoàn tất Registration. Không có nút vắng mặt trước quyết định mới.
 - **Trạng thái và quyền:** Loading/empty/error/success theo §1; scope và các action DRAFT kế thừa API. Lỗi 401 dẫn đăng nhập; 403/404 không tiết lộ dữ liệu Gym khác.
 
-### SCR-TRN-006: PT Weekly Schedule Calendar (Lịch Biểu Tuần Huấn Luyện Viên)
+### SCR-TRN-006: PT Appointment Calendar (Lịch Các Buổi Tập Cụ Thể)
 
 - **Route:** `/pt/schedule`.
 - **Feature/API mapping:** `FEAT-APP-002`, `FEAT-APP-001`.
-- **Dữ liệu và thao tác:** Lịch tuần trên desktop, danh sách ngày trên mobile; from/to theo timezone hiển thị, gửi ISO có múi giờ. Không mở lịch Gym khác từ frontend.
+- **Dữ liệu và thao tác:** Đây là lịch Appointment, không phải Working Schedule. Lịch tuần trên desktop, danh sách ngày trên mobile; from/to theo timezone hiển thị, gửi ISO có múi giờ. Không mở lịch Gym khác từ frontend.
 - **Trạng thái và quyền:** Loading/empty/error/success theo §1; scope và các action DRAFT kế thừa API. Lỗi 401 dẫn đăng nhập; 403/404 không tiết lộ dữ liệu Gym khác.
 
 ### SCR-MGR-001: Manager Dashboard (Bàn Làm Việc Quản Lý Phòng Gym)
@@ -349,7 +349,7 @@ Giữ các mã màn hình hiện có; thêm màn hình Payment và Equipment. Ro
 
 - **Route:** `/manager/trainers/assign`.
 - **Feature/API mapping:** `FEAT-TRN-003`, `FEAT-TRN-005`.
-- **Dữ liệu và thao tác:** Gán User PT có sẵn hoặc cấp tài khoản mới theo contract DRAFT Q-10. Form specialization, experience_years, bio; không dùng introduction.
+- **Dữ liệu và thao tác:** Gán User PT có sẵn hoặc cấp tài khoản mới theo Q-10 đã chốt; chỉ actor có quyền nhận mật khẩu tạm một lần để bàn giao, không có chức năng đọc lại. Form specialization, experience_years, bio; không dùng introduction.
 - **Trạng thái và quyền:** Loading/empty/error/success theo §1; scope và các action DRAFT kế thừa API. Lỗi 401 dẫn đăng nhập; 403/404 không tiết lộ dữ liệu Gym khác.
 
 ### SCR-MGR-006: Gym Packages Catalog Management (Quản Lý Gói Tập Cơ Sở)
@@ -417,16 +417,16 @@ Giữ các mã màn hình hiện có; thêm màn hình Payment và Equipment. Ro
 
 ### SCR-ADM-005: Gym Facility Creation & Status Control (Tạo Mới & Đổi Trạng Thái Phòng Gym)
 
-- **Route:** `/admin/gyms/:gymId`.
+- **Route:** `/admin/gyms/create` để tạo, `/admin/gyms/:gymId` để sửa/đổi trạng thái.
 - **Feature/API mapping:** `FEAT-GYM-003`, `FEAT-GYM-005`.
-- **Dữ liệu và thao tác:** Tạo Gym với các thông tin mới; trạng thái ACTIVE/INACTIVE. Tác động đổi trạng thái tới hợp đồng hiện có chờ Q-13.
+- **Dữ liệu và thao tác:** Tạo Gym với các thông tin mới; trạng thái ACTIVE/INACTIVE. Ngừng Gym theo Q-13 đã chốt (Domain §10); hiển thị số nghĩa vụ đang mở từ lỗi 409, không có force hoặc hủy dây chuyền.
 - **Trạng thái và quyền:** Loading/empty/error/success theo §1; scope và các action DRAFT kế thừa API. Lỗi 401 dẫn đăng nhập; 403/404 không tiết lộ dữ liệu Gym khác.
 
 ### SCR-ADM-006: Manager Provisioning & Assignment Console (Khởi Tạo & Bổ Nhiệm Quản Lý)
 
 - **Route:** `/admin/managers`.
 - **Feature/API mapping:** `FEAT-MGR-001`, `FEAT-MGR-002`, `FEAT-MGR-003`, `FEAT-MGR-004`.
-- **Dữ liệu và thao tác:** Tạo User Manager → gán MANAGER → liên kết Gym. Không vượt giới hạn ACTIVE; không tự thay Manager cũ. Không thể hiển thị toàn bộ lịch sử tái bổ nhiệm từ các cặp unique.
+- **Dữ liệu và thao tác:** Tạo User Manager → gán MANAGER → liên kết Gym. Không vượt giới hạn ACTIVE; không tự thay Manager cũ. Tái bổ nhiệm giữ bản ghi cũ; assigned_at là lần ACTIVE gần nhất, created_at là lần tạo đầu. Không thể hiển thị toàn bộ lịch sử từ các cặp unique.
 - **Trạng thái và quyền:** Loading/empty/error/success theo §1; scope và các action DRAFT kế thừa API. Lỗi 401 dẫn đăng nhập; 403/404 không tiết lộ dữ liệu Gym khác.
 
 ### SCR-ADM-007: System-wide Incident Reports Monitor (Giám Sát Sự Cố Toàn Sàn)
@@ -464,10 +464,62 @@ Giữ các mã màn hình hiện có; thêm màn hình Payment và Equipment. Ro
 - **Dữ liệu và thao tác:** Chọn equipment_type_id, nhập equipment_code, purchase_date, condition/status. Báo lỗi trùng mã trong Gym. Không có trường chuyển Gym hoặc tự tạo loại máy mới khi Q-09 chưa chốt.
 - **Trạng thái và quyền:** Loading/empty/error/success theo §1; scope và các action DRAFT kế thừa API. Lỗi 401 dẫn đăng nhập; 403/404 không tiết lộ dữ liệu Gym khác.
 
+### SCR-GST-007: Đặt lịch tư vấn
+
+- **Route:** `/gyms/:gymId/consultation`.
+- **Feature/API mapping:** FEAT-CON-001.
+- **UI:** Full name/phone bắt buộc; email, ngày/giờ mong muốn, nội dung tùy chọn. Guest không bị chuyển sang login. User đăng nhập được điền sẵn thông tin phù hợp và sửa trước khi gửi; không hiện user_id/assigned_to/status input.
+- **Trạng thái:** Loading/pending chống gửi lặp; lỗi inline; thành công “Gym đã nhận yêu cầu tư vấn”, không báo đặt thành công buổi tập hoặc thanh toán. Không hứa thời gian phản hồi chưa chốt. Validation ngày theo Q-19.
+
+### SCR-GST-008: PT Profile công khai
+
+- **Route:** `/gyms/:gymId/trainers/:trainerId`.
+- **Feature/API mapping:** FEAT-TRN-002, FEAT-REV-003.
+- **UI:** Ảnh/họ tên/bio/chuyên môn/kinh nghiệm, social links, availability, Working Schedule và review VISIBLE. Chứng chỉ chỉ hiện khi có dữ liệu được hỗ trợ; không tạo fake badges. “Liên hệ để trao đổi” qua liên kết đã công khai; không lộ số/email đăng nhập riêng tư.
+- **Hành động:** Sau Membership cùng Gym và thống nhất với PT mới đến đăng ký dịch vụ; không tạo chat hoặc thanh toán PT. Không hiển thị lịch hẹn riêng của học viên khác.
+
+### SCR-CUS-012: Đánh giá Gym
+
+- **Route:** `/gyms/:gymId/reviews/new`.
+- **Feature/API mapping:** FEAT-REV-002.
+- **UI:** Rating 1–5 và comment tùy chọn; login và eligibility từ backend. Không hiển thị chọn user_id/Gym khác trong form. Submit thành công chỉ khi API xác nhận. Không có edit/delete; trường hợp tác giả sửa chờ Q-15.
+
+### SCR-CUS-013: Đánh giá PT
+
+- **Route:** `/gyms/:gymId/trainers/:trainerId/reviews/new`.
+- **Feature/API mapping:** FEAT-REV-004.
+- **UI:** Đúng PT đã có quan hệ sử dụng; rating/comment. Xử lý REVIEW_NOT_ELIGIBLE bằng thông báo rõ, không bỏ qua backend hoặc cho chọn Registration của người khác. Không tự mở review chỉ vì có Membership Gym.
+
+### SCR-MGR-013: Xử lý yêu cầu tư vấn
+
+- **Route:** `/manager/consultations`.
+- **Feature/API mapping:** FEAT-CON-002, FEAT-CON-003.
+- **UI:** Danh sách và chi tiết liên hệ đúng Gym, trạng thái, thời gian mong muốn/nội dung; thao tác tiếp nhận/cập nhật theo Q-19. Assignment Staff chỉ xuất hiện khi Q-14 có mô hình quyền. Không tạo booking tự động.
+
+### SCR-MGR-014: Gallery Gym
+
+- **Route:** `/manager/gym/images`.
+- **Feature/API mapping:** FEAT-GIM-002.
+- **UI:** Ảnh/caption/thứ tự; nguồn upload theo Q-10/Q-19, không giả lập upload thành công. Logo vẫn là trường riêng. Không thao tác review tại màn hình gallery.
+
+### SCR-TRN-007: Availability, Social và Working Schedule
+
+- **Route:** `/pt/profile/availability-and-schedule`.
+- **Feature/API mapping:** FEAT-TRN-007, FEAT-TRN-008, FEAT-TRN-009.
+- **UI:** Chọn phân công Gym được cấp quyền; availability tách status, nhiều social links theo platform, nhiều khung giờ theo thứ. Không có bảng giá/quota. Validation giờ/timezone theo Q-18; không biến màn hình này thành lịch hẹn Customer.
+- **Trạng thái:** Loading/empty/error/success; lưu qua server theo scope, không thông báo đã đổi Appointment. Quyền thay mặt theo Q-16/Q-18.
+
+### SCR-ADM-008: Review Moderation
+
+- **Route:** `/admin/reviews`.
+- **Feature/API mapping:** FEAT-REV-005, FEAT-REV-006.
+- **UI:** Filter Gym/PT, Gym, VISIBLE/HIDDEN; xem nội dung gốc và audit. Với VISIBLE, nút “Ẩn đánh giá” yêu cầu lý do; HIDDEN hiển thị người/thời điểm/lý do. Không có xóa, sửa rating/comment, unhide hoặc ghi đè audit.
+- **Trạng thái:** 403 chặn người không phải Admin; 409 tải lại dữ liệu nếu review đã bị ẩn; chỉ báo thành công sau server xác nhận.
+
 ## 5. Form, trạng thái và luồng quan trọng
 
 - Form chỉ gửi allowlist trong API §6; payload aggregate hồ sơ ghi phone ở User, address/avatar ở Profile. Field kết quả xử lý report là read-only ngoại trừ resolution_note ở action resolve.
-- Status badges lấy đúng nhóm tại Database §11, không ánh xạ mọi INACTIVE/PENDING thành cùng một nghiệp vụ. Dùng màu semantic tokens kèm chữ, không chỉ dựa vào màu.
+- Status badges lấy đúng nhóm tại Database §7, không ánh xạ mọi INACTIVE/PENDING thành cùng một nghiệp vụ. Dùng màu semantic tokens kèm chữ, không chỉ dựa vào màu.
 - Khi thay Gym/Membership trên form, xóa lựa chọn PT/Equipment cũ và tải lại danh sách đúng scope. Backend vẫn xác minh liên kết khi submit.
 - Luồng mua: Package → Payment PENDING → nhận kết quả thật từ Backend → Membership nếu đã phát hành. Disable submit khi pending chỉ chống double-click UX, không thay idempotency server.
 - Luồng PT: Membership → PT cùng Gym → Registration → Appointment. Không hiển thị số buổi còn lại hoặc thanh tiến độ quota.
@@ -543,4 +595,18 @@ Kiểm tra viewport 375/768/1024/1440, bàn phím, focus trong dialog, label/inl
 
 ## 9. Phụ thuộc và câu hỏi mở
 
-Q-01/Q-02: checkout, phản hồi thanh toán/thẻ; Q-03: cấp thẻ thủ công; Q-04/Q-05/Q-06/Q-07: form PT và các action lịch; Q-08: UI đa Gym; Q-09: tra cứu/ghi thiết bị và danh mục; Q-10: xác minh email, cấp mật khẩu, upload; Q-11: validation vật lý; Q-12: tái bổ nhiệm Manager; Q-13: các action status còn thiếu policy. Chỉ phát hành phần API đã chốt, không hiển thị action chưa khả dụng như đã hoạt động.
+Q-01/Q-02: checkout, phản hồi thanh toán/thẻ; Q-03: cấp thẻ thủ công; Q-04/Q-06/Q-07: form PT và các action lịch; Q-08: PT chỉ một Gym ACTIVE; Customer đa Gym còn mở; Q-09: tra cứu/ghi thiết bị và danh mục; Q-10: provisioning/email đã chốt, upload còn mở; Q-11: baseline vật lý đã có; Q-05: quota ngoài phạm vi; Q-12: tái bổ nhiệm Manager đã chốt; Q-13: Gym/PT đã chốt; các action status khác còn thiếu policy. Chỉ phát hành phần API đã chốt, không hiển thị action chưa khả dụng như đã hoạt động.
+
+
+Nghiệp vụ mới bổ sung phụ thuộc Q-14 Staff, Q-15 eligibility/edit/unhide review, Q-16 availability/quyền profile, Q-17 tài khoản trong checkout, Q-18 timezone/lịch làm việc, Q-19 vận hành tư vấn/gallery. Đây là ghi chú triển khai, không hiển thị mã Q trong sản phẩm. Các màn hình mới chưa có code; giữ nguyên design tokens/responsive/a11y hiện có khi triển khai.
+
+
+## GYM-03 — Phạm vi giao diện đã triển khai
+
+GYM-03 nối các API GYM-02 hiện có: Public Gym directory/detail và PT list/profile; Manager Gym edit/PT roster/assign/provision/status; Admin Gym list/create/edit/status và Manager provision/assign/revoke. Có role/scope guards, TanStack Query, Tailwind utilities trên design tokens hiện có; mật khẩu tạm chỉ nằm trong form đang mở, không lưu Web Storage hoặc cache bền vững.
+
+Chưa có API đọc Gym riêng cho Manager/Admin. Manager đọc public Gym ACTIVE để khởi tạo form và backend thẩm định scope khi ghi; Gym không còn public trả trạng thái không khả dụng. Admin detail duyệt danh sách nội bộ theo trang để đọc cả Gym INACTIVE, không gọi public detail làm nguồn quản trị.
+
+Hai CTA trên Gym detail dẫn đúng khu vực Package/Consultation, hiện thông báo chức năng chưa triển khai. API/UI Package, gallery, consultation và review thuộc các lát cắt riêng; không hiển thị dữ liệu giả hoặc gửi request đến endpoint chưa có. Upload logo vẫn chưa mở; form nhận URL HTTP/HTTPS theo contract hiện tại.
+
+Bằng chứng kiểm thử và giới hạn phát hành: [GYM_03_VERIFICATION.md](GYM_03_VERIFICATION.md).

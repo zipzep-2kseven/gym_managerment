@@ -1,6 +1,8 @@
 import { verify, hash, Algorithm } from '@node-rs/argon2';
 import { eq, and } from 'drizzle-orm';
 import { db } from '../database/index.js';
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
+import type * as schema from '../database/schema/index.js';
 import {
   users,
   roles,
@@ -12,6 +14,7 @@ import {
 import { DUMMY_ARGON2_HASH } from '../constants/auth.constants.js';
 import {
   AppError,
+  ValidationError,
   InvalidCredentialsError,
   AccountDeactivatedError,
   UnauthorizedError,
@@ -24,6 +27,8 @@ import { LoginInput, ChangePasswordInput, RegisterInput } from '../utils/validat
 import { UserSession, LoginResult, ActiveGymAssignment } from '../types/auth.types.js';
 
 export class AuthService {
+  constructor(private readonly database: NodePgDatabase<typeof schema> = db) {}
+
   /**
    * Registers a new Customer account within an atomic database transaction.
    * Creates user, profile, and user_roles (CUSTOMER).
@@ -34,7 +39,7 @@ export class AuthService {
     const normalizedPhone = input.phone ?? null;
 
     // 1. Pre-check email uniqueness
-    const [existingEmail] = await db
+    const [existingEmail] = await this.database
       .select({ userId: users.userId })
       .from(users)
       .where(eq(users.email, normalizedEmail))
@@ -46,7 +51,7 @@ export class AuthService {
 
     // 2. Pre-check phone uniqueness if provided
     if (normalizedPhone) {
-      const [existingPhone] = await db
+      const [existingPhone] = await this.database
         .select({ userId: users.userId })
         .from(users)
         .where(eq(users.phone, normalizedPhone))
@@ -58,7 +63,7 @@ export class AuthService {
     }
 
     // 3. Look up CUSTOMER role
-    const [customerRole] = await db
+    const [customerRole] = await this.database
       .select()
       .from(roles)
       .where(eq(roles.roleName, 'CUSTOMER'))
@@ -79,7 +84,7 @@ export class AuthService {
 
     try {
       // 5. Execute atomic transaction (users + user_profiles + user_roles)
-      const { user, profile } = await db.transaction(async (tx) => {
+      const { user, profile } = await this.database.transaction(async (tx) => {
         const [createdUser] = await tx
           .insert(users)
           .values({
@@ -163,7 +168,7 @@ export class AuthService {
     const normalizedEmail = input.email.trim().toLowerCase();
 
     // 1. Look up user by email
-    const [user] = await db
+    const [user] = await this.database
       .select()
       .from(users)
       .where(eq(users.email, normalizedEmail))
@@ -205,7 +210,7 @@ export class AuthService {
    */
   async getCurrentUser(userId: string): Promise<UserSession> {
     // 1. Look up user by UUID
-    const [user] = await db
+    const [user] = await this.database
       .select()
       .from(users)
       .where(eq(users.userId, userId))
@@ -230,7 +235,7 @@ export class AuthService {
    */
   private async buildUserSession(user: typeof users.$inferSelect): Promise<UserSession> {
     // 1. Query assigned roles
-    const userRoleRows = await db
+    const userRoleRows = await this.database
       .select({ roleName: roles.roleName })
       .from(userRoles)
       .innerJoin(roles, eq(userRoles.roleId, roles.roleId))
@@ -239,14 +244,14 @@ export class AuthService {
     const roleNames = userRoleRows.map((r) => r.roleName);
 
     // 2. Query user profile (if created)
-    const [profile] = await db
+    const [profile] = await this.database
       .select()
       .from(userProfiles)
       .where(eq(userProfiles.userId, user.userId))
       .limit(1);
 
     // 3. Query active gym assignments (manager and/or trainer)
-    const managerAssignments = await db
+    const managerAssignments = await this.database
       .select({
         gymId: gymManagers.gymId,
         gymManagerId: gymManagers.gymManagerId,
@@ -254,7 +259,7 @@ export class AuthService {
       .from(gymManagers)
       .where(and(eq(gymManagers.userId, user.userId), eq(gymManagers.status, 'ACTIVE')));
 
-    const trainerAssignments = await db
+    const trainerAssignments = await this.database
       .select({
         gymId: gymTrainers.gymId,
         gymTrainerId: gymTrainers.gymTrainerId,
@@ -310,7 +315,7 @@ export class AuthService {
    */
   async changePassword(userId: string, input: ChangePasswordInput): Promise<{ message: string }> {
     // 1. Look up user by UUID from database
-    const [user] = await db
+    const [user] = await this.database
       .select()
       .from(users)
       .where(eq(users.userId, userId))
@@ -331,6 +336,10 @@ export class AuthService {
       throw new InvalidCurrentPasswordError();
     }
 
+    if (input.new_password === input.current_password) {
+      throw new ValidationError('Mật khẩu mới phải khác mật khẩu hiện tại.');
+    }
+
     // 4. Hash new password with Argon2id using standardized parameters:
     // memory: 64MB / 65536 KB, iterations (timeCost): 3, parallelism: 4, outputLen: 32
     const newPasswordHash = await hash(input.new_password, {
@@ -342,7 +351,7 @@ export class AuthService {
     });
 
     // 5. Update user password_hash, must_change_password, and updated_at atomically
-    await db
+    await this.database
       .update(users)
       .set({
         passwordHash: newPasswordHash,

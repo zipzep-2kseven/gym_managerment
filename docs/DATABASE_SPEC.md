@@ -2,12 +2,12 @@
 
 ## 1. Mục tiêu Database Specification
 
-Tài liệu này là **Source of Truth (Nguồn chân lý duy nhất)** cho thiết kế vật lý Cơ sở dữ liệu PostgreSQL 17 của hệ thống **Multi-Gym Platform**. 
+Tài liệu này là **đặc tả vật lý đối chiếu schema/migration** của PostgreSQL 17 của hệ thống **Multi-Gym Platform**.
 
-Mô hình dữ liệu bao gồm **chính xác 15 bảng** theo ERD chuẩn được phê duyệt, phục vụ kiến trúc **Shared-Database, Shared-Schema với Application-Level Multi-Gym Isolation**.
+Mô hình dữ liệu bao gồm **chính xác 21 bảng** theo ERD chuẩn được phê duyệt, phục vụ kiến trúc **Shared-Database, Shared-Schema với Application-Level Multi-Gym Isolation**.
 
 Tài liệu xác định chi tiết:
-- Danh sách 15 bảng và toàn bộ các cột (Columns).
+- Danh sách 21 bảng và toàn bộ các cột (Columns).
 - Kiểu dữ liệu chuẩn PostgreSQL (PostgreSQL Data Types).
 - Khóa chính (PRIMARY KEY).
 - Khóa ngoại (FOREIGN KEY) kèm quy tắc toàn vẹn tham chiếu `ON DELETE` và `ON UPDATE`.
@@ -19,11 +19,7 @@ Tài liệu xác định chi tiết:
 - Các quy tắc bảo toàn toàn vẹn dữ liệu Multi-Gym (Multi-Gym Integrity Rules).
 - Các câu hỏi mở và quyết định chưa chốt (`Open Questions & Unresolved Decisions`).
 
-> [!IMPORTANT]
-> **Quy tắc thực thi:**
-> - Tài liệu này thuộc **Giai đoạn 1 (Database Spec)**.
-> - **Tuyệt đối KHÔNG** viết code, KHÔNG tạo schema Drizzle, KHÔNG tạo migration, KHÔNG chạy migration, KHÔNG kết nối database, KHÔNG seed dữ liệu, KHÔNG tạo API trong giai đoạn này.
-> - Bất kỳ thay đổi nào đối với ERD, kiểu dữ liệu, hoặc ràng buộc vật lý phải được cập nhật tại tài liệu này và được người dùng phê duyệt trước khi chuyển sang giai đoạn tiếp theo.
+> Baseline vật lý đã có: [0000](../apps/api/drizzle/0000_stiff_blur.sql) và [0001](../apps/api/drizzle/0001_gym_business_update.sql), schema Drizzle và snapshot 0001. Đây là đặc tả hiện trạng dữ liệu kết hợp yêu cầu nghiệp vụ, không phải lệnh triển khai. Lần đồng bộ tài liệu này không sửa/chạy migration. Mọi thay đổi schema tiếp theo phải có migration mới, bảo toàn dữ liệu và đối chiếu [Domain Rules](DOMAIN_RULES.md).
 
 ---
 
@@ -40,7 +36,7 @@ Hệ thống hoạt động dưới mô hình quản lý chuỗi phòng tập đ
 3. **PT Scope:**
    - PT thuộc Gym thông qua bản ghi `gym_trainers`. PT chỉ được xem học viên và quản lý lịch hẹn (`pt_appointments`) được phân công cho chính mình tại cơ sở đó.
 4. **Direct Gym Scoping:**
-   - Các bảng có cột `gym_id` trực tiếp: `gym_managers`, `gym_trainers`, `packages`, `payments`, `memberships`, `equipments`, `gym_reports`.
+   - Các bảng có cột `gym_id` trực tiếp: `gym_managers`, `gym_trainers`, `packages`, `payments`, `memberships`, `equipments`, `gym_reports`, `gym_images`, `consultation_requests`, `gym_reviews`.
    - Mọi thao tác ghi/đọc trên các bảng này đều phải ràng buộc phạm vi `gym_id`.
 5. **Indirect Gym Scoping:**
    - Bảng `pt_registrations` xác định Gym gián tiếp thông qua quan hệ: `membership_id → memberships.gym_id` và `gym_trainer_id → gym_trainers.gym_id`.
@@ -54,7 +50,9 @@ Hệ thống hoạt động dưới mô hình quản lý chuỗi phòng tập đ
 
 ---
 
-## 3. Danh mục 15 Bảng Hệ thống
+Các bảng pt_social_links, pt_working_schedules và trainer_reviews xác định Gym qua gym_trainers. Guest chỉ được đọc projection public và gửi Consultation; không được đọc liên hệ của request khác.
+
+## 3. Danh mục 21 Bảng Hệ thống
 
 | STT | Tên bảng | Phạm vi (Scope) | Trách nhiệm dữ liệu |
 | :---: | :--- | :--- | :--- |
@@ -73,10 +71,14 @@ Hệ thống hoạt động dưới mô hình quản lý chuỗi phòng tập đ
 | 13 | `equipment_types` | Toàn hệ thống | Danh mục phân loại thiết bị/dụng cụ tập luyện dùng chung cho toàn bộ hệ thống (ví dụ: Máy chạy bộ, Khung gánh tạ). |
 | 14 | `equipments` | Trực tiếp Gym | Từng thiết bị/máy móc vật lý cụ thể thuộc sở hữu của một Gym (mã máy trong Gym, tình trạng vật lý, trạng thái quản lý). |
 | 15 | `gym_reports` | Trực tiếp Gym | Phản ánh/khiếu nại của hội viên gửi tới Gym, có thể liên kết trực tiếp tới một thiết bị cụ thể thuộc Gym đó. |
+| 16 | `gym_images` | Trực tiếp Gym | Gallery thực tế của Gym; nhiều ảnh, không thay logo_url. |
+| 17 | `consultation_requests` | Trực tiếp Gym | Guest/Customer yêu cầu tư vấn; user_id nullable, không phải Appointment. |
+| 18 | `pt_social_links` | Gián tiếp qua Gym Trainer | Các liên kết tham khảo/liên hệ của PT thuộc Gym. |
+| 19 | `pt_working_schedules` | Gián tiếp qua Gym Trainer | Khung giờ làm việc của PT theo thứ; không tự sinh buổi tập. |
+| 20 | `gym_reviews` | Trực tiếp Gym | Review đúng Gym của Customer có quan hệ sử dụng; giữ audit ẩn. |
+| 21 | `trainer_reviews` | Gián tiếp qua Gym Trainer | Review đúng Gym Trainer qua Membership/PT Registration; giữ audit ẩn. |
 
----
-
-## 4. Chi tiết Thiết kế Vật lý 15 Bảng
+## 4. Chi tiết Thiết kế Vật lý 21 Bảng
 
 ### Convention Chung Toàn Bộ Database
 
@@ -97,7 +99,7 @@ Hệ thống hoạt động dưới mô hình quản lý chuỗi phòng tập đ
    - Tọa độ địa lý: `numeric(9,6)` cho cả vĩ độ (latitude) và kinh độ (longitude).
 3. **Audit Columns:**
    - Mọi bảng có lifecycle đều có `created_at timestamptz(3) NOT NULL DEFAULT now()` và `updated_at timestamptz(3) NOT NULL DEFAULT now()`.
-   - Không sử dụng Database Trigger để tự cập nhật `updated_at` trong thiết kế này; tầng Data Access Layer (Drizzle ORM) hoặc câu lệnh UPDATE bắt buộc phải set `updated_at = now()` một cách tường minh.
+   - Riêng gym_reviews/trainer_reviews có trigger 0001 cập nhật updated_at; các bảng khác do tầng Data Access Layer hoặc câu lệnh UPDATE set updated_at tường minh.
 4. **Quy ước Trạng thái (Status/Enums):**
    - Sử dụng kiểu dữ liệu `varchar(20)` kết hợp với ràng buộc `CHECK (col IN ('VAL1', 'VAL2', ...))`.
    - Không sử dụng PostgreSQL Native `ENUM` type để đảm bảo tính linh hoạt khi migration và đồng bộ schema.
@@ -292,7 +294,7 @@ Hệ thống hoạt động dưới mô hình quản lý chuỗi phòng tập đ
 | `gym_manager_id` | `uuid` | NOT NULL | `gen_random_uuid()` | PK | Định danh bản ghi phân công |
 | `gym_id` | `uuid` | NOT NULL | — | FK | Chi nhánh Gym được quản lý |
 | `user_id` | `uuid` | NOT NULL | — | FK | User mang vai trò Quản lý |
-| `assigned_at` | `timestamptz(3)` | NOT NULL | `now()` | — | Thời điểm bổ nhiệm |
+| `assigned_at` | `timestamptz(3)` | NOT NULL | `now()` | — | Thời điểm bắt đầu lần ACTIVE gần nhất; cập nhật khi tái bổ nhiệm, không phải full history |
 | `status` | `varchar(20)` | NOT NULL | `'ACTIVE'` | CHECK | Trạng thái bổ nhiệm (`assignment_status`) |
 | `created_at` | `timestamptz(3)` | NOT NULL | `now()` | — | Thời điểm tạo bản ghi |
 | `updated_at` | `timestamptz(3)` | NOT NULL | `now()` | — | Thời điểm cập nhật bản ghi |
@@ -338,6 +340,7 @@ Hệ thống hoạt động dưới mô hình quản lý chuỗi phòng tập đ
 | `experience_years` | `integer` | NULL | — | CHECK | Số năm kinh nghiệm làm nghề (>= 0) |
 | `bio` | `text` | NULL | — | — | Giới thiệu ngắn về bản thân huấn luyện viên |
 | `status` | `varchar(20)` | NOT NULL | `'ACTIVE'` | CHECK | Trạng thái làm việc của PT (`trainer_status`) |
+| `availability` | `varchar(20)` | NOT NULL | `'NOT_ACCEPTING'` | CHECK | Khả năng nhận học viên; độc lập status |
 | `joined_at` | `timestamptz(3)` | NOT NULL | `now()` | — | Thời điểm bắt đầu làm việc tại Gym |
 | `created_at` | `timestamptz(3)` | NOT NULL | `now()` | — | Thời điểm tạo bản ghi |
 | `updated_at` | `timestamptz(3)` | NOT NULL | `now()` | — | Thời điểm cập nhật bản ghi |
@@ -350,9 +353,11 @@ Hệ thống hoạt động dưới mô hình quản lý chuỗi phòng tập đ
   - `gym_trainers_user_fk` FOREIGN KEY (`user_id`) REFERENCES `users`(`user_id`) ON DELETE RESTRICT ON UPDATE RESTRICT
 - **UNIQUE CONSTRAINTS:**
   - `gym_trainers_gym_user_key` UNIQUE (`gym_id`, `user_id`): Cấm tạo nhiều bản ghi phân công cho cùng một User tại cùng một Gym.
+- **PARTIAL UNIQUE INDEX:** `gym_trainers_active_user_key` trên `(user_id)` với `status = 'ACTIVE'` (migration 0002, Q-08).
 - **CHECK CONSTRAINTS:**
   - `gym_trainers_experience_years_check` CHECK (`experience_years IS NULL OR experience_years >= 0`)
   - `gym_trainers_status_check` CHECK (`status IN ('ACTIVE', 'INACTIVE')`)
+  - `gym_trainers_availability_check` CHECK (`availability IN ('ACCEPTING', 'ALMOST_FULL', 'NOT_ACCEPTING')`)
 
 #### Chỉ mục (Indexes)
 
@@ -526,7 +531,7 @@ Hệ thống hoạt động dưới mô hình quản lý chuỗi phòng tập đ
   - `pt_registrations_status_check` CHECK (`status IN ('ACTIVE', 'CANCELLED', 'COMPLETED')`)
 - **Lưu ý toàn vẹn Multi-Gym:**
   - Bảng này không có cột `gym_id` trực tiếp theo đúng ERD gốc.
-  - Quy tắc bất biến `INV-004` (Membership và Gym Trainer phải cùng thuộc một Gym) phải được kiểm tra nghiêm ngặt tại **Backend Service Layer** trong một Transaction với khóa bi quan (`SELECT FOR UPDATE`) trước khi thực hiện INSERT.
+  - Quy tắc bất biến `INV-004` (Membership và Gym Trainer phải cùng thuộc một Gym) được kiểm tra tại backend service và trigger 0001, khóa hàng cha bằng `FOR SHARE` trong transaction trước INSERT; trigger ở bảng cha chặn đổi Gym khi đã có registration.
 
 #### Chỉ mục (Indexes)
 
@@ -691,6 +696,192 @@ Hệ thống hoạt động dưới mô hình quản lý chuỗi phòng tập đ
 | `gym_reports_equipment_gym_idx` | B-tree | `(equipment_id, gym_id)` | Hỗ trợ Foreign Key và xem lịch sử phản ánh của từng máy |
 | `gym_reports_user_created_idx` | B-tree | `(user_id, created_at DESC)` | Lịch sử phản ánh của khách hàng |
 | `gym_reports_resolver_idx` | B-tree | `(resolved_by)` | Tra cứu phản ánh do một nhân sự xử lý (Hỗ trợ ON DELETE SET NULL) |
+### 4.16. Bảng `gym_images`
+
+Gallery thực tế của Gym; nhiều ảnh, không thay logo_url.
+
+| Cột | Kiểu | Nullability | Default | Khóa |
+| :--- | :--- | :--- | :--- | :--- |
+| `image_id` | `uuid` | NOT NULL | `gen_random_uuid()` | PK |
+| `gym_id` | `uuid` | NOT NULL | `—` | FK |
+| `image_url` | `text` | NOT NULL | `—` | — |
+| `caption` | `text` | NULL | `—` | — |
+| `display_order` | `integer` | NOT NULL | `0` | — |
+| `created_at` | `timestamp (3) with time zone` | NOT NULL | `now()` | — |
+| `updated_at` | `timestamp (3) with time zone` | NOT NULL | `now()` | — |
+
+**Constraints và index:**
+
+- `gym_images_gym_fk`: (gym_id) → `gyms(gym_id)`, ON DELETE RESTRICT, ON UPDATE RESTRICT.
+- `gym_images_order_check`: `display_order >= 0`.
+- `gym_images_url_check`: `btrim(image_url) <> ''`.
+- `gym_images_gym_order_idx`: btree (gym_id, display_order).
+
+Không có UNIQUE nghiệp vụ bổ sung ngoài PK.
+
+### 4.17. Bảng `consultation_requests`
+
+Guest/Customer yêu cầu tư vấn; user_id nullable, không phải Appointment.
+
+| Cột | Kiểu | Nullability | Default | Khóa |
+| :--- | :--- | :--- | :--- | :--- |
+| `consultation_request_id` | `uuid` | NOT NULL | `gen_random_uuid()` | PK |
+| `user_id` | `uuid` | NULL | `—` | FK |
+| `gym_id` | `uuid` | NOT NULL | `—` | FK |
+| `full_name` | `varchar(100)` | NOT NULL | `—` | — |
+| `phone` | `varchar(20)` | NOT NULL | `—` | — |
+| `email` | `varchar(254)` | NULL | `—` | — |
+| `preferred_date` | `date` | NULL | `—` | — |
+| `preferred_time` | `time(0)` | NULL | `—` | — |
+| `content` | `text` | NULL | `—` | — |
+| `status` | `varchar(20)` | NOT NULL | `'PENDING'` | — |
+| `assigned_to` | `uuid` | NULL | `—` | FK |
+| `created_at` | `timestamp (3) with time zone` | NOT NULL | `now()` | — |
+| `updated_at` | `timestamp (3) with time zone` | NOT NULL | `now()` | — |
+
+**Constraints và index:**
+
+- `consultation_requests_gym_fk`: (gym_id) → `gyms(gym_id)`, ON DELETE RESTRICT, ON UPDATE RESTRICT.
+- `consultation_requests_user_fk`: (user_id) → `users(user_id)`, ON DELETE RESTRICT, ON UPDATE RESTRICT.
+- `consultation_requests_assignee_fk`: (assigned_to) → `users(user_id)`, ON DELETE RESTRICT, ON UPDATE RESTRICT.
+- `consultation_requests_status_check`: `status IN ('PENDING', 'CONTACTED', 'COMPLETED', 'CANCELLED')`.
+- `consultation_requests_contact_check`: `btrim(full_name) <> '' AND btrim(phone) <> ''`.
+- `consultation_requests_gym_status_idx`: btree (gym_id, status).
+- `consultation_requests_user_idx`: btree (user_id).
+- `consultation_requests_assignee_idx`: btree (assigned_to).
+
+Không có UNIQUE nghiệp vụ bổ sung ngoài PK.
+
+### 4.18. Bảng `pt_social_links`
+
+Các liên kết tham khảo/liên hệ của PT thuộc Gym.
+
+| Cột | Kiểu | Nullability | Default | Khóa |
+| :--- | :--- | :--- | :--- | :--- |
+| `social_link_id` | `uuid` | NOT NULL | `gen_random_uuid()` | PK |
+| `gym_trainer_id` | `uuid` | NOT NULL | `—` | FK |
+| `platform` | `varchar(20)` | NOT NULL | `—` | — |
+| `url` | `text` | NOT NULL | `—` | — |
+| `created_at` | `timestamp (3) with time zone` | NOT NULL | `now()` | — |
+| `updated_at` | `timestamp (3) with time zone` | NOT NULL | `now()` | — |
+
+**Constraints và index:**
+
+- `pt_social_links_trainer_fk`: (gym_trainer_id) → `gym_trainers(gym_trainer_id)`, ON DELETE RESTRICT, ON UPDATE RESTRICT.
+- `pt_social_links_platform_check`: `platform IN ('FACEBOOK', 'INSTAGRAM', 'YOUTUBE', 'TIKTOK', 'WEBSITE')`.
+- `pt_social_links_url_check`: `btrim(url) <> ''`.
+- `pt_social_links_trainer_idx`: btree (gym_trainer_id).
+
+Không có UNIQUE nghiệp vụ bổ sung ngoài PK.
+
+### 4.19. Bảng `pt_working_schedules`
+
+Khung giờ làm việc của PT theo thứ; không tự sinh buổi tập.
+
+| Cột | Kiểu | Nullability | Default | Khóa |
+| :--- | :--- | :--- | :--- | :--- |
+| `schedule_id` | `uuid` | NOT NULL | `gen_random_uuid()` | PK |
+| `gym_trainer_id` | `uuid` | NOT NULL | `—` | FK |
+| `day_of_week` | `varchar(20)` | NOT NULL | `—` | — |
+| `start_time` | `time(0)` | NOT NULL | `—` | — |
+| `end_time` | `time(0)` | NOT NULL | `—` | — |
+| `status` | `varchar(20)` | NOT NULL | `'ACTIVE'` | — |
+| `created_at` | `timestamp (3) with time zone` | NOT NULL | `now()` | — |
+| `updated_at` | `timestamp (3) with time zone` | NOT NULL | `now()` | — |
+
+**Constraints và index:**
+
+- `pt_working_schedules_trainer_fk`: (gym_trainer_id) → `gym_trainers(gym_trainer_id)`, ON DELETE RESTRICT, ON UPDATE RESTRICT.
+- `pt_working_schedules_day_check`: `day_of_week IN ('MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY')`.
+- `pt_working_schedules_time_check`: `end_time > start_time`.
+- `pt_working_schedules_status_check`: `status IN ('ACTIVE', 'INACTIVE')`.
+- `pt_working_schedules_trainer_day_idx`: btree (gym_trainer_id, day_of_week).
+
+Không có UNIQUE nghiệp vụ bổ sung ngoài PK.
+
+### 4.20. Bảng `gym_reviews`
+
+Review đúng Gym của Customer có quan hệ sử dụng; giữ audit ẩn.
+
+| Cột | Kiểu | Nullability | Default | Khóa |
+| :--- | :--- | :--- | :--- | :--- |
+| `gym_review_id` | `uuid` | NOT NULL | `gen_random_uuid()` | PK |
+| `gym_id` | `uuid` | NOT NULL | `—` | FK |
+| `user_id` | `uuid` | NOT NULL | `—` | FK |
+| `rating` | `integer` | NOT NULL | `—` | — |
+| `comment` | `text` | NULL | `—` | — |
+| `status` | `varchar(20)` | NOT NULL | `'VISIBLE'` | — |
+| `hidden_at` | `timestamp (3) with time zone` | NULL | `—` | — |
+| `hidden_by` | `uuid` | NULL | `—` | FK |
+| `hidden_reason` | `text` | NULL | `—` | — |
+| `created_at` | `timestamp (3) with time zone` | NOT NULL | `now()` | — |
+| `updated_at` | `timestamp (3) with time zone` | NOT NULL | `now()` | — |
+
+**Constraints và index:**
+
+- `gym_reviews_target_fk`: (gym_id) → `gyms(gym_id)`, ON DELETE RESTRICT, ON UPDATE RESTRICT.
+- `gym_reviews_user_fk`: (user_id) → `users(user_id)`, ON DELETE RESTRICT, ON UPDATE RESTRICT.
+- `gym_reviews_moderator_fk`: (hidden_by) → `users(user_id)`, ON DELETE RESTRICT, ON UPDATE RESTRICT.
+- `gym_reviews_rating_check`: `rating BETWEEN 1 AND 5`.
+- `gym_reviews_status_check`: `status IN ('VISIBLE', 'HIDDEN')`.
+- `gym_reviews_moderation_check`: `(status = 'VISIBLE' AND hidden_at IS NULL AND hidden_by IS NULL AND hidden_reason IS NULL) OR (status = 'HIDDEN' AND hidden_at IS NOT NULL AND hidden_by IS NOT NULL AND hidden_reason IS NOT NULL AND btrim(hidden_reason) <> '')`.
+- `gym_reviews_target_status_idx`: btree (gym_id, status).
+- `gym_reviews_user_idx`: btree (user_id).
+- `gym_reviews_moderator_idx`: btree (hidden_by).
+
+Không có UNIQUE nghiệp vụ bổ sung ngoài PK.
+
+### 4.21. Bảng `trainer_reviews`
+
+Review đúng Gym Trainer qua Membership/PT Registration; giữ audit ẩn.
+
+| Cột | Kiểu | Nullability | Default | Khóa |
+| :--- | :--- | :--- | :--- | :--- |
+| `trainer_review_id` | `uuid` | NOT NULL | `gen_random_uuid()` | PK |
+| `gym_trainer_id` | `uuid` | NOT NULL | `—` | FK |
+| `user_id` | `uuid` | NOT NULL | `—` | FK |
+| `rating` | `integer` | NOT NULL | `—` | — |
+| `comment` | `text` | NULL | `—` | — |
+| `status` | `varchar(20)` | NOT NULL | `'VISIBLE'` | — |
+| `hidden_at` | `timestamp (3) with time zone` | NULL | `—` | — |
+| `hidden_by` | `uuid` | NULL | `—` | FK |
+| `hidden_reason` | `text` | NULL | `—` | — |
+| `created_at` | `timestamp (3) with time zone` | NOT NULL | `now()` | — |
+| `updated_at` | `timestamp (3) with time zone` | NOT NULL | `now()` | — |
+
+**Constraints và index:**
+
+- `trainer_reviews_target_fk`: (gym_trainer_id) → `gym_trainers(gym_trainer_id)`, ON DELETE RESTRICT, ON UPDATE RESTRICT.
+- `trainer_reviews_user_fk`: (user_id) → `users(user_id)`, ON DELETE RESTRICT, ON UPDATE RESTRICT.
+- `trainer_reviews_moderator_fk`: (hidden_by) → `users(user_id)`, ON DELETE RESTRICT, ON UPDATE RESTRICT.
+- `trainer_reviews_rating_check`: `rating BETWEEN 1 AND 5`.
+- `trainer_reviews_status_check`: `status IN ('VISIBLE', 'HIDDEN')`.
+- `trainer_reviews_moderation_check`: `(status = 'VISIBLE' AND hidden_at IS NULL AND hidden_by IS NULL AND hidden_reason IS NULL) OR (status = 'HIDDEN' AND hidden_at IS NOT NULL AND hidden_by IS NOT NULL AND hidden_reason IS NOT NULL AND btrim(hidden_reason) <> '')`.
+- `trainer_reviews_target_status_idx`: btree (gym_trainer_id, status).
+- `trainer_reviews_user_idx`: btree (user_id).
+- `trainer_reviews_moderator_idx`: btree (hidden_by).
+
+Không có UNIQUE nghiệp vụ bổ sung ngoài PK.
+
+### 4.22. Trigger bổ sung trong migration 0001
+
+Các trigger là SQL tùy chỉnh trong migration, không nằm trong snapshot Drizzle:
+
+| Trigger | Bảng | Hành vi |
+| :--- | :--- | :--- |
+| pt_registration_gym_guard | pt_registrations | Trước INSERT/UPDATE nguồn, khóa Membership và Gym Trainer FOR SHARE, buộc cùng Gym. |
+| membership_pt_gym_guard | memberships | Chặn đổi gym_id nếu đã có PT Registration. |
+| trainer_pt_gym_guard | gym_trainers | Chặn đổi gym_id nếu đã có PT Registration. |
+| gym_review_guard / trainer_review_guard | gym_reviews / trainer_reviews | Eligibility lúc INSERT, review mới VISIBLE; UPDATE chỉ VISIBLE → HIDDEN có Admin hoạt động; giữ nguyên nội dung/tác giả/đối tượng/audit đã ghi; chặn DELETE. |
+| gym_review_truncate_guard / trainer_review_truncate_guard | gym_reviews / trainer_reviews | Chặn TRUNCATE. |
+
+Functions: `enforce_pt_registration_gym`, `protect_pt_parent_gym`, `protect_customer_review`.
+Migration kiểm tra legacy registration sai Gym và dừng nguyên tử khi có vi phạm, không sửa/xóa dữ liệu cũ.
+Review trigger đặt updated_at; các bảng khác giữ convention application cập nhật updated_at.
+Trigger không xác thực HTTP actor: backend phải lấy hidden_by/user_id từ phiên, kiểm tra quyền hiện tại.
+PostgreSQL owner/superuser có quyền DDL không phải Admin nghiệp vụ.
+
+Eligibility hiện triển khai: Membership ACTIVE/EXPIRED, start_date <= CURRENT_DATE; trainer review còn cần Registration ACTIVE/COMPLETED và Membership cùng Gym Trainer. Không dùng FK review tới một Membership cụ thể; review được giữ khi trạng thái sử dụng sau này thay đổi. Điều kiện hủy, bằng chứng đã sử dụng, quyền tác giả sửa và unhide chờ Q-15; thay rule cần migration mới, không chỉnh 0001 đã áp dụng.
 
 ---
 
@@ -701,36 +892,48 @@ erDiagram
     users ||--o| user_profiles : "has (0..1)"
     users ||--o{ user_roles : "assigned"
     roles ||--o{ user_roles : "granted"
-    
+
     users ||--o{ gym_managers : "manages"
     gyms ||--o{ gym_managers : "managed by"
-    
+
     users ||--o{ gym_trainers : "works as PT"
     gyms ||--o{ gym_trainers : "employs"
-    
+
     gyms ||--o{ packages : "offers"
-    
+
     users ||--o{ payments : "pays"
     gyms ||--o{ payments : "receives"
     packages ||--o{ payments : "paid for"
-    
+
     users ||--o{ memberships : "owns"
     gyms ||--o{ memberships : "hosts"
     packages ||--o{ memberships : "contract for"
     payments |o--o| memberships : "originates (0..1)"
-    
+
     memberships ||--o{ pt_registrations : "registered under"
     gym_trainers ||--o{ pt_registrations : "assigned to"
-    
+
     pt_registrations ||--o{ pt_appointments : "schedules"
-    
+
     equipment_types ||--o{ equipments : "categorizes"
     gyms ||--o{ equipments : "owns"
-    
+
     users ||--o{ gym_reports : "submits"
     gyms ||--o{ gym_reports : "receives"
     equipments |o--o{ gym_reports : "refers to"
     users |o--o{ gym_reports : "resolves"
+    gyms ||--o{ gym_images : "gallery"
+    gyms ||--o{ consultation_requests : "receives consultation"
+    users |o--o{ consultation_requests : "optional requester"
+    users |o--o{ consultation_requests : "optional assignee"
+    gym_trainers ||--o{ pt_social_links : "publishes"
+    gym_trainers ||--o{ pt_working_schedules : "works"
+    gyms ||--o{ gym_reviews : "reviewed"
+    users ||--o{ gym_reviews : "authors"
+    users |o--o{ gym_reviews : "hides"
+    gym_trainers ||--o{ trainer_reviews : "reviewed"
+    users ||--o{ trainer_reviews : "authors"
+    users |o--o{ trainer_reviews : "hides"
 ```
 
 ---
@@ -738,6 +941,9 @@ erDiagram
 ## 6. Các Luồng Nghiệp vụ Cốt lõi & Toàn vẹn Dữ liệu
 
 ### 6.1. Luồng Payment → Membership
+
+Guest chọn Gym → Package → xác nhận → thanh toán → Membership. Không bắt buộc PT hoặc Consultation. payments.user_id NOT NULL nên điểm login/register trong checkout cần Q-17; không tự hỗ trợ anonymous Payment.
+
 1. Khách hàng chọn gói tập `packages` tại một phòng Gym.
 2. Hệ thống khởi tạo bản ghi `payments` với trạng thái `payment_status = 'PENDING'`, lưu `user_id`, `gym_id`, `package_id`, và `amount`. FK tổ hợp `(package_id, gym_id)` đảm bảo gói tập thuộc đúng phòng Gym.
 3. Khi cổng thanh toán xác nhận thành công, giao dịch chuyển sang `payment_status = 'SUCCESS'`, cập nhật `paid_at` và `transaction_code`.
@@ -752,7 +958,7 @@ erDiagram
    - Thẻ hội viên thuộc quyền sở hữu của Customer.
    - `memberships.gym_id == gym_trainers.gym_id`.
    - PT đang có trạng thái `status = 'ACTIVE'`.
-3. Tạo bản ghi `pt_registrations` với `membership_id` và `gym_trainer_id`.
+3. Sau khi Customer và PT liên hệ, trao đổi và thống nhất, tạo bản ghi `pt_registrations` với `membership_id` và `gym_trainer_id`.
 4. Khi đặt lịch tập, tạo bản ghi `pt_appointments` liên kết với `registration_id`. Check constraint đảm bảo `end_time > start_time`.
 
 ### 6.3. Luồng Quản lý Thiết bị & Báo cáo Sự cố
@@ -763,6 +969,14 @@ erDiagram
 3. Manager xem danh sách báo cáo, tiếp nhận (`IN_PROGRESS`) và giải quyết (`RESOLVED`), ghi nhận `resolved_by`, `resolved_at`, và `resolution_note`.
 
 ---
+
+### 6.4. Consultation, gallery và PT Profile
+
+Guest/Customer gửi Consultation, user_id NULL hoặc từ phiên xác thực; Manager/Staff tiếp nhận theo scope (Staff chờ Q-14). preferred_date/time chỉ là mong muốn; không tạo Appointment/Membership/Payment. Gallery dùng gym_images theo display_order. PT Profile JOIN user_profiles (full_name/avatar_url), gym_trainers, social links, working schedules và review VISIBLE. Không có schema chứng chỉ hay tiện ích riêng; nội dung Gym hiện lưu qua description.
+
+### 6.5. Review và moderation
+
+Review gắn đúng Gym hoặc Gym Trainer; backend xác minh chuỗi sử dụng theo Domain INV-016. Gym/Manager/Staff/PT không sửa/xóa. Admin ẩn vi phạm, audit bắt buộc và giữ nguyên nội dung; không xóa vật lý. Public chỉ đọc VISIBLE. Không có UNIQUE một review/user/target, không mở edit/unhide mặc định; xem Q-15.
 
 ## 7. Danh mục Trạng thái (Status Allowlist)
 
@@ -784,8 +998,14 @@ Tất cả các cột trạng thái dưới đây được thiết kế bằng k
 | `report_status` | `gym_reports.status` | `'PENDING'`, `'IN_PROGRESS'`, `'RESOLVED'`, `'REJECTED'` |
 | `report_type` | `gym_reports.report_type` | `'EQUIPMENT'`, `'FACILITY'`, `'CLEANLINESS'`, `'SERVICE'`, `'OTHER'` |
 | `role_name` | `roles.role_name` | `'ADMIN'`, `'MANAGER'`, `'PT'`, `'CUSTOMER'` |
+| `trainer_availability` | `gym_trainers.availability` | `'ACCEPTING'`, `'ALMOST_FULL'`, `'NOT_ACCEPTING'` |
+| `consultation_status` | `consultation_requests.status` | `'PENDING'`, `'CONTACTED'`, `'COMPLETED'`, `'CANCELLED'` |
+| `review_status` | `gym_reviews.status`, `trainer_reviews.status` | `'VISIBLE'`, `'HIDDEN'` |
+| `social_platform` | `pt_social_links.platform` | `'FACEBOOK'`, `'INSTAGRAM'`, `'YOUTUBE'`, `'TIKTOK'`, `'WEBSITE'` |
+| `day_of_week` | `pt_working_schedules.day_of_week` | `'MONDAY'`, `'TUESDAY'`, `'WEDNESDAY'`, `'THURSDAY'`, `'FRIDAY'`, `'SATURDAY'`, `'SUNDAY'` |
+| `working_schedule_status` | `pt_working_schedules.status` | `'ACTIVE'`, `'INACTIVE'` |
 
----
+Không có native PostgreSQL enum. trainer_status không thay availability; CHECK chỉ giới hạn giá trị, không quyết định mọi lifecycle.
 
 ## 8. Bảng Tổng hợp Toàn bộ Khóa ngoại (Foreign Key Actions)
 
@@ -817,8 +1037,20 @@ Tất cả các khóa ngoại đều áp dụng `ON UPDATE RESTRICT`, `NOT DEFER
 | 22 | `gym_reports_gym_fk` | `gym_reports(gym_id)` | `gyms(gym_id)` | RESTRICT | RESTRICT |
 | 23 | `gym_reports_equipment_gym_fk` | `gym_reports(equipment_id, gym_id)` | `equipments(equipment_id, gym_id)` | RESTRICT | RESTRICT |
 | 24 | `gym_reports_resolver_fk` | `gym_reports(resolved_by)` | `users(user_id)` | SET NULL | RESTRICT |
+| 25 | `gym_images_gym_fk` | `gym_images(gym_id)` | `gyms(gym_id)` | RESTRICT | RESTRICT |
+| 26 | `consultation_requests_gym_fk` | `consultation_requests(gym_id)` | `gyms(gym_id)` | RESTRICT | RESTRICT |
+| 27 | `consultation_requests_user_fk` | `consultation_requests(user_id)` | `users(user_id)` | RESTRICT | RESTRICT |
+| 28 | `consultation_requests_assignee_fk` | `consultation_requests(assigned_to)` | `users(user_id)` | RESTRICT | RESTRICT |
+| 29 | `pt_social_links_trainer_fk` | `pt_social_links(gym_trainer_id)` | `gym_trainers(gym_trainer_id)` | RESTRICT | RESTRICT |
+| 30 | `pt_working_schedules_trainer_fk` | `pt_working_schedules(gym_trainer_id)` | `gym_trainers(gym_trainer_id)` | RESTRICT | RESTRICT |
+| 31 | `gym_reviews_target_fk` | `gym_reviews(gym_id)` | `gyms(gym_id)` | RESTRICT | RESTRICT |
+| 32 | `gym_reviews_user_fk` | `gym_reviews(user_id)` | `users(user_id)` | RESTRICT | RESTRICT |
+| 33 | `gym_reviews_moderator_fk` | `gym_reviews(hidden_by)` | `users(user_id)` | RESTRICT | RESTRICT |
+| 34 | `trainer_reviews_target_fk` | `trainer_reviews(gym_trainer_id)` | `gym_trainers(gym_trainer_id)` | RESTRICT | RESTRICT |
+| 35 | `trainer_reviews_user_fk` | `trainer_reviews(user_id)` | `users(user_id)` | RESTRICT | RESTRICT |
+| 36 | `trainer_reviews_moderator_fk` | `trainer_reviews(hidden_by)` | `users(user_id)` | RESTRICT | RESTRICT |
 
----
+Tổng cộng 36 FK, đều ON UPDATE RESTRICT. Các FK mới đều ON DELETE RESTRICT.
 
 ## 9. Bảng Tổng hợp Chiến lược Chỉ mục (Index Strategy)
 
@@ -855,6 +1087,12 @@ Tất cả các khóa ngoại đều áp dụng `ON UPDATE RESTRICT`, `NOT DEFER
 | `equipments` | `equipments_gym_code_key` | `(gym_id, equipment_code)` | Unique tổ hợp |
 | `equipments` | `equipments_equipment_gym_key` | `(equipment_id, gym_id)` | Unique tổ hợp (FK target) |
 | `gym_reports` | `gym_reports_pkey` | `(report_id)` | Primary Key |
+| `gym_images` | `gym_images_pkey` | `(image_id)` | Primary Key |
+| `consultation_requests` | `consultation_requests_pkey` | `(consultation_request_id)` | Primary Key |
+| `pt_social_links` | `pt_social_links_pkey` | `(social_link_id)` | Primary Key |
+| `pt_working_schedules` | `pt_working_schedules_pkey` | `(schedule_id)` | Primary Key |
+| `gym_reviews` | `gym_reviews_pkey` | `(gym_review_id)` | Primary Key |
+| `trainer_reviews` | `trainer_reviews_pkey` | `(trainer_review_id)` | Primary Key |
 
 ### 9.2. Chỉ mục Thứ cấp Bổ sung (Secondary B-Tree Indexes)
 
@@ -880,8 +1118,19 @@ Tất cả các khóa ngoại đều áp dụng `ON UPDATE RESTRICT`, `NOT DEFER
 | 18 | `gym_reports_equipment_gym_idx` | `gym_reports` | `(equipment_id, gym_id)` | Tối ưu Foreign Key và tra cứu lịch sử sự cố theo máy |
 | 19 | `gym_reports_user_created_idx` | `gym_reports` | `(user_id, created_at DESC)` | Lịch sử phản ánh của khách hàng |
 | 20 | `gym_reports_resolver_idx` | `gym_reports` | `(resolved_by)` | Hỗ trợ thao tác SET NULL khi tài khoản nhân viên bị xóa |
+| 21 | `gym_images_gym_order_idx` | `gym_images` | `(gym_id, display_order)` | Tra cứu theo FK/scope |
+| 22 | `consultation_requests_gym_status_idx` | `consultation_requests` | `(gym_id, status)` | Tra cứu theo FK/scope |
+| 23 | `consultation_requests_user_idx` | `consultation_requests` | `(user_id)` | Tra cứu theo FK/scope |
+| 24 | `consultation_requests_assignee_idx` | `consultation_requests` | `(assigned_to)` | Tra cứu theo FK/scope |
+| 25 | `pt_social_links_trainer_idx` | `pt_social_links` | `(gym_trainer_id)` | Tra cứu theo FK/scope |
+| 26 | `pt_working_schedules_trainer_day_idx` | `pt_working_schedules` | `(gym_trainer_id, day_of_week)` | Tra cứu theo FK/scope |
+| 27 | `gym_reviews_target_status_idx` | `gym_reviews` | `(gym_id, status)` | Tra cứu theo FK/scope |
+| 28 | `gym_reviews_user_idx` | `gym_reviews` | `(user_id)` | Tra cứu theo FK/scope |
+| 29 | `gym_reviews_moderator_idx` | `gym_reviews` | `(hidden_by)` | Tra cứu theo FK/scope |
+| 30 | `trainer_reviews_target_status_idx` | `trainer_reviews` | `(gym_trainer_id, status)` | Tra cứu theo FK/scope |
+| 31 | `trainer_reviews_user_idx` | `trainer_reviews` | `(user_id)` | Tra cứu theo FK/scope |
+| 32 | `trainer_reviews_moderator_idx` | `trainer_reviews` | `(hidden_by)` | Tra cứu theo FK/scope |
 
----
 
 ## 10. Multi-Gym Integrity Rules Matrix
 
@@ -893,7 +1142,7 @@ Tất cả các khóa ngoại đều áp dụng `ON UPDATE RESTRICT`, `NOT DEFER
 | **Payment phải tham chiếu Package cùng Gym** | **Khóa ngoại tổ hợp:**<br>`payments(package_id, gym_id) REFERENCES packages(package_id, gym_id)` | Backend kiểm tra gói tập đang ở trạng thái `ACTIVE` và số tiền `amount` do server tự tính toán. |
 | **Membership phải tham chiếu Package cùng Gym** | **Khóa ngoại tổ hợp:**<br>`memberships(package_id, gym_id) REFERENCES packages(package_id, gym_id)` | Backend khởi tạo thẻ hội viên theo đúng gói tập và chi nhánh đã chọn. |
 | **Membership sinh từ Payment phải khớp dữ liệu** | **Khóa ngoại tổ hợp 4 cột:**<br>`memberships(payment_id, user_id, gym_id, package_id) REFERENCES payments(...)`<br>kèm `UNIQUE (payment_id)` | Transaction khóa Payment `FOR UPDATE`, xác minh trạng thái `SUCCESS`, tạo duy nhất 1 Membership và gán `purchase_price`. |
-| **Đăng ký PT phải cùng một Gym** | `membership_id` FK đến `memberships`<br>`gym_trainer_id` FK đến `gym_trainers` | Backend Transaction khóa cả hai bản ghi nguồn, kiểm tra điều kiện `memberships.gym_id == gym_trainers.gym_id`. Từ chối dùng thẻ Gym A để đăng ký PT Gym B. |
+| **Đăng ký PT phải cùng một Gym** | `membership_id` FK đến `memberships`<br>`gym_trainer_id` FK đến `gym_trainers`; trigger 0001 kiểm tra cùng Gym và chặn đổi Gym ở cha có registration | Backend Transaction khóa cả hai bản ghi nguồn, kiểm tra điều kiện `memberships.gym_id == gym_trainers.gym_id`. Từ chối dùng thẻ Gym A để đăng ký PT Gym B. |
 | **Thiết bị phải thuộc đúng Gym** | - `equipments` FK `gym_id` đến `gyms`<br>- `UNIQUE (gym_id, equipment_code)` | Manager chỉ được quản lý máy móc tại chi nhánh mình quản lý. |
 | **Báo cáo sự cố máy phải cùng Gym** | **Khóa ngoại tổ hợp:**<br>`gym_reports(equipment_id, gym_id) REFERENCES equipments(equipment_id, gym_id)`<br>kèm CHECK `(report_type <> 'EQUIPMENT' OR equipment_id IS NOT NULL)` | Backend xác thực Customer, kiểm tra thiết bị thuộc phòng Gym tiếp nhận báo cáo. |
 | **Không tin tưởng `gym_id` client gửi lên** | Không có ràng buộc DB nào xác thực được HTTP request | Backend trích xuất danh tính từ JWT/Cookie, truy vấn quyền thực tế từ database, đối chiếu Gym Scope trước khi thực thi. |
@@ -905,55 +1154,40 @@ Tất cả các khóa ngoại đều áp dụng `ON UPDATE RESTRICT`, `NOT DEFER
 | Phạm vi | Trách nhiệm của Database (PostgreSQL) | Trách nhiệm của Backend Application |
 | :--- | :--- | :--- |
 | **Tính toàn vẹn quan hệ (Referential Integrity)** | Bắt buộc tồn tại khóa chính, khóa ngoại, không mồ côi dữ liệu, chặn xóa dữ liệu lịch sử bằng `ON DELETE RESTRICT`. | Điều phối thứ tự ghi dữ liệu trong transaction, không để sót bản ghi phụ thuộc. |
-| **Ranh giới dữ liệu Multi-Gym (Scope)** | Thực thi triệt để qua các **Khóa ngoại tổ hợp (Composite FKs)** cho Package/Payment, Package/Membership, Payment/Membership, và Equipment/Report. | Kiểm tra phạm vi gián tiếp cho Registration và Appointment; đối chiếu quyền người dùng đăng nhập với tài nguyên. |
+| **Ranh giới dữ liệu Multi-Gym (Scope)** | Thực thi triệt để qua các **Khóa ngoại tổ hợp (Composite FKs)** cho Package/Payment, Package/Membership, Payment/Membership, Equipment/Report; trigger bảo vệ Registration cùng Gym. | Backend kiểm tra scope gián tiếp và actor cho Registration/Appointment; đối chiếu quyền người dùng đăng nhập với tài nguyên. |
 | **Quy tắc duy nhất (Uniqueness)** | Thực thi qua UNIQUE constraints và Partial Unique Indexes (email, phone, transaction_code, 1 manager/gym). | Bắt mã lỗi Postgres `23505` (unique_violation) để trả về thông báo lỗi HTTP 409 Conflict chuẩn hóa. |
 | **Miền giá trị (Domain Values)** | Thực thi qua CHECK constraints: khoảng tọa độ GPS, tiền tệ >= 0 và không NaN, ngày kết thúc >= ngày bắt đầu, allowlist trạng thái. | Validate định dạng đầu vào bằng Zod Schema (định dạng số điện thoại, độ dài mật khẩu, cấu trúc email). |
 | **Đồng thời & Tranh chấp (Concurrency)** | Khóa hàng ở mức vật lý (`FOR UPDATE`), ngăn chặn vi phạm ràng buộc song song. | Thiết kế Transaction có timeout hợp lý, cơ chế thử lại (retry) khi gặp conflict, chống trùng lịch hẹn và xử lý lặp webhook thanh toán. |
-| **Dấu vết thời gian (Audit Timestamps)** | Gán giá trị mặc định ban đầu `now()` cho `created_at` và `updated_at`. | Luôn set `updated_at = now()` trong mọi câu lệnh UPDATE của Drizzle ORM. |
+| **Dấu vết thời gian (Audit Timestamps)** | Gán mặc định now(); riêng review trigger cập nhật updated_at khi hide. | Luôn set `updated_at = now()` trong mọi câu lệnh UPDATE của Drizzle ORM. |
 
 ---
 
-## 12. Open Questions & Unresolved Decisions
+## 12. Câu hỏi mở và ranh giới implementation
 
-Dưới đây là bảng tập hợp toàn bộ các câu hỏi mở và quyết định kỹ thuật chưa chốt (được đối chiếu thống nhất với mã **Q-01 đến Q-13** trong `DOMAIN_RULES.md`). 
+Danh mục duy nhất: [Domain §9](DOMAIN_RULES.md#9-câu-hỏi-mở-và-phạm-vi-chặn), Q-01–Q-19.
+Không lặp các phương án chưa duyệt thành quyết định vật lý ở tài liệu này.
 
-Theo nguyên tắc thiết kế, **giữ nguyên hiện trạng an toàn**, không tự ý đưa ra quyết định thay cho người thiết kế hệ thống / Product Owner.
+- Q-11: baseline vật lý đã có, VARCHAR + CHECK, FK/index và trigger theo 0000/0001; không còn chờ chọn enum.
+- Q-05: quota PT ngoài phạm vi hiện tại, không dùng COUNT(Appointment) để tự mở hạn mức hoặc đưa PT vào Gym Package.
+- Q-04/Q-15/Q-16: service/trigger có điều kiện hiện tại được ghi rõ, chưa thay thế quyết định nghiệp vụ còn mở.
+- Q-14: schema hiện không có Staff role/assignment.
+- Q-17: Payment/Membership cần user_id, không tự thêm anonymous checkout.
+- Q-18/Q-19: thời gian mong muốn/lịch làm việc không phải booking hoặc cam kết giữ chỗ.
 
-| Mã | Vấn đề kỹ thuật tại Database | Các phương án lựa chọn (Options) | Hiện trạng áp dụng trong Spec này |
-| :---: | :--- | :--- | :--- |
-| **Q-01** | **Allowlist cho `payment_method`**<br>Hiện tại cột `payment_method` là `text NOT NULL` chưa có CHECK constraint giới hạn danh mục. | **Phương án A:** Giữ nguyên `text NOT NULL`, để backend Zod schema validate danh mục cổng thanh toán (dễ tích hợp thêm phương thức mới).<br>**Phương án B:** Thêm CHECK constraint cứng tại DB: `CHECK (payment_method IN ('VNPAY', 'MOMO', 'CASH', 'BANK_TRANSFER'))`. | **Áp dụng Phương án A** (Giữ nguyên hiện trạng). Chờ Product Owner chốt danh sách phương thức thanh toán chính thức trước khi cân nhắc thêm CHECK. |
-| **Q-02** | **Trạng thái ban đầu của Membership sau Payment**<br>Khi Payment thành công (`SUCCESS`), `memberships.status` nên là `PENDING` hay `ACTIVE`? Quy tắc tính ngày `start_date`? | **Phương án A:** Server backend tự tính `start_date = CURRENT_DATE`, `end_date = start_date + duration_days`, và set `status = 'ACTIVE'` ngay lập tức.<br>**Phương án B:** Khởi tạo `status = 'PENDING'`, hội viên phải kích hoạt lần đầu khi đến phòng tập mới chuyển sang `ACTIVE`. | **Không đặt DEFAULT** cho `memberships.status` và các cột ngày. Bắt buộc backend Service Layer phải truyền giá trị tường minh theo chính sách nghiệp vụ được duyệt. |
-| **Q-03** | **Cấp thẻ hội viên không qua thanh toán (`payment_id IS NULL`)**<br>Cột `memberships.payment_id` là nullable. Nghiệp vụ có cho phép cấp thẻ thủ công không? | **Phương án A:** Cho phép Manager/Admin cấp thẻ thủ công (cho khách VIP, tặng thưởng) với `payment_id = NULL`. Giá `purchase_price` có thể bằng 0.<br>**Phương án B:** Bắt buộc 100% thẻ phải qua thanh toán, sửa `payment_id` thành `NOT NULL`. | **Áp dụng Phương án A ở mức DB** (`payment_id` nullable), nhưng tại backend API không mở endpoint tạo thẻ trực tiếp khi chưa có policy duyệt. |
-| **Q-04** | **Điều kiện Membership để đăng ký PT**<br>Thẻ hội viên cần điều kiện gì để được đăng ký PT và đặt lịch? Xử lý thế nào khi thẻ bị hết hạn/hủy trong khi còn lịch tương lai? | **Phương án A:** Chỉ cho phép đăng ký khi `memberships.status = 'ACTIVE'` và `end_date >= CURRENT_DATE`. Khi thẻ hết hạn/hủy, tự động CANCEL các lịch hẹn tương lai qua cron job/service.<br>**Phương án B:** Cho phép đặt lịch trước, nhưng khi check-in ca tập mới kiểm tra hiệu lực thẻ. | Giữ nguyên quan hệ FK vật lý. Logic kiểm tra thuộc về Backend Service Layer khi thực hiện chức năng booking. |
-| **Q-05** | **Quota số buổi tập PT**<br>ERD hiện tại không có cột số buổi tổng (`total_sessions`) hay số buổi đã tập (`completed_sessions`) trong `packages` hoặc `pt_registrations`. | **Phương án A (Hiện trạng):** Không đếm số buổi theo quota; dịch vụ PT hoạt động theo thời hạn của Membership, hoặc quota được tính động bằng cách `COUNT(*)` các `pt_appointments` có `status = 'COMPLETED'`.<br>**Phương án B:** Bổ sung cột `sessions_count` vào `packages` và các cột đếm buổi vào `pt_registrations` (Yêu cầu thay đổi ERD). | **Áp dụng Phương án A** (Giữ nguyên cấu trúc ERD 15 bảng chuẩn, tuyệt đối không tự ý thêm cột ngoài ERD). |
-| **Q-06** | **Cơ chế chống trùng lịch ca tập (Anti-overlap)**<br>Phạm vi chống trùng ca tập của Huấn luyện viên và Học viên; trạng thái nào được xem là giữ chỗ? | **Phương án A (Hiện trạng):** Dùng PostgreSQL B-tree index trên `(registration_id, start_time)` và `(start_time)`. Backend sử dụng Transaction với khóa bi quan (`SELECT FOR UPDATE`) trên slot thời gian của PT để chống trùng.<br>**Phương án B:** Dùng PostgreSQL Exclusion Constraint (`EXCLUDE USING gist (...)`). Tuy nhiên, phương án này đòi hỏi extension `btree_gist` và bắt buộc bảng `pt_appointments` phải có cột `trainer_id` trực tiếp (vi phạm nguyên tắc giữ nguyên ERD). | **Áp dụng Phương án A** (Xử lý chống race condition tại tầng ứng dụng/backend transaction), giữ nguyên ERD không thêm cột. |
-| **Q-07** | **Đổi Huấn luyện viên (Reassign PT) và lịch sử ca tập**<br>Nếu cập nhật `gym_trainer_id` trong `pt_registrations`, các lịch hẹn cũ trong quá khứ sẽ bị hiển thị như do PT mới thực hiện. | **Phương án A (Khuyến nghị):** Cấm UPDATE `gym_trainer_id` trên một Registration đã có lịch hẹn. Muốn đổi PT, phải chuyển trạng thái Registration cũ thành `CANCELLED`/`COMPLETED` và tạo một Registration mới với PT mới.<br>**Phương án B:** Cho phép UPDATE `gym_trainer_id`, chấp nhận lịch sử bị gán cho PT mới.<br>**Phương án C:** Thêm cột `gym_trainer_id` snapshot trực tiếp vào từng `pt_appointments` (Yêu cầu đổi ERD). | **Áp dụng Phương án A** (Quy định trong Domain Rules và Backend Service), giữ nguyên thiết kế bảng. |
-| **Q-08** | **Chính sách Huấn luyện viên làm việc tại nhiều Gym**<br>Hiện tại bảng `gym_trainers` có `UNIQUE (gym_id, user_id)`. Một User có được làm PT `ACTIVE` tại nhiều phòng Gym khác nhau không? | **Phương án A (Hiện trạng):** Database cho phép 1 PT có thể liên kết với nhiều Gym khác nhau (chỉ cấm trùng cặp Gym/User).<br>**Phương án B:** Thêm Partial Unique Index `UNIQUE (user_id) WHERE status = 'ACTIVE'` trên `gym_trainers` để giới hạn 1 PT chỉ làm việc tại 1 Gym duy nhất cùng một thời điểm. | **Áp dụng Phương án A** (Không ép chặn ở DB level, chờ Product Owner xác nhận quy chế nhân sự đa chi nhánh). |
-| **Q-09** | **Quyền quản trị `equipment_types`**<br>Bảng danh mục loại thiết bị dùng chung toàn hệ thống, không có `gym_id`. | **Phương án A:** Chỉ duy nhất vai trò `ADMIN` toàn hệ thống mới có quyền thêm/sửa/xóa loại thiết bị trong `equipment_types`. Manager chỉ có quyền xem (Read-only).<br>**Phương án B:** Cho phép Manager được đề xuất hoặc tạo loại thiết bị mới dùng chung. | Thuộc phân quyền API (Đã thống nhất ở API Spec: chỉ Admin được ghi). Database thiết kế dùng chung. |
-| **Q-10** | **Quy trình xác thực Email & Cấp mật khẩu tạm**<br>User chưa xác thực email (`email_verified_at IS NULL`) có bị hạn chế tính năng không? Quy trình cấp mật khẩu tạm cho Manager/PT? | **Phương án A:** User chưa verify email vẫn được đăng nhập nhưng bị giới hạn mua gói tập và đặt lịch; đổi mật khẩu thành công sẽ set `must_change_password = false`.<br>**Phương án B:** Bắt buộc verify email qua liên kết kích hoạt trước khi cho phép đăng nhập lần đầu. | Giữ nguyên các cột `email_verified_at` và `must_change_password`. Chính sách giới hạn do AuthService quản lý. |
-| **Q-11** | **Chuẩn hóa ràng buộc vật lý (Hoàn tất trong bản Spec này)**<br>Lựa chọn giữa PostgreSQL Native ENUM hay VARCHAR + CHECK; xác định chi tiết FK Actions và Indexing. | **Đã quyết định trong bản Spec này:**<br>- Chọn **VARCHAR(20) + CHECK constraint**.<br>- Chọn **ON UPDATE RESTRICT** cho toàn bộ 24 FKs.<br>- Chọn **CASCADE** duy nhất cho `user_profiles` và `user_roles`; **SET NULL** duy nhất cho `resolved_by`; còn lại toàn bộ là **RESTRICT**.<br>- Bổ sung đầy đủ 20 Secondary Indexes và các Composite/Partial Unique Constraints. | **ĐÃ HOÀN TẤT VỀ MẶT THIẾT KẾ DỮ LIỆU** và sẵn sàng để người dùng review. |
-| **Q-12** | **Lịch sử bổ nhiệm Manager khi tái bổ nhiệm**<br>Ràng buộc `UNIQUE (gym_id, user_id)` trên `gym_managers` khiến một User từng làm Manager tại Gym A (đã `INACTIVE`) không thể được tạo bản ghi mới khi được bổ nhiệm lại tại Gym A. | **Phương án A (Hiện trạng):** Khi tái bổ nhiệm, backend thực hiện UPDATE bản ghi cũ: `status = 'ACTIVE'`, `assigned_at = now()`. (Không lưu được nhiều dòng lịch sử cho cùng một cặp).<br>**Phương án B:** Bỏ `UNIQUE (gym_id, user_id)` toàn bảng, thay bằng Partial Unique Index `UNIQUE (gym_id, user_id) WHERE status = 'ACTIVE'`. Khi đó mỗi lần bổ nhiệm là một bản ghi INSERT mới.<br>**Phương án C:** Thêm bảng riêng `gym_manager_history` (Yêu cầu đổi ERD). | **Áp dụng Phương án A** (Giữ nguyên UNIQUE cặp và 2 partial unique indexes để bảo đảm tuyệt đối quy tắc `INV-010`). Chờ Architect xem xét nếu cần chuyển sang Phương án B. |
-| **Q-13** | **Điều kiện chuyển trạng thái hủy/từ chối (Status State Machine)**<br>Chính sách nghiệp vụ khi hủy thẻ hội viên, từ chối báo cáo sự cố, hoặc ngừng hoạt động một phòng Gym. | **Phương án:** Backend triển khai State Machine kiểm tra điều kiện chuyển trạng thái hợp lệ trước khi thực hiện câu lệnh UPDATE trong database. | Database chỉ bảo đảm giá trị nằm trong CHECK allowlist; không tự ép quy tắc chuyển trạng thái ở database level. |
+## 13. Migration và bảo toàn dữ liệu
 
----
+15 bảng nền được giữ nguyên qua migration 0000; migration 0001 bổ sung sáu bảng và availability, đưa danh mục hiện hành lên 21 bảng. Không sửa lịch sử migration đã áp dụng, không reset/drop database để đồng bộ tài liệu.
 
-## 13. Kết luận & Các Điểm Cần Phê Duyệt Trước Giai đoạn 3
+Drizzle journal bảo vệ lần chạy lại; nếu schema ngoài journal bị sửa thủ công, migration báo xung đột và rollback thay vì che giấu drift. Trigger SQL phải được bảo toàn khi tạo migration tiếp theo vì không nằm trong Drizzle snapshot.
 
-Tài liệu này đã hoàn thiện đầy đủ thiết kế vật lý cho **đúng 15 bảng**, bảo toàn 100% cấu trúc ERD, củng cố toàn vẹn dữ liệu chuỗi phòng tập Multi-Gym thông qua các khóa ngoại tổ hợp và chỉ mục tối ưu.
+[database-business-update.md](database-business-update.md) lưu báo cáo triển khai trước, kết quả kiểm thử và hướng dẫn down an toàn. Down từ chối khi bảng mới có dữ liệu hoặc availability đã thay đổi khỏi NOT_ACCEPTING; không dùng rollback để xóa lịch sử.
 
-### Các điểm mấu chốt đề nghị người dùng kiểm tra và phê duyệt:
 
-1. **Lựa chọn VARCHAR(20) + CHECK thay vì ENUM:** Đảm bảo dễ dàng nâng cấp, kiểm thử và tương thích tuyệt đối với migration Drizzle.
-2. **Khóa ngoại tổ hợp (Composite Foreign Keys) bảo vệ Multi-Gym:**
-   - `payments(package_id, gym_id) → packages(package_id, gym_id)`
-   - `memberships(package_id, gym_id) → packages(package_id, gym_id)`
-   - `memberships(payment_id, user_id, gym_id, package_id) → payments(...)`
-   - `gym_reports(equipment_id, gym_id) → equipments(equipment_id, gym_id)`
-3. **Quy tắc bảo vệ Manager độc quyền (INV-010) bằng 2 Partial Unique Indexes:**
-   - 1 Gym chỉ có tối đa 1 Manager ACTIVE.
-   - 1 User chỉ làm Manager ACTIVE tại tối đa 1 Gym.
-4. **Chính sách Foreign Key Actions:**
-   - `CASCADE` chỉ áp dụng khi xóa User dẫn đến xóa Profile và liên kết Role.
-   - `SET NULL` chỉ áp dụng cho người xử lý báo cáo sự cố (`resolved_by`).
-   - `RESTRICT` được áp dụng cho toàn bộ 21 quan hệ dữ liệu nghiệp vụ còn lại nhằm ngăn chặn mất mát dữ liệu lịch sử tài chính, hội viên, lịch tập và thiết bị.
-5. **Ghi nhận toàn bộ 13 câu hỏi mở (Q-01 đến Q-13) ở trạng thái an toàn**, không tự ý suy diễn nghiệp vụ hay thay đổi ERD.
+## Q-08/Q-13 — migration 0002_gym_lifecycle
+
+- Không sửa migration 0000/0001; vẫn 21 bảng. Bổ sung partial unique index `gym_trainers_active_user_key(user_id) WHERE status = 'ACTIVE'`, cho phép nhiều bản ghi INACTIVE lịch sử. Schema Drizzle và snapshot 0002 đồng bộ index.
+- `gym_open_obligations(gym_id, trainer_id?)` trả counts Payment PENDING, Membership PENDING/ACTIVE, Registration ACTIVE, Appointment PENDING/CONFIRMED. Theo trainer chỉ đếm Registration/Appointment.
+- Trigger `gym_shutdown_guard`, `trainer_lifecycle_guard` chặn ngừng khi có nghĩa vụ; `manager_lifecycle_guard` chặn phân công mới/kích hoạt vào Gym INACTIVE. Không cập nhật dây chuyền.
+- Trigger payment/membership/registration/appointment lifecycle bảo vệ ghi nghĩa vụ mới và tái kích hoạt; khóa parent Gym bằng FOR NO KEY UPDATE trong transaction. API lấy khóa này trước account/assignment. FK/constraints cũ giữ nguyên.
+- Migration chạy nguyên tử và dừng nếu PT ACTIVE nhiều Gym hoặc Gym/PT INACTIVE có nghĩa vụ mở. Không tự reconcile/revoke/xóa dữ liệu. Rollback riêng 0002 bỏ guard/index, giữ mọi row; chỉ dùng khi chủ động rollback policy, không chạy rollback 0001 trước 0002.
+- GYM-01 vẫn CLOSED; đây là ràng buộc bổ sung của policy GYM-02. Không thêm bảng lịch sử, không thay `assigned_at` Manager hoặc `joined_at` PT.

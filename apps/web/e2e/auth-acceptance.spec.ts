@@ -27,7 +27,7 @@ test.describe('AUTH-03 Acceptance Tests — Authentication & Route Guards', () =
   // Ensure DB cleanup after all tests complete
   test.afterAll(async () => {
     try {
-      runDbQuery(`DELETE FROM users WHERE email LIKE 'customer.%.@example.com' OR email LIKE 'customer.%';`);
+      runDbQuery(`DELETE FROM users WHERE email IN ('${customerEmail}', '${pwdCustomerEmail}', '${forcedCustomerEmail}', '${deactCustomerEmail}');`);
     } catch {
       // Ignore cleanup error
     }

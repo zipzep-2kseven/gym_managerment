@@ -2,7 +2,7 @@
 
 ## 1. Purpose
 
-Tài liệu này ghi nhận chính thức toàn bộ các quyết định kiến trúc cốt lõi (Architecture Baseline), công nghệ nền tảng, tiêu chuẩn bảo mật, phạm vi nghiệp vụ và nguyên tắc thiết kế cho dự án **Multi-Gym Platform**. 
+Tài liệu này ghi nhận chính thức toàn bộ các quyết định kiến trúc cốt lõi (Architecture Baseline), công nghệ nền tảng, tiêu chuẩn bảo mật, phạm vi nghiệp vụ và nguyên tắc thiết kế cho dự án **Multi-Gym Platform**.
 
 Mọi lập trình viên và AI coding agent tham gia phát triển dự án bắt buộc phải tuân thủ nghiêm ngặt các quyết định trong tài liệu này làm nguồn chân lý kỹ thuật (Technical Source of Truth), nhằm đảm bảo hệ thống phát triển nhất quán, an toàn, không bị phân mảnh hay "vibe coding" sai lệch kiến trúc.
 
@@ -118,7 +118,7 @@ Hệ thống áp dụng mô hình kết hợp: **RBAC (Role-Based Access Control
 
 Hệ thống triển khai mô hình **Shared-Database, Shared-Schema với Application-Level Multi-Gym Isolation**:
 
-1. **Gym Scope Key:** Dữ liệu Gym-scoped phải có đường xác định Gym rõ ràng: gym_id trực tiếp trên gym_managers, gym_trainers, packages, payments, memberships, equipments, gym_reports; pt_registrations qua Membership/Gym Trainer; pt_appointments qua Registration. Không thêm cột ngoài ERD. Chốt index và bảo vệ xuyên bảng ở bước constraints.
+1. **Gym Scope Key:** Dữ liệu Gym-scoped phải có đường xác định Gym rõ ràng: gym_id trực tiếp trên gym_managers, gym_trainers, packages, payments, memberships, equipments, gym_reports, gym_images, consultation_requests, gym_reviews; pt_social_links/pt_working_schedules/trainer_reviews qua gym_trainers; pt_registrations qua Membership/Gym Trainer; pt_appointments qua Registration. Không thêm cột ngoài ERD. Baseline FK/index/trigger đã có trong migration 0000/0001; xem Database Spec.
 2. **Scoping Middleware:** Backend xây dựng middleware chuyên trách `enforceGymScope` nhằm trích xuất `gym_id` từ route parameters / query / body và đối chiếu với phân công/ownership còn hiệu lực trong database của User đăng nhập; không lấy token hoặc gym_id frontend làm nguồn quyền duy nhất.
 3. **Repository Scoping:** SELECT/UPDATE/DELETE dữ liệu thuộc Gym phải lọc gym_id trực tiếp hoặc JOIN/EXISTS qua quan hệ nguồn. Registration/Appointment không có gym_id trực tiếp; scope đi qua Membership và đối chiếu Gym Trainer. Bảng system-scoped áp dụng ownership/quyền tương ứng, không ép gym_id giả.
 4. **Ngăn chặn Single-Gym Assumption:** Cấm mọi giả định trong code rằng hệ thống chỉ có một phòng tập (không hardcode `gym_id`, không viết query thiếu điều kiện lọc theo gym).
@@ -203,9 +203,9 @@ Mục tiêu: Đảm bảo toàn bộ thành viên clone dự án về máy đề
 
 ---
 
-## 13. Current Domain Scope (15 Approved Tables)
+## 13. Current Domain Scope (21 Approved Tables)
 
-Theo yêu cầu cập nhật ERD và đồng bộ tài liệu, phạm vi mới gồm đúng 15 bảng trong [DATABASE_SPEC.md](DATABASE_SPEC.md):
+Theo yêu cầu cập nhật ERD và đồng bộ tài liệu, phạm vi mới gồm đúng 21 bảng trong [DATABASE_SPEC.md](DATABASE_SPEC.md):
 
 1. `users` — PK `user_id`.
 2. `user_profiles` — PK `profile_id`.
@@ -222,11 +222,25 @@ Theo yêu cầu cập nhật ERD và đồng bộ tài liệu, phạm vi mới g
 13. `equipment_types` — PK `equipment_type_id`.
 14. `equipments` — PK `equipment_id`.
 15. `gym_reports` — PK `report_id`.
+16. `gym_images` — PK `image_id`.
+17. `consultation_requests` — PK `consultation_request_id`.
+18. `pt_social_links` — PK `social_link_id`.
+19. `pt_working_schedules` — PK `schedule_id`.
+20. `gym_reviews` — PK `gym_review_id`.
+21. `trainer_reviews` — PK `trainer_review_id`.
 
 Role lưu trữ gồm ADMIN, MANAGER, PT, CUSTOMER; Guest là actor chưa đăng nhập. Role không xác định Gym. Payment → Membership, quản lý thiết bị và report gắn thiết bị thuộc phạm vi thiết kế mới. PT Registration dựa trên Membership; Appointment suy ra Customer/PT/Gym qua quan hệ.
 
-Status/enum ở DATABASE_SPEC.md §11 là dự kiến. ERD không còn mô hình quota buổi PT. Giữ nguyên giới hạn quyền Manager của kiến trúc trước: tối đa một Gym ACTIVE mỗi Manager và một Manager ACTIVE mỗi Gym; cách thực thi/tái bổ nhiệm theo khóa cặp chờ chốt.
+Status/enum tương đương ở DATABASE_SPEC.md §7 đã được triển khai bằng VARCHAR + CHECK. ERD không còn mô hình quota buổi PT. Giữ nguyên giới hạn quyền Manager của kiến trúc trước: tối đa một Gym ACTIVE mỗi Manager và một Manager ACTIVE mỗi Gym; giới hạn đã được bảo vệ bằng partial unique index; Q-12 đã chốt: reactivate bản ghi INACTIVE hiện tại, giữ ID/created_at và cập nhật assigned_at lần ACTIVE gần nhất; không thêm bảng lịch sử.
 
+
+### 13.1. Quyết định nghiệp vụ cập nhật
+
+Nghiệp vụ chính thức của người dùng thay thế mô tả cũ xung đột. Membership là cốt lõi: Gym → Package → xác nhận → Payment → Membership. PT và Consultation đều tùy chọn; PT Registration diễn ra sau Membership và sau trao đổi/thống nhất với PT. Gym Detail có hai CTA Đăng ký ngay / Đặt lịch tư vấn.
+
+PT Profile gồm thông tin công khai, social links, availability, working schedule và review; chứng chỉ chỉ khi được hỗ trợ, không tạo schema chứng chỉ mới. trainer_status và availability độc lập. Working Schedule không phải Appointment. Review giữ nguyên dữ liệu gốc; chỉ Admin ẩn vi phạm kèm audit, không có API xóa review. Guest được gửi Consultation không cần đăng nhập.
+
+Schema 21 bảng và hai service review/PT đã có; API/UI mới là mục tiêu cần triển khai. Role CUSTOMER cấp tài khoản khác tư cách hội viên của Gym. Staff và các quyết định chi tiết chưa chốt được ghi duy nhất tại [Domain §9](DOMAIN_RULES.md#9-câu-hỏi-mở-và-phạm-vi-chặn).
 
 ## 14. Phạm vi thiết kế và giới hạn triển khai
 
@@ -236,7 +250,7 @@ Cho phép đặc tả payments, equipment_types, equipments và các luồng tro
 
 ### 14.2. Ngoài phạm vi
 
-Không thêm Invoice, Transaction, Audit_Log, Report_Attachment hoặc bảng thứ 16. Không thêm subscription billing, kho vật tư/bảo trì phức tạp, AI/ML, sinh lịch tự động hoặc theo dõi thể lực. Quản lý thiết bị cơ bản đã thuộc phạm vi; không đồng nghĩa có quản lý kho nâng cao.
+Không thêm Invoice, Transaction, Audit_Log, Report_Attachment hoặc bảng ngoài danh mục 21 bảng. Không triển khai PT Pricing/Package/Payment, chat realtime, social network, marketplace PT độc lập, recommendation, gym comparison hoặc booking realtime phức tạp. Không thêm subscription billing, kho vật tư/bảo trì phức tạp, AI/ML, sinh lịch tự động hoặc theo dõi thể lực. Quản lý thiết bị cơ bản đã thuộc phạm vi; không đồng nghĩa có quản lý kho nâng cao.
 
 Lần cập nhật này chỉ đồng bộ tài liệu trong docs; không tạo code, schema/migration hay chạy database.
 
@@ -269,4 +283,20 @@ Toàn bộ quá trình thiết kế và viết mã phải tuân thủ 7 nguyên 
 
 ## 17. Open Questions
 
-Stack, ORM và cơ chế xác thực giữ nguyên. Các quyết định nghiệp vụ/kỹ thuật còn mở được quản lý duy nhất tại [DOMAIN_RULES.md §9](DOMAIN_RULES.md#9-câu-hỏi-mở-và-phạm-vi-chặn), mã Q-01–Q-13. Chỉ chặn công việc phụ thuộc; không tự chuyển giá trị dự kiến thành policy đã phê duyệt.
+Stack, ORM và cơ chế xác thực giữ nguyên. Các quyết định nghiệp vụ/kỹ thuật còn mở được quản lý duy nhất tại [DOMAIN_RULES.md §9](DOMAIN_RULES.md#9-câu-hỏi-mở-và-phạm-vi-chặn), mã Q-01–Q-19. Chỉ chặn công việc phụ thuộc; không tự chuyển giá trị dự kiến thành policy đã phê duyệt.
+
+
+### Quyết định Q-10/Q-12 — Provisioning và tái bổ nhiệm Manager
+
+Backend sinh mật khẩu tạm cho Manager/PT, lưu Argon2id hash; actor không nhập password. Khi chưa có email/notification delivery, chỉ response provisioning thành công trả `temporary_password` một lần cho actor được phép để bàn giao. Không lưu/log plaintext, không endpoint đọc lại; response `Cache-Control: no-store`. Session/projection thông thường không chứa credential. Đổi mật khẩu phải dùng giá trị mới khác giá trị hiện tại để mật khẩu tạm hết hiệu lực; chỉ cập nhật hash, `must_change_password=false`, `updated_at`. Không thay đổi account status/email verification/assignment.
+
+Admin provision Manager/PT; Manager có role và assignment ACTIVE đúng Gym được provision PT. Không thêm email verification gate. Transaction tạo User/Profile/Role/Assignment nguyên tử; quyền được đọc lại từ DB trong transaction. Giới hạn Manager giữ nguyên bằng constraint hiện có, không tự revoke Manager xung đột. Revoke giữ row INACTIVE; tái bổ nhiệm cùng User/Gym dùng lại row và cập nhật assigned_at, giữ created_at. Không migration/history table mới. Upload Q-10 còn mở. Q-08 PT và Q-13 Gym/PT được chốt ở quyết định tiếp theo bên dưới; các lifecycle khác vẫn mở.
+
+
+### Q-08 PT / Q-13 Gym và PT — ngừng khi hết nghĩa vụ
+
+Áp dụng Domain §10 và API §15. PT tối đa một assignment ACTIVE toàn hệ thống, bảo vệ bằng partial unique index mới `gym_trainers_active_user_key`. Giữ lịch sử INACTIVE, không tự xử lý dữ liệu cũ xung đột. Migration 0002 từ chối dữ liệu không phù hợp thay vì revoke/xóa.
+
+Gym/PT chỉ ngừng khi không còn nghĩa vụ mở theo policy; không cascade. Các thao tác ghi liên quan và đổi trạng thái dùng khóa parent Gym trong transaction ngắn; trigger chặn ghi nghĩa vụ vào Gym/PT INACTIVE và kiểm tra nghĩa vụ khi ngừng. API khóa Gym trước account/assignment; SQL ngoài API có thứ tự khóa khác có thể bị PostgreSQL hủy vì deadlock, không bỏ qua rule. Các Gym độc lập không dùng khóa toàn hệ thống. Không giữ khóa khi hash password/gọi dịch vụ ngoài.
+
+Tái sử dụng GymScopeService đã CLOSED; bổ sung policy tại service/DB mới, không mở lại GYM-01. Không thêm trạng thái đóng khẩn cấp, history table, refund hay Customer đa Gym.

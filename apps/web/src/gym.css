@@ -1,0 +1,52 @@
+@tailwind utilities;
+.gym-shell { min-height: 100dvh; display: flex; flex-direction: column; }
+.gym-header, .gym-main, .gym-footer { width: min(100%, 1280px); margin: 0 auto; padding: 24px; }
+.gym-header { display: flex; justify-content: space-between; align-items: center; gap: 24px; border-bottom: 1px solid var(--color-border); }
+.gym-brand { font-size: 22px; letter-spacing: -.04em; font-weight: 800; text-decoration: none; color: var(--color-text-primary); }
+.gym-brand span { color: var(--color-crimson-700); }
+.gym-main { flex: 1; padding-top: 48px; padding-bottom: 64px; }
+.gym-main h1 { font-size: clamp(28px, 4vw, 48px); line-height: 1.15; letter-spacing: -.035em; margin: 20px 0 24px; }
+.gym-main h2 { font-size: 20px; margin: 0 0 12px; }
+.gym-main a, .gym-header a { color: var(--color-navy-900); }
+.gym-main p { color: var(--color-text-secondary); }
+.gym-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; }
+.gym-main .btn-primary { width: auto; background: var(--color-crimson-700); border-color: var(--color-crimson-700); color: white; text-decoration: none; }
+.gym-main .btn-secondary { text-decoration: none; }
+.gym-intro { padding: 24px 0 40px; max-width: 800px; }
+.gym-eyebrow { font-size: 12px; letter-spacing: .1em; font-weight: 700; }
+.gym-toolbar { display: grid; grid-template-columns: minmax(180px, 1fr) auto minmax(140px, 220px); gap: 16px; align-items: end; padding: 24px 0; }
+.gym-directory { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px; padding: 24px 0; }
+.gym-list-item { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 24px; padding: 24px 0; border-top: 1px solid var(--color-border); }
+.gym-image, .gym-image-fallback { width: 96px; height: 96px; object-fit: contain; border-radius: var(--radius-lg); background: var(--color-neutral-bg); }
+.gym-image-fallback { display: grid; place-items: center; font-size: 32px; font-weight: 700; color: var(--color-navy-900); }
+.gym-panel { padding: 32px; margin: 24px 0; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); }
+.gym-detail-heading { display: flex; gap: 24px; align-items: center; padding: 32px 0; }
+.gym-detail-grid { display: grid; grid-template-columns: 1.3fr 1fr; gap: 24px; }
+.gym-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.gym-fieldset { border: 0; padding: 0; margin: 24px 0 0; min-width: 0; display: grid; gap: 24px; }
+.gym-heading, .gym-management-row { display: flex; justify-content: space-between; gap: 24px; align-items: center; }
+.gym-management-row { padding: 24px 0; border-bottom: 1px solid var(--color-border); }
+.gym-preserve { white-space: pre-wrap; }
+.gym-main dd { margin: 0 0 16px; }
+.gym-main dt { font-weight: 600; }
+.gym-main p, .gym-main dd, .gym-main h2, .gym-credentials output { overflow-wrap: anywhere; }
+.gym-credentials { padding: 24px; border: 1px solid var(--color-border); margin-top: 24px; }
+.gym-credentials output { display: block; margin-bottom: 16px; font-family: var(--font-mono); }
+.gym-footer { border-top: 1px solid var(--color-border); color: var(--color-text-secondary); font-size: 14px; }
+.gym-skeleton { display: grid; gap: 16px; padding: 32px 0; }
+.gym-skeleton span { background: var(--color-border); height: 48px; border-radius: var(--radius-md); }
+.skip-link { position: absolute; left: 16px; top: -80px; background: white; padding: 12px; z-index: 10; }
+.skip-link:focus { top: 12px; }
+:focus-visible { outline: 2px solid var(--color-navy-900); outline-offset: 4px; }
+button:active:not(:disabled) { transform: scale(.98); }
+button:disabled { cursor: not-allowed; }
+@media (max-width: 767px) {
+  .gym-header { align-items: flex-start; flex-direction: column; }
+  .gym-toolbar, .gym-directory, .gym-detail-grid, .gym-form-grid { grid-template-columns: 1fr; }
+  .gym-heading, .gym-management-row { flex-direction: column; align-items: flex-start; }
+  .gym-main { padding: 24px 16px 48px; }
+  .gym-panel { padding: 20px; }
+  .gym-detail-heading { align-items: flex-start; flex-direction: column; }
+  .gym-actions { gap: 12px; }
+}
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }

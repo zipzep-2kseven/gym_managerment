@@ -11,7 +11,11 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:seed": "tsx src/database/seed.ts",
-    "db:bootstrap:admin": "tsx src/database/bootstrap-admin.ts"
+    "db:bootstrap:admin": "tsx src/database/bootstrap-admin.ts",
+    "test:database": "tsx tests/database-business.test.ts && tsx tests/gym-lifecycle.integration.test.ts && tsx tests/gym-02.acceptance.test.ts",
+    "test:lifecycle": "tsx tests/gym-lifecycle.integration.test.ts",
+    "test:gym02": "tsx tests/gym-02.acceptance.test.ts",
+    "typecheck:tests": "tsc -p tsconfig.tests.json"
   },
   "dependencies": {
     "@multi-gym/shared": "*",

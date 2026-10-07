@@ -1,3 +1,6 @@
+import { gymImages, consultationRequests } from './discovery.js';
+import { ptSocialLinks, ptWorkingSchedules } from './trainer-profile.js';
+import { gymReviews, trainerReviews } from './reviews.js';
 import { relations } from 'drizzle-orm';
 import { users, userProfiles, roles, userRoles } from './users.js';
 import { gyms, gymManagers, gymTrainers } from './gyms.js';
@@ -19,6 +22,12 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   gymTrainers: many(gymTrainers),
   payments: many(payments),
   memberships: many(memberships),
+  consultations: many(consultationRequests, { relationName: 'consultationUser' }),
+  assignedConsultations: many(consultationRequests, { relationName: 'consultationAssignee' }),
+  gymReviews: many(gymReviews, { relationName: 'gymReviewAuthor' }),
+  hiddenGymReviews: many(gymReviews, { relationName: 'gymReviewModerator' }),
+  trainerReviews: many(trainerReviews, { relationName: 'trainerReviewAuthor' }),
+  hiddenTrainerReviews: many(trainerReviews, { relationName: 'trainerReviewModerator' }),
   reportsSubmitted: many(gymReports, { relationName: 'reportSubmitter' }),
   reportsResolved: many(gymReports, { relationName: 'reportResolver' }),
 }));
@@ -50,6 +59,9 @@ export const userRolesRelations = relations(userRoles, ({ one }) => ({
 
 // gyms relations
 export const gymsRelations = relations(gyms, ({ many }) => ({
+  images: many(gymImages),
+  consultations: many(consultationRequests),
+  reviews: many(gymReviews),
   managers: many(gymManagers),
   trainers: many(gymTrainers),
   packages: many(packages),
@@ -81,6 +93,9 @@ export const gymTrainersRelations = relations(gymTrainers, ({ one, many }) => ({
     fields: [gymTrainers.userId],
     references: [users.userId],
   }),
+  socialLinks: many(ptSocialLinks),
+  workingSchedules: many(ptWorkingSchedules),
+  reviews: many(trainerReviews),
   ptRegistrations: many(ptRegistrations),
 }));
 
@@ -194,4 +209,34 @@ export const gymReportsRelations = relations(gymReports, ({ one }) => ({
     references: [users.userId],
     relationName: 'reportResolver',
   }),
+}));
+
+export const gymImagesRelations = relations(gymImages, ({ one }) => ({
+  gym: one(gyms, { fields: [gymImages.gymId], references: [gyms.gymId] }),
+}));
+
+export const consultationRequestsRelations = relations(consultationRequests, ({ one }) => ({
+  gym: one(gyms, { fields: [consultationRequests.gymId], references: [gyms.gymId] }),
+  user: one(users, { fields: [consultationRequests.userId], references: [users.userId], relationName: 'consultationUser' }),
+  assignee: one(users, { fields: [consultationRequests.assignedTo], references: [users.userId], relationName: 'consultationAssignee' }),
+}));
+
+export const ptSocialLinksRelations = relations(ptSocialLinks, ({ one }) => ({
+  trainer: one(gymTrainers, { fields: [ptSocialLinks.gymTrainerId], references: [gymTrainers.gymTrainerId] }),
+}));
+
+export const ptWorkingSchedulesRelations = relations(ptWorkingSchedules, ({ one }) => ({
+  trainer: one(gymTrainers, { fields: [ptWorkingSchedules.gymTrainerId], references: [gymTrainers.gymTrainerId] }),
+}));
+
+export const gymReviewsRelations = relations(gymReviews, ({ one }) => ({
+  gym: one(gyms, { fields: [gymReviews.gymId], references: [gyms.gymId] }),
+  author: one(users, { fields: [gymReviews.userId], references: [users.userId], relationName: 'gymReviewAuthor' }),
+  moderator: one(users, { fields: [gymReviews.hiddenBy], references: [users.userId], relationName: 'gymReviewModerator' }),
+}));
+
+export const trainerReviewsRelations = relations(trainerReviews, ({ one }) => ({
+  trainer: one(gymTrainers, { fields: [trainerReviews.gymTrainerId], references: [gymTrainers.gymTrainerId] }),
+  author: one(users, { fields: [trainerReviews.userId], references: [users.userId], relationName: 'trainerReviewAuthor' }),
+  moderator: one(users, { fields: [trainerReviews.hiddenBy], references: [users.userId], relationName: 'trainerReviewModerator' }),
 }));

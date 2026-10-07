@@ -1,12 +1,10 @@
 # Multi-Gym Project Rules & Architectural Guidelines
 
-Bộ hướng dẫn cho AI áp dụng trên toàn bộ monorepo (`apps/api`, `apps/web`, `packages/shared`, `docker-compose.yml`, `docs`). Nội dung các mục bên dưới đồng bộ với [docs/PROJECT_RULES.md](../../docs/PROJECT_RULES.md); đây không phải một nguồn quy tắc nghiệp vụ độc lập.
+Hướng dẫn AI cho monorepo; bản sao quy tắc bên dưới đồng bộ với [Project Rules](../../docs/PROJECT_RULES.md), không phải nguồn nghiệp vụ độc lập. `.agents` là symlink tới `.agent`.
 
-Trước khi thực hiện công việc, đọc các phần liên quan trong [Architecture Decisions](../../docs/ARCHITECTURE_DECISIONS.md), [Domain Rules](../../docs/DOMAIN_RULES.md), [Database Spec](../../docs/DATABASE_SPEC.md), [Feature Spec](../../docs/FEATURE_SPEC.md), [API Spec](../../docs/API_SPEC.md), [UI/UX Spec](../../docs/UI_UX_SPEC.md) và [Implementation Plan](../../docs/IMPLEMENTATION_PLAN.md). Tuân thủ thứ tự ưu tiên tại mục 3.
+Nghiệp vụ hiện hành: 21 bảng; Membership là cốt lõi, PT bổ sung sau Membership và trao đổi, Consultation tùy chọn cho Guest/Customer, review chỉ ẩn có audit. Đọc [Domain Rules](../../docs/DOMAIN_RULES.md) và các spec liên quan trước tác vụ. Q-11 đã có baseline, Q-05 ngoài phạm vi; các Q còn mở chỉ chặn phần phụ thuộc. Task docs không mở quyền sửa code/chạy migration.
 
-Thiết kế hiện tại gồm **15 bảng**, có Payment và Equipment; Registration/Appointment xác định Gym Scope qua quan hệ. Các quyết định **Q-01–Q-13** tại Domain §9 chưa chốt không được tự suy diễn thành policy hoặc constraint đã duyệt. Chỉ chặn phần việc phụ thuộc; tác vụ chỉnh tài liệu không tự mở quyền tạo code/migration hay chạy database.
-
-`.agents` trỏ tới `.agent`; hai đường dẫn rule truy cập cùng một file. Khi sửa quy tắc, cập nhật file này và PROJECT_RULES.md cùng lượt để tránh lệch nội dung.
+# Multi-Gym Project Rules
 
 ## 1. Mục Đích & Phạm Vi Áp Dụng
 
@@ -39,7 +37,7 @@ Mọi quy tắc trong tài liệu này phải ngắn gọn, rõ ràng, cụ th�
 Khi có sự xung đột thông tin giữa các tài liệu hoặc giữa tài liệu và mã nguồn hiện có, áp dụng thứ tự ưu tiên tuyệt đối từ cao xuống thấp:
 
 ```text
-1. Explicit user requirement của task hiện tại
+1. Explicit user requirement và cập nhật nghiệp vụ chính thức hiện hành
    ↓
 2. Architecture Decisions (docs/ARCHITECTURE_DECISIONS.md)
    ↓
@@ -55,6 +53,7 @@ Khi có sự xung đột thông tin giữa các tài liệu hoặc giữa tài l
 ```
 
 - **Quy tắc bất biến:** Không bao giờ dùng mã nguồn hiện tại làm lý do để phá vỡ `Architecture Decisions` hoặc `Project Rules`.
+- Bản cập nhật nghiệp vụ Gym/PT hiện hành đã được người dùng yêu cầu đồng bộ; các giới hạn cũ trái với phạm vi này được thay thế, không yêu cầu phê duyệt lại cùng thay đổi.
 - **Xử lý xung đột:** Nếu yêu cầu mới từ người dùng mâu thuẫn trực tiếp với `Architecture Decisions`, AI **không được tự ý sửa kiến trúc**, phải báo cáo xung đột và đề xuất quy trình cập nhật `Architecture Decision Change`.
 
 ---
@@ -92,7 +91,7 @@ Trước khi chạm vào code:
 ### Rule 5.2 — Không tự ý mở rộng scope (No Scope Creep)
 Tuyệt đối không tự ý:
 - Thêm tính năng không được yêu cầu.
-- Thêm entity mới ngoài 15 bảng đã duyệt.
+- Thêm entity mới ngoài 21 bảng đã duyệt.
 - Thêm endpoint API không có trong spec.
 - Cài thêm thư viện (npm package) khi chưa thảo luận.
 - Đổi công nghệ hoặc thay đổi kiến trúc.
@@ -118,7 +117,7 @@ Mọi dữ liệu và thao tác thuộc phạm vi vận hành phòng gym bắt b
 
 ### Rule 6.2 — Cách ly dữ liệu chéo phòng Gym (Cross-Gym Isolation)
 Người dùng thuộc Gym A tuyệt đối không được:
-- Đọc dữ liệu của Gym B.
+- Đọc dữ liệu nội bộ của Gym B. Dữ liệu public (Gym/Package/PT, gallery, review VISIBLE) vẫn được xem theo public projection, không cần Membership.
 - Chỉnh sửa dữ liệu của Gym B.
 - Xóa dữ liệu của Gym B.
 - Suy diễn hoặc dò quét dữ liệu Gym B thông qua API parameters.
@@ -172,7 +171,7 @@ Frontend không được tự quyết định rằng người dùng "đã đăng
 ## 8. Quy Tắc Phân Quyền (Authorization Rules)
 
 - **Mô hình:** RBAC (Role-Based Access Control) kết hợp chặt chẽ với Gym Scope Enforcement.
-- **5 Actors:** Guest, Customer, PT, Manager, Admin. Chỉ lưu 4 roles: CUSTOMER, PT, MANAGER, ADMIN; role_name unique.
+- **Actors đã có trong code:** Guest, Customer, PT, Manager, Admin. Staff xử lý tư vấn là yêu cầu nghiệp vụ nhưng mô hình quyền chờ Q-14. Chỉ lưu 4 roles: CUSTOMER, PT, MANAGER, ADMIN; role_name unique.
 
 ### Rule 8.1 — Role không bao giờ là yếu tố duy nhất
 Cấm viết code kiểu:
@@ -190,7 +189,7 @@ Manager chỉ có quyền quản trị phòng Gym duy nhất mà mình được 
 PT chỉ có quyền truy cập học viên, gói tập và lịch hẹn trong phạm vi Gym mà mình được chỉ định hợp đồng (`Gym_Trainer`).
 
 ### Rule 8.4 — Quyền hạn Admin
-Admin có thẩm quyền toàn hệ thống nhưng mọi thao tác vẫn phải đi qua pipeline xác thực và ghi vết vận hành phù hợp (không thêm bảng Audit_Log ngoài 15 bảng).
+Admin có thẩm quyền toàn hệ thống nhưng mọi thao tác vẫn phải đi qua pipeline xác thực và ghi vết vận hành phù hợp (không thêm bảng Audit_Log ngoài 21 bảng).
 
 ### Rule 8.5 — Frontend không phải ranh giới an toàn (Security Boundary)
 Việc Frontend ẩn nút, disable link, hoặc redirect trang chỉ là tối ưu UX. Backend luôn luôn phải kiểm tra lại quyền hạn độc lập trên từng request.
@@ -246,10 +245,10 @@ Không cài đặt hay sử dụng thêm bất kỳ thư viện ORM nào khác n
 Bảng cơ sở dữ liệu phải bám sát chính xác các Domain Entities đã duyệt. Cấm tạo bảng tùy tiện chỉ để lưu object tạm của frontend.
 
 ### Rule 10.3 — Toàn vẹn dữ liệu quan hệ
-Mọi quan hệ phải có FK và ràng buộc phù hợp sau khi chốt constraints. Không ép NOT NULL lên các quan hệ tùy chọn payment_id, equipment_id hoặc resolved_by. UNIQUE và index phải đúng cardinality/query, không áp dụng máy móc cho mọi FK; chi tiết ở DATABASE_SPEC.md §12 (Q-11).
+Mọi quan hệ phải có FK và ràng buộc phù hợp theo baseline schema/migration hiện tại. Không ép NOT NULL lên các quan hệ tùy chọn payment_id, equipment_id hoặc resolved_by. UNIQUE và index phải đúng cardinality/query, không áp dụng máy móc cho mọi FK; chi tiết ở DATABASE_SPEC.md §4 và §8–§11. Các FK mới cho Guest/moderation cũng phải giữ nullability đúng schema.
 
 ### Rule 10.4 — Chiến lược Gym-Scoped Data
-Các bảng gym_managers, gym_trainers, packages, payments, memberships, equipments, gym_reports có gym_id trực tiếp. pt_registrations xác định Gym qua memberships và gym_trainers; pt_appointments qua pt_registrations. users, user_profiles, roles, user_roles, equipment_types là system-scoped. Truy vấn phải lọc scope trên bảng sở hữu hoặc qua JOIN/EXISTS tương ứng; không tự thêm gym_id ngoài ERD.
+Các bảng gym_managers, gym_trainers, packages, payments, memberships, equipments, gym_reports, gym_images, consultation_requests, gym_reviews có gym_id trực tiếp. pt_social_links, pt_working_schedules, trainer_reviews xác định Gym qua gym_trainers. pt_registrations xác định Gym qua memberships và gym_trainers; pt_appointments qua pt_registrations. users, user_profiles, roles, user_roles, equipment_types là system-scoped. Truy vấn phải lọc scope trên bảng sở hữu hoặc qua JOIN/EXISTS tương ứng; không tự thêm gym_id ngoài ERD.
 
 ### Rule 10.5 — Quy trình Migration duy nhất
 Mọi thay đổi cấu trúc bảng phải được tạo qua file migration của Drizzle (`drizzle-kit generate` $\rightarrow$ `drizzle-kit migrate`). Cấm sửa bảng trực tiếp bằng tay trên database production/dev mà không có file migration.
@@ -312,7 +311,7 @@ Mọi API call phải được định nghĩa tập trung trong tầng `src/serv
   - **Light Gray (`#F1F5F9` / `#E2E8F0`)**: Nền phụ, viền mảnh tinh tế.
 
 ### Rule 13.1 — Tự động tuân thủ Taste Skill
-Mọi tác vụ giao diện bắt buộc phải đọc và tuân thủ các quy tắc anti-slop chi tiết trong [`.taste-skill/skills/taste-skill/SKILL.md`](../../.taste-skill/skills/taste-skill/SKILL.md).
+Mọi tác vụ giao diện bắt buộc phải đọc và tuân thủ các quy tắc anti-slop chi tiết trong [`.taste-skill/skills/taste-skill/SKILL.md`](file:///srv/gym/.taste-skill/skills/taste-skill/SKILL.md).
 
 ### Rule 13.2 — Nhất quán Design Tokens
 Cấm tự ý pha màu mới, cấm dùng font tùy tiện ngoài hệ thống, cấm đổi bán kính bo góc lộn xộn. Tuân thủ bảng màu và scale token đã định.
@@ -382,15 +381,15 @@ Tuyệt đối không sửa đổi hay xóa bỏ test case hợp lệ chỉ đ�
 
 ## 17. Quy tắc Payment
 
-Payment và luồng Payment → Membership nằm trong phạm vi 15 bảng đã yêu cầu. Backend không tin kết quả thanh toán do Customer tự khai; phải xác minh nguồn, số tiền và quan hệ User/Gym/Package. Một Payment tối đa một Membership; giữ giá mua lịch sử.
+Payment và luồng Payment → Membership nằm trong phạm vi 21 bảng đã yêu cầu. Backend không tin kết quả thanh toán do Customer tự khai; phải xác minh nguồn, số tiền và quan hệ User/Gym/Package. Một Payment tối đa một Membership; giữ giá mua lịch sử.
 
 Gateway, callback/webhook, phương thức thanh toán, kích hoạt thẻ và refund chờ Q-01/Q-02 tại DOMAIN_RULES.md §9. Không tự thêm Invoice/Transaction, billing định kỳ hoặc đường cấp Membership miễn thanh toán để thay thế phần chưa chốt.
 
 ## 18. Giới hạn domain
 
-Đúng 15 bảng theo DATABASE_SPEC.md: users, user_profiles, roles, user_roles, gyms, gym_managers, gym_trainers, packages, payments, memberships, pt_registrations, pt_appointments, equipment_types, equipments, gym_reports.
+Đúng 21 bảng theo DATABASE_SPEC.md: users, user_profiles, roles, user_roles, gyms, gym_managers, gym_trainers, packages, payments, memberships, pt_registrations, pt_appointments, equipment_types, equipments, gym_reports, gym_images, consultation_requests, pt_social_links, pt_working_schedules, gym_reviews, trainer_reviews.
 
-Không tự tạo bảng thứ 16. Nếu có nghiệp vụ cần mô hình khác, báo tác động và chờ quyết định cho phần đó. Không chặn các công việc độc lập đã được yêu cầu.
+Không tự tạo bảng ngoài danh mục 21 bảng. Nếu có nghiệp vụ cần mô hình khác, báo tác động và chờ quyết định cho phần đó. Không chặn các công việc độc lập đã được yêu cầu.
 
 ## 19. Quy Chuẩn Chất Lượng Mã Nguồn (Code Quality Rules)
 
@@ -471,7 +470,7 @@ Một task chỉ được coi là hoàn tất khi thỏa mãn đầy đủ các 
 - [ ] Test cases tương ứng (Unit, Integration hoặc Cross-Gym check) đã được viết và pass.
 - [ ] Tác vụ UI/UX đã áp dụng triệt để Taste Skill và kiểm tra Responsive (Desktop, Tablet, Mobile).
 - [ ] Không hard-code bất kỳ secret hoặc thông tin xác thực nào.
-- [ ] Không tự ý tạo bảng thứ 16 hoặc tính năng ngoài phạm vi 15 bảng đã duyệt.
+- [ ] Không tự ý tạo bảng ngoài danh mục 21 bảng hoặc tính năng ngoài phạm vi 21 bảng đã duyệt.
 - [ ] Đã chạy quy trình Verification kiểm tra thực tế.
 
 ---
@@ -518,12 +517,32 @@ Khi phát hiện thiếu thông tin hoặc yêu cầu không rõ ràng:
 - Không tự ý sửa đổi kiến trúc.
 - Dừng lại, nêu rõ giả định hoặc đặt câu hỏi để nhận chỉ đạo chính xác từ Lead/User.
 
-## 28. Quy tắc đồng bộ ERD 15 bảng
+## 28. Quy tắc đồng bộ ERD 21 bảng
 
 - Dùng tên PK riêng của từng bảng; user_roles dùng khóa (user_id, role_id), không có id riêng. DTO dùng đúng tên cột tại DATABASE_SPEC; không trả password_hash.
 - Payment → Membership: tối đa một Membership mỗi Payment; purchase_price giữ giá lịch sử. Không có endpoint cho Customer tự đánh dấu thanh toán thành công.
 - Report dùng content, report_type, equipment_id, resolved_by, resolved_at, resolution_note; thiết bị và report phải cùng Gym.
-- Không áp dụng công thức quota PT hoặc exclusion constraint cũ dựa trên cột không còn tồn tại. Cơ chế thay thế phải giải quyết Q-05/Q-06/Q-11 trước triển khai phần phụ thuộc.
-- Status/enum là dự kiến; không tự chốt PostgreSQL ENUM/VARCHAR + CHECK, FK actions hoặc indexes ngoài bước constraints.
-- Các câu hỏi mở dùng Q-01–Q-13 ở DOMAIN_RULES.md §9. API/UI/plan phải cùng tham chiếu; không tự đặt các đáp án khác nhau.
-- Phạm vi 15 bảng và Payment/Equipment đã được người dùng yêu cầu cập nhật. `.agent/rules/multi-gym.md` là bản hướng dẫn cho AI đồng bộ với tài liệu này; khi thay đổi quy tắc, cập nhật cả hai trong cùng lượt sửa. `.agents` là symlink tới `.agent`, không phải bản quy tắc thứ ba.
+- Không áp dụng công thức quota PT hoặc exclusion constraint cũ dựa trên cột không còn tồn tại. Cơ chế thay thế phải giải quyết Q-06 trước triển khai phần lịch phụ thuộc; Q-05 hiện nằm ngoài phạm vi và Q-11 đã có baseline.
+- Status hiện dùng VARCHAR + CHECK; FK actions/index/trigger đối chiếu migration 0000/0001 và DATABASE_SPEC.md. Không coi câu hỏi enum vật lý là chưa chốt.
+- Các câu hỏi mở dùng Q-01–Q-19 ở DOMAIN_RULES.md §9. API/UI/plan phải cùng tham chiếu; không tự đặt các đáp án khác nhau.
+- Phạm vi 21 bảng gồm Membership/Payment, Consultation/Gallery, PT Profile/Availability/Working Schedule, Review và Equipment đã được người dùng yêu cầu cập nhật. `.agent/rules/multi-gym.md` là bản hướng dẫn cho AI đồng bộ với tài liệu này; khi thay đổi quy tắc, cập nhật cả hai trong cùng lượt sửa. `.agents` là symlink tới `.agent`, không phải bản quy tắc thứ ba.
+
+
+## 29. Quy tắc nghiệp vụ Gym/PT hiện hành
+
+- Gym Detail có hai CTA chính: Đăng ký ngay và Đặt lịch tư vấn. Không bắt chọn PT hoặc gửi tư vấn khi mua Membership.
+- Guest được tạo Consultation không cần login; user_id chỉ lấy từ phiên hợp lệ, không tin body. Liên hệ và assigned_to không được đưa vào public response.
+- PT Registration chỉ sau Membership phù hợp, cùng Gym, sau khi hai bên thống nhất; không thêm PT Pricing/Package/Payment hoặc quota Gym Package.
+- trainer_status ACTIVE/INACTIVE độc lập availability ACCEPTING/ALMOST_FULL/NOT_ACCEPTING. Working Schedule độc lập Appointment, không tự tạo slot/giữ chỗ.
+- Backend kiểm tra eligibility review theo Membership/PT Registration; public chỉ VISIBLE. Gym/Manager/Staff/PT không sửa/xóa review; Admin chỉ hide kèm hidden_at/hidden_by/hidden_reason, không xóa vật lý.
+- Nghiệp vụ chưa chốt tra Q-14–Q-19 tại Domain; hiện trạng code/constraint không tự trở thành policy đã được duyệt.
+- Tài liệu API/Feature/UI phải ghi rõ chức năng mục tiêu và phần đã có. Thay đổi tài liệu không đồng nghĩa đã triển khai endpoint.
+- Không thêm chat realtime, social network, marketplace PT độc lập, recommendation, gym comparison, booking realtime phức tạp hoặc subscription mới.
+
+
+## Q-08 PT / Q-13 Gym và PT đã chốt
+
+- PT tối đa một assignment ACTIVE toàn hệ thống; chuyển Gym phải ngừng assignment cũ, không tự revoke/xóa. Customer đa Gym còn OPEN.
+- Ngừng Gym chỉ bởi Admin khi không còn Payment PENDING, Membership PENDING/ACTIVE, Registration ACTIVE, Appointment PENDING/CONFIRMED. Ngừng PT bởi Admin/Manager ACTIVE đúng Gym khi hết Registration ACTIVE và Appointment PENDING/CONFIRMED. Lịch quá giờ chưa kết thúc vẫn chặn.
+- Không cascade, force, hoàn tiền tự động hoặc sửa availability/account/role/history. Kích hoạt lại PT dùng row cũ, kiểm tra Gym/User ACTIVE, role PT, giới hạn một Gym. API trả 409 kèm counts khi còn nghĩa vụ.
+- Policy triển khai tại Domain §10, API §15 và migration 0002; giữ migration 0000/0001, không mở lại GYM-01. DB guards/transaction bảo vệ concurrent writes; rollback policy phải có chủ đích và không xóa dữ liệu. Các phần Q-13 khác còn OPEN.

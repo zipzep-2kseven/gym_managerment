@@ -1,3 +1,4 @@
+import { useQueryClient } from '@tanstack/react-query';
 import React, { createContext, useEffect, useState, useCallback } from 'react';
 import {
   UserSession,
@@ -31,6 +32,7 @@ export interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+  const queryClient = useQueryClient();
   const [user, setUser] = useState<UserSession | null>(null);
   const [status, setStatus] = useState<AuthStatus>('loading');
   const [error, setError] = useState<string | null>(null);
@@ -71,7 +73,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setError(err instanceof Error ? err.message : 'Không thể tải phiên làm việc.');
       return null;
     }
-  }, []);
+  }, [queryClient]);
 
   useEffect(() => {
     void refreshSession();
@@ -81,6 +83,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setError(null);
     try {
       const session = await authService.login(credentials);
+      queryClient.clear();
       if (session.status === 'INACTIVE' || session.status === 'SUSPENDED') {
         setUser(session);
         setStatus('forbidden');
@@ -98,12 +101,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setError(err instanceof Error ? err.message : 'Đăng nhập thất bại.');
       throw err;
     }
-  }, []);
+  }, [queryClient]);
 
   const register = useCallback(async (data: RegisterData): Promise<UserSession> => {
     setError(null);
     try {
       const session = await authService.register(data);
+      queryClient.clear();
       setUser(session);
       setStatus('authenticated');
       setError(null);
@@ -112,17 +116,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setError(err instanceof Error ? err.message : 'Đăng ký thất bại.');
       throw err;
     }
-  }, []);
+  }, [queryClient]);
 
   const logout = useCallback(async (): Promise<void> => {
     try {
       await authService.logout();
     } finally {
+      queryClient.clear();
       setUser(null);
       setStatus('unauthenticated');
       setError(null);
     }
-  }, []);
+  }, [queryClient]);
 
   const changePassword = useCallback(
     async (data: ChangePasswordData): Promise<void> => {
