@@ -50,3 +50,57 @@ button:disabled { cursor: not-allowed; }
   .gym-actions { gap: 12px; }
 }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+
+.package-toolbar { display: flex; flex-wrap: wrap; align-items: end; gap: 16px; margin: 24px 0; }
+.package-toolbar .form-group { flex: 1 1 160px; margin-bottom: 0; }
+.package-toolbar .form-group:first-child { flex: 2 1 240px; }
+.package-list { margin: 24px 0; }
+.package-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 24px; padding: 28px 0; border-top: 1px solid var(--color-border); }
+.gym-main .package-price { font-size: 28px; font-weight: 700; color: var(--color-text-primary); font-variant-numeric: tabular-nums; margin: 12px 0; overflow-wrap: anywhere; }
+.package-price span { font-size: 14px; font-weight: 500; }
+@media (max-width: 767px) { .package-row { grid-template-columns: minmax(0, 1fr); } .package-toolbar { display: grid; grid-template-columns: minmax(0, 1fr); } }
+
+/* Customer schedule: ordered day columns and accessible appointment buttons. */
+.pt-calendar-toolbar { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:16px; margin:20px 0; }
+.pt-calendar-grid { display:grid; gap:12px; margin:24px 0; }
+.pt-calendar-week { grid-template-columns:repeat(7,minmax(0,1fr)); }
+.pt-calendar-day { min-width:0; border:1px solid #e2e8f0; border-radius:6px; padding:12px; background:#fff; }
+.pt-calendar-day h3 { margin:0 0 16px; font-size:14px; }
+.pt-today { display:block; color:#b91c1c; font-size:12px; margin-top:4px; }
+.pt-calendar-event { border-left:3px solid #0f172a; background:#f1f5f9; border-radius:4px; margin:12px 0; min-width:0; }
+.pt-event-pending { border-left-color:#b91c1c; }
+.pt-event-cancelled { border-left-color:#64748b; }
+.pt-event-completed { border-left-color:#475569; }
+.pt-event-button { width:100%; text-align:left; display:flex; flex-direction:column; gap:8px; padding:12px; border:0; background:none; color:#0f172a; cursor:pointer; overflow-wrap:anywhere; font:inherit; }
+.pt-event-button:hover { background:#e2e8f0; }
+.pt-event-button:disabled { opacity:.6; cursor:default; }
+.pt-event-status { font-size:12px; font-weight:600; }
+.pt-calendar-empty { color:#475569; font-size:14px; }
+.pt-calendar-detail { box-sizing:border-box; width:min(720px,calc(100% - 32px)); max-height:85dvh; overflow:auto; border:1px solid #e2e8f0; border-radius:8px; padding:24px; color:#0f172a; }
+.pt-calendar-detail::backdrop { background:rgba(15,23,42,.45); }
+.pt-calendar-detail .gym-panel { padding:16px; }
+.pt-calendar-detail .gym-heading h2 { margin:0; }
+.pt-calendar-list { margin-top:24px; }
+.pt-calendar-list .pt-event-button { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); }
+@media(max-width:1100px) { .pt-calendar-week { grid-template-columns:repeat(3,minmax(0,1fr)); } }
+@media(max-width:700px) { .pt-calendar-week { grid-template-columns:1fr; } .pt-calendar-list .pt-event-button { display:flex; } .pt-calendar-detail { padding:16px; } }
+
+.report-photo { display: block; width: auto; max-width: 100%; max-height: 360px; object-fit: contain; margin: 16px 0; border: 1px solid var(--color-border); border-radius: 6px; }
+
+.gym-gallery { margin-top: 32px; }
+.gallery-grid, .gallery-management-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; margin-top: 24px; }
+.gallery-grid figure { margin: 0; min-width: 0; }
+.gallery-grid .gallery-cover { grid-column: 1 / -1; }
+.gallery-photo { display: block; width: 100%; max-height: 440px; object-fit: contain; background: #f1f5f9; border-radius: 6px; margin: 12px 0; }
+.gallery-grid figcaption { color: #475569; padding: 8px 0; overflow-wrap: anywhere; }
+@media (max-width: 640px) { .gallery-grid, .gallery-management-grid { grid-template-columns: minmax(0, 1fr); } }
+
+.review-entry { padding-block: 0.75rem; border-bottom: 1px solid #e2e8f0; overflow-wrap: anywhere; }
+
+.review-moderation-entry { overflow-wrap: anywhere; }
+
+.account-list { margin-top: 1rem; border-top: 1px solid #e2e8f0; }
+.account-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.2fr); gap: 1.5rem; padding: 1.5rem 0; border-bottom: 1px solid #e2e8f0; overflow-wrap: anywhere; }
+.account-row h2 { font-size: 1.1rem; margin: 0 0 .5rem; }
+.account-confirm { padding: 1rem; background: #f1f5f9; border-radius: .375rem; }
+@media (max-width: 767px) { .account-row { grid-template-columns: minmax(0, 1fr); gap: .5rem; } }

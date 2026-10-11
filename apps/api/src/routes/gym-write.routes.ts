@@ -2,6 +2,7 @@ import { Router, type Request, type Response, type NextFunction } from 'express'
 import { authenticate } from '../middleware/auth.middleware.js';
 import { gymWriteService } from '../services/gym-write.service.js';
 import { publicGymParamsSchema } from '../validators/public-gym.validator.js';
+import { assignmentDto } from '../controllers/staffing.controller.js';
 import type { Gym } from '../database/schema/index.js';
 
 const gymDto = (row: Gym) => ({
@@ -20,7 +21,13 @@ export const createGymWriteRouter = (service = gymWriteService) => {
       try { res.status(status).json({ success: true, data: gymDto(await run(req)) }); }
       catch (error) { next(error); }
     };
-  router.post('/gyms', authenticated, handle(201, req => service.create(req.user!.userId, req.body)));
+  router.post('/gyms', authenticated, async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const result = await service.create(req.user!.userId, req.body);
+      res.status(201).json({ success: true, data: { ...gymDto(result),
+        ...(result.manager ? { manager: { ...result.manager, assignment: assignmentDto(result.manager.assignment) } } : {}) } });
+    } catch (error) { next(error); }
+  });
   router.patch('/gyms/:gymId', authenticated, handle(200, req =>
     service.update(req.user!.userId, publicGymParamsSchema.parse(req.params).gymId, req.body)));
   return router;

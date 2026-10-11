@@ -73,7 +73,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setError(err instanceof Error ? err.message : 'Không thể tải phiên làm việc.');
       return null;
     }
-  }, [queryClient]);
+  }, []);
 
   useEffect(() => {
     void refreshSession();

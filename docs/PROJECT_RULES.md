@@ -379,6 +379,8 @@ Payment và luồng Payment → Membership nằm trong phạm vi 21 bảng đã 
 
 Gateway, callback/webhook, phương thức thanh toán, kích hoạt thẻ và refund chờ Q-01/Q-02 tại DOMAIN_RULES.md §9. Không tự thêm Invoice/Transaction, billing định kỳ hoặc đường cấp Membership miễn thanh toán để thay thế phần chưa chốt.
 
+Ngoại lệ demo đã được người dùng yêu cầu ngày 2026-10-08: `PAYMENT_MODE=demo` trong môi trường không production cho backend mô phỏng SUCCESS và tạo Membership ACTIVE cùng transaction, gắn nhãn DEMO, không thu tiền thật. Mọi kiểm tra account/role/ownership/Gym/Package và validation vẫn giữ. Không coi luồng demo là cổng thanh toán thật hoặc đóng các Q còn mở; không thêm snapshot/migration cho demo.
+
 ## 18. Giới hạn domain
 
 Đúng 21 bảng theo DATABASE_SPEC.md: users, user_profiles, roles, user_roles, gyms, gym_managers, gym_trainers, packages, payments, memberships, pt_registrations, pt_appointments, equipment_types, equipments, gym_reports, gym_images, consultation_requests, pt_social_links, pt_working_schedules, gym_reviews, trainer_reviews.

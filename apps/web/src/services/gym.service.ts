@@ -1,5 +1,5 @@
 import { ApiClientError, apiClient } from './api-client';
-import type { Gym, GymInput, Trainer, ManagedTrainer, ManagerAssignment, PageResult, ListQuery, Status, ProvisionResult } from '../types/gym.types';
+import type { Gym, GymInput, Trainer, ManagedTrainer, ManagerAssignment, PageResult, ListQuery, Status, ProvisionResult, CreateGymWithManagerInput, CreateGymWithManagerResult } from '../types/gym.types';
 
 const segment = (id: string) => encodeURIComponent(id);
 const gymPath = (id: string) => `/gyms/${segment(id)}`;
@@ -21,6 +21,7 @@ export const gymService = {
   trainers: (id: string, query: ListQuery) => apiClient.list<Trainer>(`${gymPath(id)}/trainers`, { params: { ...query } }),
   trainer: (id: string, trainerId: string) => apiClient.get<Trainer>(`${gymPath(id)}/trainers/${segment(trainerId)}`),
   managedTrainers: (id: string, query: ListQuery): Promise<PageResult<ManagedTrainer>> => apiClient.list(`${gymPath(id)}/management/trainers`, { params: { ...query } }),
+  createWithManager: (body: CreateGymWithManagerInput) => apiClient.post<CreateGymWithManagerResult>('/gyms', body),
   create: (body: GymInput) => apiClient.post<Gym>('/gyms', body),
   update: (id: string, body: Partial<GymInput>) => apiClient.patch<Gym>(gymPath(id), body),
   status: (id: string, status: Status) => apiClient.patch<Gym>(`${gymPath(id)}/status`, { status }),

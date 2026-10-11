@@ -3,7 +3,7 @@ import type { ListQuery } from '../types/gym.types';
 export const useListFilters = (defaultSort: string, management = false) => {
   const [params, setParams] = useSearchParams();
   const page = Number(params.get('page'));
-  const allowed = defaultSort === 'full_name' ? ['full_name', 'joined_at', 'created_at'] : defaultSort === 'specialization' ? ['specialization', 'joined_at', 'created_at'] : ['gym_name', 'address', 'created_at'];
+  const allowed = defaultSort === 'package_name' ? ['package_name', 'price', 'duration_days', 'created_at'] : defaultSort === 'full_name' ? ['full_name', 'joined_at', 'created_at'] : defaultSort === 'specialization' ? ['specialization', 'joined_at', 'created_at'] : ['gym_name', 'address', 'created_at'];
   const sort = params.get('sortBy') || defaultSort;
   const status = params.get('status');
   const query: ListQuery = { page: Number.isSafeInteger(page) && page > 0 && page < 1000000 ? page : 1, pageSize: 12,

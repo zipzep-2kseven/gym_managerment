@@ -1,7 +1,6 @@
-import { pgTable, uuid, varchar, text, integer, timestamp, date, time, foreignKey, check, index } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, varchar, text, timestamp, time, foreignKey, check, index } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
-import { gyms, gymTrainers } from './gyms.js';
-import { users } from './users.js';
+import { gymTrainers } from './gyms.js';
 
 export const ptSocialLinks = pgTable('pt_social_links', {
   socialLinkId: uuid('social_link_id').primaryKey().defaultRandom(),

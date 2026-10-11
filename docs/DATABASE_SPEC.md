@@ -1191,3 +1191,40 @@ Drizzle journal bảo vệ lần chạy lại; nếu schema ngoài journal bị 
 - Trigger payment/membership/registration/appointment lifecycle bảo vệ ghi nghĩa vụ mới và tái kích hoạt; khóa parent Gym bằng FOR NO KEY UPDATE trong transaction. API lấy khóa này trước account/assignment. FK/constraints cũ giữ nguyên.
 - Migration chạy nguyên tử và dừng nếu PT ACTIVE nhiều Gym hoặc Gym/PT INACTIVE có nghĩa vụ mở. Không tự reconcile/revoke/xóa dữ liệu. Rollback riêng 0002 bỏ guard/index, giữ mọi row; chỉ dùng khi chủ động rollback policy, không chạy rollback 0001 trước 0002.
 - GYM-01 vẫn CLOSED; đây là ràng buộc bổ sung của policy GYM-02. Không thêm bảng lịch sử, không thay `assigned_at` Manager hoặc `joined_at` PT.
+
+## PT workflow — migration 0003
+
+Migration 0003_pt_workflow không thêm bảng/cột. Unique partial index `pt_registrations_active_membership_key` giữ một Registration ACTIVE/thẻ. Preflight từ chối dữ liệu lịch mở chồng nhau của cùng Customer/PT (kể cả User hai role), không tự reconcile.
+
+Triggers bảo vệ source identity và terminal history của Registration/Appointment, User nguồn của Membership/PT có Registration, và overlap theo participant qua JOIN. Khoảng [start,end), chỉ PENDING/CONFIRMED giữ chỗ. Guard overlap khóa parent Gym rồi participant users theo UUID; các ghi Appointment phải READ COMMITTED. API khóa thêm actor, membership và đọc lại policy sau chờ. Quyền/eligibility/state machine thuộc service; trigger không thay cho authentication.
+
+Rollback tại apps/api/drizzle/rollback/0003_pt_workflow.sql chỉ gỡ index/guard, không sửa hoặc xóa dữ liệu. Phải rollback 0003 trước 0002; thao tác journal và triển khai DB phải theo quy trình migration kiểm soát. Đã áp dụng chuỗi migration qua 0003 lên database Docker development đang dùng ngày 2026-10-09; đã backup trước nâng cấp.
+
+
+## Báo cáo sự cố đơn giản — migration 0004 (2026-10-10)
+
+Quyết định người dùng: bỏ màn danh mục/QL máy khỏi demo, Customer gửi nội dung + một ảnh tùy chọn không chọn thiết bị. Giữ 21 bảng và FK/dữ liệu equipment_types/equipments. `0004_report_without_equipment` chỉ bỏ CHECK gym_reports_equipment_required_check; equipment_id nullable kể cả EQUIPMENT, FK cùng Gym vẫn bảo vệ khi có ID. Không đổi cột/schema còn lại, không rewrite report cũ. Bảng CHECK/ERD mô tả baseline ở phần trước được thay thế ở ràng buộc này.
+
+Báo cáo mới server gán type OTHER, title từ nội dung, equipment_id NULL, status PENDING. Ảnh lưu key UUID.extension tại image_url, không phải URL công khai. Projection API chỉ has_image; đọc bytes qua API ownership/internal scope. REJECTED lưu actor ở resolved_by, lý do resolution_note, resolved_at NULL và thời điểm updated_at. RESOLVED có resolved_by/resolved_at/note. Không tự cascade/xóa ảnh/báo cáo khi xử lý hoặc thẻ hết hạn. Rollback 0004 từ chối nếu tồn tại EQUIPMENT không gắn máy, không tự xóa/sửa dữ liệu để rollback.
+
+## Consultation đơn giản — migration 0005 (2026-10-10)
+
+Theo đề xuất được người dùng duyệt, consultation_requests thêm preferred_contact VARCHAR(200) nullable (nguyện vọng thời gian liên hệ dạng chữ) và processing_note TEXT nullable (ghi chú Manager, API tối đa 2000 ký tự). Giữ các field preferred_date/preferred_time/email/assigned_to cũ; API mới không ghi/đọc các field này. Không thêm bảng/index, vẫn 21 bảng. Migration additive giữ bản ghi cũ; rollback kiểm tra cả hai field mới đều NULL trước DROP, từ chối nếu có dữ liệu. Ghi chú không ghép vào content và không phải lịch sử audit.
+
+## Gallery demo — GIM-01 (2026-10-10)
+
+Tái sử dụng gym_images, không thêm migration/table/column/index. image_url giữ storage key UUID server trong luồng mới; public DTO không xuất key này, endpoint bytes tra row và Gym trước đọc file. display_order xác định thứ tự/cover; caption API tối đa 200 ký tự. Quota 10 ảnh và reorder nguyên tử được service bảo vệ bằng khóa parent Gym trong transaction, không áp dụng constraint mới hoặc sửa dữ liệu cũ. Không reset các URL legacy; URL ngoài filesystem của luồng demo không được API này fetch/redirect. DB và file không nguyên tử chung; crash/cleanup thất bại có thể để lại file mồ côi, row đã xóa không thể public file mồ côi.
+
+## TPR-01 — không thay schema (2026-10-10)
+
+Dùng gym_trainers.bio/specialization/experience_years/updated_at, pt_social_links và pt_working_schedules hiện có. Không migration/table/index mới; vẫn 21 bảng. Quyền/giới hạn/overlap schedule do validator/service bảo vệ với khóa Gym khi API ghi; baseline CHECK end_time>start_time vẫn giữ. Schedule bị bỏ INACTIVE, có thể reactivate exact row; không đổi Appointment hoặc quan hệ. Không tự reconcile lịch legacy ngoài thao tác lưu được yêu cầu. Ghi ngoài API không tự có toàn bộ policy validation overlap này.
+
+
+## REV-01 — policy tại API (2026-10-10)
+
+Giữ gym_reviews/trainer_reviews và trigger 0001 bất biến/audit/eligibility baseline, không migration hoặc index mới. Q-15 mới: service khóa parent Gym trước account/assignment/membership, kiểm tra một review mỗi User/target tính cả HIDDEN và buổi PT COMPLETED. Kiểm tra duplicate bao gồm legacy rows, không tự dọn trùng. Hai POST qua API tuần tự hóa theo Gym và chỉ một commit. SQL trực tiếp ngoài API vẫn chịu trigger 0001 nhưng chưa có unique constraint hoặc rule buổi COMPLETED mới. Read public VISIBLE có snapshot repeatable read để count/average/list nhất quán trong một response. Trainer scope qua gym_trainers.gym_id; ngày eligibility theo timezone transaction Asia/Ho_Chi_Minh. Không thay dữ liệu thẻ/lịch hẹn khi gửi review.
+
+
+## REV-02 — Moderation API (2026-10-10)
+
+Không đổi schema/migration. Giữ trigger 0001 bảo toàn nội dung và audit, chỉ VISIBLE → HIDDEN. Service tái sử dụng khóa parent Gym trước account/role hiện hành và update có điều kiện status=VISIBLE; server ghi hidden_by và clock_timestamp. Role/account đọc FOR SHARE tới commit. Trainer review xác định Gym qua gym_trainers, không thêm gym_id giả. List Admin có scope toàn hệ thống được phép, lọc Gym theo join và không áp ACTIVE-only; snapshot REPEATABLE READ để list/count nhất quán. Không thêm history/audit table hay thao tác DELETE/unhide.

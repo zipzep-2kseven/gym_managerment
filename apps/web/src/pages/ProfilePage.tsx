@@ -202,7 +202,7 @@ export const ProfilePage: React.FC = () => {
   return (
     <div className="profile-container">
       {/* Navigation Header */}
-      <header
+      <header className="profile-header"
         style={{
           display: 'flex',
           justifyContent: 'space-between',
@@ -215,9 +215,9 @@ export const ProfilePage: React.FC = () => {
             <div className="auth-brand-badge">{APP_NAME}</div>
           </Link>
           <span style={{ color: 'var(--color-border-strong)' }}>/</span>
-          <span style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--color-navy-900)' }}>
+          <h1 style={{ margin: 0, fontSize: '1rem', fontWeight: 600, color: 'var(--color-navy-900)' }}>
             Hồ sơ cá nhân
-          </span>
+          </h1>
         </div>
 
         <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
@@ -230,6 +230,7 @@ export const ProfilePage: React.FC = () => {
         </div>
       </header>
 
+      <main>
       {fetchError && (
         <div
           className="alert-banner alert-error"
@@ -331,6 +332,8 @@ export const ProfilePage: React.FC = () => {
               id="profile-fullname"
               type="text"
               name="full_name"
+              aria-invalid={!!errors.full_name}
+              aria-describedby={errors.full_name ? "profile-full_name-error" : undefined}
               required
               disabled={isSubmitting}
               value={fullName}
@@ -342,7 +345,7 @@ export const ProfilePage: React.FC = () => {
               placeholder="Nguyễn Văn A"
             />
             {errors.full_name && (
-              <span className="form-error" role="alert">
+              <span className="form-error" role="alert" id="profile-full_name-error">
                 {errors.full_name}
               </span>
             )}
@@ -358,6 +361,8 @@ export const ProfilePage: React.FC = () => {
                 id="profile-phone"
                 type="tel"
                 name="phone"
+                aria-invalid={!!errors.phone}
+                aria-describedby={errors.phone ? "profile-phone-error" : undefined}
                 disabled={isSubmitting}
                 value={phone}
                 onChange={(e) => {
@@ -369,7 +374,7 @@ export const ProfilePage: React.FC = () => {
               />
               <span className="form-helper">Định dạng: 03x, 05x, 07x, 08x, 09x</span>
               {errors.phone && (
-                <span className="form-error" role="alert">
+                <span className="form-error" role="alert" id="profile-phone-error">
                   {errors.phone}
                 </span>
               )}
@@ -384,6 +389,8 @@ export const ProfilePage: React.FC = () => {
                 id="profile-dob"
                 type="date"
                 name="date_of_birth"
+                aria-invalid={!!errors.date_of_birth}
+                aria-describedby={errors.date_of_birth ? "profile-date_of_birth-error" : undefined}
                 disabled={isSubmitting}
                 value={dateOfBirth}
                 onChange={(e) => {
@@ -394,7 +401,7 @@ export const ProfilePage: React.FC = () => {
                 className={`form-input ${errors.date_of_birth ? 'has-error' : ''}`}
               />
               {errors.date_of_birth && (
-                <span className="form-error" role="alert">
+                <span className="form-error" role="alert" id="profile-date_of_birth-error">
                   {errors.date_of_birth}
                 </span>
               )}
@@ -411,6 +418,8 @@ export const ProfilePage: React.FC = () => {
                 id="profile-gender"
                 type="text"
                 name="gender"
+                aria-invalid={!!errors.gender}
+                aria-describedby={errors.gender ? "profile-gender-error" : undefined}
                 disabled={isSubmitting}
                 value={gender}
                 onChange={(e) => {
@@ -422,7 +431,7 @@ export const ProfilePage: React.FC = () => {
                 maxLength={50}
               />
               {errors.gender && (
-                <span className="form-error" role="alert">
+                <span className="form-error" role="alert" id="profile-gender-error">
                   {errors.gender}
                 </span>
               )}
@@ -437,6 +446,8 @@ export const ProfilePage: React.FC = () => {
                 id="profile-avatar"
                 type="url"
                 name="avatar_url"
+                aria-invalid={!!errors.avatar_url}
+                aria-describedby={errors.avatar_url ? "profile-avatar_url-error" : undefined}
                 disabled={isSubmitting}
                 value={avatarUrl}
                 onChange={(e) => {
@@ -448,7 +459,7 @@ export const ProfilePage: React.FC = () => {
                 placeholder="https://example.com/avatar.jpg"
               />
               {errors.avatar_url && (
-                <span className="form-error" role="alert">
+                <span className="form-error" role="alert" id="profile-avatar_url-error">
                   {errors.avatar_url}
                 </span>
               )}
@@ -463,6 +474,8 @@ export const ProfilePage: React.FC = () => {
             <textarea
               id="profile-address"
               name="address"
+              aria-invalid={!!errors.address}
+              aria-describedby={errors.address ? "profile-address-error" : undefined}
               disabled={isSubmitting}
               value={address}
               onChange={(e) => {
@@ -474,7 +487,7 @@ export const ProfilePage: React.FC = () => {
               maxLength={500}
             />
             {errors.address && (
-              <span className="form-error" role="alert">
+              <span className="form-error" role="alert" id="profile-address-error">
                 {errors.address}
               </span>
             )}
@@ -530,6 +543,7 @@ export const ProfilePage: React.FC = () => {
           </Link>
         </div>
       </section>
+      </main>
     </div>
   );
 };

@@ -147,6 +147,8 @@ export const RegisterPage: React.FC = () => {
             id="register-fullname"
             type="text"
             name="full_name"
+            aria-invalid={!!errors.full_name}
+            aria-describedby={errors.full_name ? "register-full_name-error" : undefined}
             autoComplete="name"
             required
             disabled={isSubmitting}
@@ -159,7 +161,7 @@ export const RegisterPage: React.FC = () => {
             placeholder="Nguyễn Văn A"
           />
           {errors.full_name && (
-            <span className="form-error" role="alert">
+            <span className="form-error" role="alert" id="register-full_name-error">
               {errors.full_name}
             </span>
           )}
@@ -173,6 +175,8 @@ export const RegisterPage: React.FC = () => {
             id="register-email"
             type="email"
             name="email"
+            aria-invalid={!!errors.email}
+            aria-describedby={errors.email ? "register-email-error" : undefined}
             autoComplete="email"
             required
             disabled={isSubmitting}
@@ -185,7 +189,7 @@ export const RegisterPage: React.FC = () => {
             placeholder="name@example.com"
           />
           {errors.email && (
-            <span className="form-error" role="alert">
+            <span className="form-error" role="alert" id="register-email-error">
               {errors.email}
             </span>
           )}
@@ -200,6 +204,8 @@ export const RegisterPage: React.FC = () => {
             id="register-phone"
             type="tel"
             name="phone"
+            aria-invalid={!!errors.phone}
+            aria-describedby={errors.phone ? "register-phone-error" : undefined}
             autoComplete="tel"
             disabled={isSubmitting}
             value={phone}
@@ -212,7 +218,7 @@ export const RegisterPage: React.FC = () => {
           />
           <span className="form-helper">Định dạng Việt Nam: 03x, 05x, 07x, 08x, 09x</span>
           {errors.phone && (
-            <span className="form-error" role="alert">
+            <span className="form-error" role="alert" id="register-phone-error">
               {errors.phone}
             </span>
           )}
@@ -226,6 +232,8 @@ export const RegisterPage: React.FC = () => {
             id="register-password"
             type="password"
             name="password"
+            aria-invalid={!!errors.password}
+            aria-describedby={errors.password ? "register-password-error" : undefined}
             autoComplete="new-password"
             required
             disabled={isSubmitting}
@@ -239,7 +247,7 @@ export const RegisterPage: React.FC = () => {
           />
           <span className="form-helper">Từ 8-128 ký tự, ít nhất 1 chữ hoa và 1 chữ số</span>
           {errors.password && (
-            <span className="form-error" role="alert">
+            <span className="form-error" role="alert" id="register-password-error">
               {errors.password}
             </span>
           )}

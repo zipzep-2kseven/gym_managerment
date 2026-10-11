@@ -4,6 +4,8 @@ import { memberships, gymTrainers, ptRegistrations } from '../database/schema/in
 import { staffingDatabaseError } from './staffing-errors.js';
 import { AppError } from '../utils/errors.js';
 
+// Legacy 0001 service retained only for the frozen baseline integration suite.
+// Runtime routes use pt-workflow.service with the approved 2026-10-09 policies.
 // actorId comes from the authenticated server context. No PT price/payment is created.
 export const createPtRegistrationService = (database: typeof db) => ({
   register: async (actorId: string, membershipId: string, gymTrainerId: string, note?: string) =>
@@ -26,5 +28,3 @@ export const createPtRegistrationService = (database: typeof db) => ({
       return (await tx.insert(ptRegistrations).values({ membershipId, gymTrainerId, status: 'ACTIVE', note }).returning())[0];
     }).catch(staffingDatabaseError),
 });
-
-export const ptRegistrationService = createPtRegistrationService(db);

@@ -120,6 +120,8 @@ export const LoginPage: React.FC = () => {
             id="login-email"
             type="email"
             name="email"
+            aria-invalid={!!errors.email}
+            aria-describedby={errors.email ? "login-email-error" : undefined}
             autoComplete="email"
             required
             disabled={isSubmitting}
@@ -137,7 +139,7 @@ export const LoginPage: React.FC = () => {
             placeholder="name@example.com"
           />
           {errors.email && (
-            <span className="form-error" role="alert" id="email-error">
+            <span className="form-error" role="alert" id="login-email-error">
               {errors.email}
             </span>
           )}
@@ -151,6 +153,8 @@ export const LoginPage: React.FC = () => {
             id="login-password"
             type="password"
             name="password"
+            aria-invalid={!!errors.password}
+            aria-describedby={errors.password ? "login-password-error" : undefined}
             autoComplete="current-password"
             required
             disabled={isSubmitting}
@@ -163,7 +167,7 @@ export const LoginPage: React.FC = () => {
             placeholder="••••••••"
           />
           {errors.password && (
-            <span className="form-error" role="alert" id="password-error">
+            <span className="form-error" role="alert" id="login-password-error">
               {errors.password}
             </span>
           )}

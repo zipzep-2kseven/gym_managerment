@@ -1,9 +1,7 @@
-import { randomBytes } from 'node:crypto';
-import { hash, Algorithm } from '@node-rs/argon2';
 import { db } from '../database/index.js';
 import { createStaffingRepository } from '../repositories/staffing.repository.js';
 import { createGymScopeService } from './gym-scope.service.js';
-import { AuthService } from './auth.service.js';
+import { prepareStaffCredential, provisionStaffInTransaction } from './staff-provisioning.js';
 import { AppError, AccountDeactivatedError } from '../utils/errors.js';
 import { managerProvisionSchema, trainerProvisionSchema, managerAssignSchema,
   type ManagerProvisionInput, type TrainerProvisionInput } from '../validators/staffing.validator.js';
@@ -24,20 +22,12 @@ export const createStaffingService = (database: typeof db = db) => {
     // Preliminary authorization avoids expensive hashing for unauthorized callers.
     await transact(gymId, async (repo) => createGymScopeService(repo, repo)
       .requireInternalScope(actorId, gymId, role === 'MANAGER' ? ['ADMIN'] : ['ADMIN', 'MANAGER']));
-    const temporaryPassword = `Aa1!${randomBytes(24).toString('base64url')}`;
-    const passwordHash = await hash(temporaryPassword, { algorithm: Algorithm.Argon2id,
-      memoryCost: 65536, timeCost: 3, parallelism: 4, outputLen: 32 });
+    const credential = await prepareStaffCredential();
     return transact(gymId, async (repo, tx) => {
       // Recheck and lock current authorization inside the actual write transaction.
       await createGymScopeService(repo, repo).requireInternalScope(actorId, gymId,
         role === 'MANAGER' ? ['ADMIN'] : ['ADMIN', 'MANAGER']);
-      const targetRole = await repo.findRole(role);
-      if (!targetRole) throw new AppError(500, 'INTERNAL_SERVER_ERROR', 'Thiếu cấu hình role.');
-      const user = await repo.createAccount(input, passwordHash, targetRole.roleId);
-      const assignment = role === 'MANAGER' ? await repo.createManager(gymId, user.userId)
-        : await repo.createTrainer(gymId, user.userId, input);
-      const session = await new AuthService(tx).getCurrentUser(user.userId);
-      return { user: session, assignment, temporary_password: temporaryPassword };
+      return provisionStaffInTransaction(tx, gymId, role, input, credential);
     });
   };
   return {

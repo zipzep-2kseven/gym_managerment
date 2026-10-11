@@ -175,6 +175,8 @@ export const ChangePasswordPage: React.FC = () => {
                   id="cp-current-password"
                   type={showCurrent ? 'text' : 'password'}
                   name="current_password"
+                  aria-invalid={!!errors.current_password}
+                  aria-describedby={errors.current_password ? "changepassword-current_password-error" : undefined}
                   autoComplete="current-password"
                   required
                   disabled={isSubmitting}
@@ -197,7 +199,7 @@ export const ChangePasswordPage: React.FC = () => {
                 </button>
               </div>
               {errors.current_password && (
-                <span className="form-error" role="alert">
+                <span className="form-error" role="alert" id="changepassword-current_password-error">
                   {errors.current_password}
                 </span>
               )}
@@ -212,6 +214,8 @@ export const ChangePasswordPage: React.FC = () => {
                   id="cp-new-password"
                   type={showNew ? 'text' : 'password'}
                   name="new_password"
+                  aria-invalid={!!errors.new_password}
+                  aria-describedby={errors.new_password ? "changepassword-new_password-error" : undefined}
                   autoComplete="new-password"
                   required
                   disabled={isSubmitting}
@@ -235,7 +239,7 @@ export const ChangePasswordPage: React.FC = () => {
               </div>
               <span className="form-helper">Từ 8-128 ký tự, ít nhất 1 chữ hoa và 1 chữ số</span>
               {errors.new_password && (
-                <span className="form-error" role="alert">
+                <span className="form-error" role="alert" id="changepassword-new_password-error">
                   {errors.new_password}
                 </span>
               )}
@@ -250,6 +254,8 @@ export const ChangePasswordPage: React.FC = () => {
                   id="cp-confirm-password"
                   type={showConfirm ? 'text' : 'password'}
                   name="confirm_password"
+                  aria-invalid={!!errors.confirm_password}
+                  aria-describedby={errors.confirm_password ? "changepassword-confirm_password-error" : undefined}
                   autoComplete="new-password"
                   required
                   disabled={isSubmitting}
@@ -272,7 +278,7 @@ export const ChangePasswordPage: React.FC = () => {
                 </button>
               </div>
               {errors.confirm_password && (
-                <span className="form-error" role="alert">
+                <span className="form-error" role="alert" id="changepassword-confirm_password-error">
                   {errors.confirm_password}
                 </span>
               )}

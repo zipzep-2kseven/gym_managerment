@@ -4,13 +4,14 @@ import { createStaffingRepository } from '../repositories/staffing.repository.js
 import { createGymScopeService } from './gym-scope.service.js';
 import { staffingDatabaseError } from './staffing-errors.js';
 import { AppError, AccountDeactivatedError, UnauthorizedError } from '../utils/errors.js';
+import { prepareStaffCredential, provisionStaffInTransaction } from './staff-provisioning.js';
 import { createGymSchema, updateGymSchema } from '../validators/gym-write.validator.js';
 
 export const createGymWriteService = (database: typeof db = db) => ({
   create: async (actorId: string, input: unknown) => {
     const parsed = createGymSchema.parse(input);
-    // Creation has system scope: no Gym exists yet to authorize against.
-    return database.transaction(async tx => {
+    // System scope; no Gym exists yet. Authorize before expensive hashing.
+    const authorize = async (tx: Parameters<Parameters<typeof database.transaction>[0]>[0]) => {
       const staff = createStaffingRepository(tx);
       const account = await staff.findAccountState(actorId);
       if (!account) throw new UnauthorizedError();
@@ -19,7 +20,15 @@ export const createGymWriteService = (database: typeof db = db) => ({
       if (!(await staff.findCurrentUserRoles(actorId)).includes('ADMIN')) {
         throw new AppError(403, 'INSUFFICIENT_ROLE', 'Chỉ Admin được tạo Gym.');
       }
-      return createGymWriteRepository(tx).create(parsed);
+    };
+    if (parsed.manager) await database.transaction(authorize).catch(staffingDatabaseError);
+    const credential = parsed.manager ? await prepareStaffCredential() : undefined;
+    return database.transaction(async tx => {
+      await authorize(tx); // Lock current account/role through commit, including after hashing.
+      const gym = await createGymWriteRepository(tx).create(parsed);
+      const manager = parsed.manager && credential
+        ? await provisionStaffInTransaction(tx, gym.gymId, 'MANAGER', parsed.manager, credential) : undefined;
+      return { ...gym, ...(manager ? { manager } : {}) };
     }).catch(staffingDatabaseError);
   },
   update: async (actorId: string, gymId: string, input: unknown) => {

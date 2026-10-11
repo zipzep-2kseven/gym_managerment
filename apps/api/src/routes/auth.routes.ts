@@ -7,6 +7,7 @@ import {
   changePasswordController,
 } from '../controllers/auth.controller.js';
 import { authenticate } from '../middleware/auth.middleware.js';
+import { createLoginRateLimit } from '../middleware/login-rate-limit.js';
 
 export const authRouter = Router();
 
@@ -20,7 +21,7 @@ authRouter.post('/register', registerController);
  * FEAT-AUTH-002: User Login
  * POST /api/v1/auth/login
  */
-authRouter.post('/login', loginController);
+authRouter.post('/login', createLoginRateLimit(), loginController);
 
 /**
  * FEAT-AUTH-003: User Logout

@@ -109,3 +109,12 @@ Thumbs.db
 # Project Specific Exclusions
 # ------------------------------------------
 agentic-awesome-skills/
+
+# Private report photos (Docker uses a named volume)
+data/report-images/
+apps/api/data/report-images/
+
+data/gallery-images/
+apps/api/data/gallery-images/
+
+**/.qa-artifacts/

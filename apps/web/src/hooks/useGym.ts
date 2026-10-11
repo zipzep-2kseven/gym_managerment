@@ -5,11 +5,11 @@ import { useAuth } from './useAuth';
 import { useNavigate } from 'react-router-dom';
 
 export const useGym = (id: string) => useQuery({ queryKey: ['gyms', 'public', id], queryFn: () => gymService.gym(id), enabled: !!id });
-export const useGymMutation = <T,>(action: (input: T) => Promise<unknown>) => {
+export const useGymMutation = <T,>(action: (input: T) => Promise<unknown>, options: { gcTime?: number } = {}) => {
   const client = useQueryClient();
   const { refreshSession } = useAuth();
   const navigate = useNavigate();
-  return useMutation({ mutationFn: action, retry: false,
+  return useMutation({ ...options, mutationFn: action, retry: false,
     onSuccess: async () => { await client.invalidateQueries({ queryKey: ['gyms'] }); },
     onError: async (error) => {
       if (!(error instanceof ApiClientError)) return;

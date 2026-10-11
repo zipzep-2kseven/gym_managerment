@@ -1,10 +1,10 @@
 /**
  * Valid pre-computed Argon2id hash used for dummy password verification
- * when a user is not found by email. This guarantees constant-time execution
- * and protects against user enumeration and timing side-channel attacks.
+ * when a user is not found by email. This uses the same work parameters as real passwords
+ * to reduce timing differences; it does not guarantee constant request latency.
  */
 export const DUMMY_ARGON2_HASH =
-  '$argon2id$v=19$m=19456,t=2,p=1$aw5+yzrqJLCApYviUaYmdA$JBjXHn6yVgfEG6zHfSZm2QD6YhDbevgyVwbpE0/WwkQ';
+  "$argon2id$v=19$m=65536,t=3,p=4$/kBWxNd+eiDxME1Fsx81qQ$PXVp19M9VpxWS/KLYIb/Y9mNvxc8MOxl+SDFLji9vHA";
 
 export const AUTH_COOKIE_NAME = 'auth_token';
 export const AUTH_COOKIE_PATH = '/api/v1';

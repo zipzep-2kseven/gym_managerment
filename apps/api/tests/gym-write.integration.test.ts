@@ -14,6 +14,7 @@ import { createPublicGymRouter } from '../src/routes/public-gym.routes.js';
 import { createStaffingService } from '../src/services/staffing.service.js';
 import { errorHandler } from '../src/middleware/error-handler.js';
 import { signJwt } from '../src/utils/jwt.js';
+import { gymOnboardingCases } from './gym-onboarding.cases.js';
 import { config } from '../src/config/index.js';
 
 export async function testGymWriteIntegration(db: typeof applicationDb) {
@@ -44,6 +45,7 @@ export async function testGymWriteIntegration(db: typeof applicationDb) {
     return { status: result.status, headers: result.headers, body: await result.json() as Envelope };
   };
   const cases: [string, () => Promise<void>][] = [
+    ...gymOnboardingCases({ db, admin, service, staff, gymInput, create, user, request }),
     ['Admin creates an ACTIVE Gym and no account/role/assignment side effects', async () => {
       const [{ n: beforeUsers }] = await db.select({ n: count() }).from(users);
       const [{ n: beforeRoles }] = await db.select({ n: count() }).from(userRoles);

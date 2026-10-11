@@ -43,13 +43,18 @@ test('Real API: Guest explores Gym/PT and Manager edits Gym, provisions PT and c
   expect(await page.evaluate(() => [localStorage.length, sessionStorage.length])).toEqual([0, 0]);
 });
 
-test('Real API: Admin creates Gym, assigns Manager; backend rejects Manager cross-Gym write', async ({ page }) => {
+test('Real API: Admin creates Gym with Manager, Manager changes password and is Gym-scoped', async ({ page }) => {
   await login(page, 'admin');
   await page.goto('/admin/gyms/create');
   await page.getByLabel('Tên phòng Gym', { exact: true }).fill('Browser Second Gym');
   await page.getByLabel('Địa chỉ', { exact: true }).fill('Địa chỉ thứ hai');
-  await page.getByRole('button', { name: 'Tạo Gym', exact: true }).click();
-  await expect(page.getByRole('status')).toContainText('Thông tin đã được lưu');
+  await page.getByLabel('Họ và tên Manager').fill('Browser Second Manager');
+  await page.getByLabel('Email đăng nhập Manager').fill('secondmanager@gym03.test');
+  await page.getByRole('button', { name: 'Tạo cơ sở và Manager', exact: true }).click();
+  await expect(page.locator('p[role="status"]')).toContainText('tài khoản Manager secondmanager@gym03.test');
+  const temporary = await page.getByLabel('Mật khẩu tạm', { exact: true }).textContent();
+  expect(temporary).toBeTruthy();
+  await page.getByRole('button', { name: 'Đã bàn giao, ẩn mật khẩu' }).click();
   await page.getByRole('link', { name: 'Danh sách Gym', exact: true }).click();
   await page.getByRole('link', { name: 'Sửa thông tin Browser Second Gym' }).click();
   const gymId = new URL(page.url()).pathname.split('/').pop()!;
@@ -63,13 +68,21 @@ test('Real API: Admin creates Gym, assigns Manager; backend rejects Manager cros
   await expect(page.locator('.badge')).toContainText('Hoạt động');
   await page.goto('/admin/managers');
   await page.getByLabel('Chọn Gym').selectOption(gymId);
-  await page.getByLabel('Cách tiếp nhận').selectOption('provision');
-  await page.getByLabel('Họ và tên').fill('Browser Second Manager');
-  await page.getByLabel('Email', { exact: true }).fill('secondmanager@gym03.test');
-  await page.getByRole('button', { name: 'Cấp tài khoản', exact: true }).click();
-  await expect(page.getByLabel('Mật khẩu tạm', { exact: true })).toBeVisible();
-  await page.getByRole('button', { name: 'Đã bàn giao, ẩn mật khẩu' }).click();
   await expect(page.getByRole('article').getByText('Hoạt động', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Đăng xuất', exact: true }).click();
+  await page.goto('/login'); await page.locator('input[name="email"]').fill('secondmanager@gym03.test');
+  await page.locator('input[name="password"]').fill(temporary!); await page.getByRole('button', { name: 'Đăng nhập', exact: true }).click();
+  await expect(page).toHaveURL(/change-password/);
+  await page.locator('input[name="current_password"]').fill(temporary!);
+  await page.locator('input[name="new_password"]').fill('ChangedFixture1!');
+  await page.locator('input[name="confirm_password"]').fill('ChangedFixture1!');
+  await page.getByRole('button', { name: 'Cập nhật mật khẩu', exact: true }).click();
+  await expect(page.getByText('Đổi mật khẩu thành công! Tài khoản của bạn đã được cập nhật.', { exact: true })).toBeVisible();
+  await page.goto('/manager/gym'); await expect(page.getByLabel('Tên phòng Gym', { exact: true })).toHaveValue('Browser Second Gym');
+  await page.getByLabel('Mô tả', { exact: true }).fill('Manager mới quản lý cơ sở vừa tạo');
+  await page.getByRole('button', { name: 'Lưu thay đổi' }).click(); await expect(page.getByRole('status')).toContainText('Thông tin đã được lưu');
+  await page.getByRole('button', { name: 'Đăng xuất', exact: true }).click(); await login(page, 'admin');
+  await page.goto('/admin/managers'); await page.getByLabel('Chọn Gym').selectOption(gymId);
   await page.getByRole('button', { name: 'Thu hồi phân công', exact: true }).click();
   await page.getByRole('button', { name: 'Xác nhận', exact: true }).click();
   await expect(page.getByRole('article').getByText('Ngừng hoạt động', { exact: true })).toBeVisible();

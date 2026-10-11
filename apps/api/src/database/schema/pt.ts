@@ -7,6 +7,7 @@ import {
   foreignKey,
   check,
   index,
+  uniqueIndex,
 } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 import { memberships } from './memberships.js';
@@ -44,6 +45,7 @@ export const ptRegistrations = pgTable(
       'pt_registrations_status_check',
       sql`status IN ('ACTIVE', 'CANCELLED', 'COMPLETED')`
     ),
+    uniqueIndex('pt_registrations_active_membership_key').on(table.membershipId).where(sql`status = 'ACTIVE'`),
     index('pt_registrations_membership_idx').on(table.membershipId),
     index('pt_registrations_gym_trainer_idx').on(table.gymTrainerId),
   ]

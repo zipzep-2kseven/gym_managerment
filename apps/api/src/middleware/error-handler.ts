@@ -8,6 +8,22 @@ export const errorHandler: ErrorRequestHandler = (
   res: Response,
   _next: NextFunction
 ): void => {
+  res.setHeader('Cache-Control', 'no-store');
+
+  // Express rejects malformed JSON and scalar payloads before Zod/controller.
+  // Treat them as input errors without logging parser messages containing body.
+  const parseError = err as Error & { type?: string; status?: number };
+  if (err instanceof SyntaxError && parseError.type === 'entity.parse.failed' && parseError.status === 400) {
+    res.status(400).json({ success: false, error: {
+      code: 'VALIDATION_ERROR', message: 'Nội dung JSON không hợp lệ.', details: null,
+    } });
+    return;
+  }
+
+  if (parseError.type === 'entity.too.large') {
+    res.status(413).json({ success: false, error: { code: 'PAYLOAD_TOO_LARGE', message: 'Ảnh hoặc nội dung quá lớn.', details: null } }); return;
+  }
+
   // 1. AppError (Domain & Custom Errors)
   if (err instanceof AppError) {
     res.status(err.statusCode).json({
@@ -41,7 +57,9 @@ export const errorHandler: ErrorRequestHandler = (
 
   // 3. Fallback for unhandled internal server errors
   // We intentionally do NOT log raw passwords or request bodies containing credentials
-  console.error('[UNHANDLED_ERROR]:', err.message);
+  // ORM messages can contain SQL parameters, hashes and contact data.
+  // Log a fixed event only; never stringify the exception or its cause.
+  console.error('[UNHANDLED_ERROR]');
 
   res.status(500).json({
     success: false,

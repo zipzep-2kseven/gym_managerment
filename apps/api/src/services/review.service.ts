@@ -1,58 +1,56 @@
-import { and, eq, inArray, lte, sql } from 'drizzle-orm';
+import { createReviewModerationService } from './review-moderation.service.js';
+import { sql } from 'drizzle-orm';
 import { db } from '../database/index.js';
-import { gymReviews, trainerReviews, memberships, ptRegistrations, gymTrainers, users, roles, userRoles } from '../database/schema/index.js';
-import { AppError, ValidationError } from '../utils/errors.js';
-
-type ReviewTarget = { kind: 'gym'; id: string } | { kind: 'trainer'; id: string };
-type ReviewInput = { rating: number; comment?: string | null };
+import { gymReviews, trainerReviews } from '../database/schema/index.js';
+import { AppError } from '../utils/errors.js';
+import { createReviewRepository } from '../repositories/review.repository.js';
+import { createStaffingRepository } from '../repositories/staffing.repository.js';
+import { reviewInput, type ReviewTarget } from '../validators/review.validator.js';
+import { staffingDatabaseError } from './staffing-errors.js';
+const sqlTimezone = sql`select set_config('TimeZone', 'Asia/Ho_Chi_Minh', true)`;
 type Database = typeof db;
-
-// actorId must come from authenticated server context, never request body.
-// No edit/delete method is exposed: review text and moderation history are retained.
-export const createReviewService = (database: Database) => ({
-  create: async (actorId: string, target: ReviewTarget, input: ReviewInput) => {
-    if (!Number.isInteger(input.rating) || input.rating < 1 || input.rating > 5) {
-      throw new ValidationError('Rating phải là số nguyên từ 1 đến 5.');
-    }
-    return database.transaction(async (tx) => {
-      const [actor] = await tx.select().from(users).where(and(eq(users.userId, actorId), eq(users.status, 'ACTIVE')));
-      if (!actor) throw new AppError(403, 'REVIEW_FORBIDDEN', 'Tài khoản không hoạt động.');
-      const eligibleMembership = and(
-        eq(memberships.userId, actorId),
-        inArray(memberships.status, ['ACTIVE', 'EXPIRED']),
-        lte(memberships.startDate, sql`CURRENT_DATE`),
-      );
-      const eligible = target.kind === 'gym'
-        ? await tx.select({ id: memberships.membershipId }).from(memberships)
-          .where(and(eligibleMembership, eq(memberships.gymId, target.id))).limit(1)
-        : await tx.select({ id: memberships.membershipId }).from(memberships)
-          .innerJoin(ptRegistrations, eq(ptRegistrations.membershipId, memberships.membershipId))
-          .innerJoin(gymTrainers, eq(gymTrainers.gymTrainerId, ptRegistrations.gymTrainerId))
-          .where(and(eligibleMembership, eq(gymTrainers.gymTrainerId, target.id),
-            eq(memberships.gymId, gymTrainers.gymId), inArray(ptRegistrations.status, ['ACTIVE', 'COMPLETED']))).limit(1);
-      if (!eligible.length) throw new AppError(403, 'REVIEW_NOT_ELIGIBLE', 'Chưa có quan hệ sử dụng Gym/PT hợp lệ.');
-      const values = { userId: actorId, rating: input.rating, comment: input.comment };
-      if (target.kind === 'gym') return (await tx.insert(gymReviews).values({ ...values, gymId: target.id }).returning())[0];
-      return (await tx.insert(trainerReviews).values({ ...values, gymTrainerId: target.id }).returning())[0];
-    });
-  },
-  hide: async (actorId: string, kind: ReviewTarget['kind'], reviewId: string, reason: string) => {
-    if (!reason.trim()) throw new ValidationError('Phải ghi lý do ẩn review.');
-    return database.transaction(async (tx) => {
-      const [admin] = await tx.select({ id: users.userId }).from(users)
-        .innerJoin(userRoles, eq(userRoles.userId, users.userId))
-        .innerJoin(roles, eq(roles.roleId, userRoles.roleId))
-        .where(and(eq(users.userId, actorId), eq(users.status, 'ACTIVE'), eq(roles.roleName, 'ADMIN'))).limit(1);
-      if (!admin) throw new AppError(403, 'REVIEW_MODERATION_FORBIDDEN', 'Chỉ Admin được ẩn review.');
-      const table = kind === 'gym' ? gymReviews : trainerReviews;
-      const id = kind === 'gym' ? gymReviews.gymReviewId : trainerReviews.trainerReviewId;
-      const [review] = await tx.update(table).set({ status: 'HIDDEN', hiddenBy: actorId,
-        hiddenAt: new Date(), hiddenReason: reason.trim(), updatedAt: new Date() })
-        .where(and(eq(id, reviewId), eq(table.status, 'VISIBLE'))).returning();
-      if (!review) throw new AppError(409, 'REVIEW_NOT_VISIBLE', 'Review không tồn tại hoặc đã bị ẩn.');
-      return review;
-    });
-  },
+type Tx = Parameters<Parameters<Database['transaction']>[0]>[0];
+export const ownReviewView = (row: typeof gymReviews.$inferSelect | typeof trainerReviews.$inferSelect) => ({
+  review_id: 'gymReviewId' in row ? row.gymReviewId : row.trainerReviewId,
+  rating: row.rating, comment: row.comment, status: row.status, created_at: row.createdAt,
 });
-
-export const reviewService = createReviewService(db);
+const targetScope = async (tx: Tx, target: ReviewTarget, write = false) => {
+  const repo = createReviewRepository(tx), gymId = await repo.resolveGym(target);
+  if (!gymId) throw new AppError(404, 'NOT_FOUND', 'Không tìm thấy Gym/PT.');
+  const gym = await repo.gym(gymId, write);
+  if (!gym || gym.status !== 'ACTIVE') throw new AppError(404, 'NOT_FOUND', 'Không tìm thấy Gym/PT đang hoạt động.');
+  if (target.kind === 'trainer') {
+    const trainer = await repo.trainer(target);
+    if (!trainer || trainer.status !== 'ACTIVE' || (await repo.trainerAccount(trainer.userId))?.status !== 'ACTIVE') throw new AppError(404, 'NOT_FOUND', 'Không tìm thấy PT đang hoạt động.');
+  }
+  return gymId;
+};
+const eligibility = async (tx: Tx, actor: string, target: ReviewTarget, gym: string) => {
+  const auth = createStaffingRepository(tx), account = await auth.findAccountState(actor), roles = await auth.findCurrentUserRoles(actor);
+  if (!account || account.status !== 'ACTIVE' || account.mustChangePassword || !roles.includes('CUSTOMER')) throw new AppError(403, 'REVIEW_FORBIDDEN', 'Bạn cần tài khoản Customer đang hoạt động và đã đổi mật khẩu tạm.');
+  const review = await createReviewRepository(tx).own(actor, target);
+  if (review) return { eligible: false, reason: 'Bạn đã gửi đánh giá cho đối tượng này.', review: ownReviewView(review) };
+  if (await auth.findActiveManagerAssignment(actor, gym) || await auth.findActiveTrainerAssignment(actor, gym)) return { eligible: false, reason: 'Nhân sự không đánh giá Gym hoặc PT tại Gym đang phụ trách.', review: null };
+  const eligible = await createReviewRepository(tx).eligible(actor, gym, target);
+  return { eligible, reason: eligible ? null : target.kind === 'gym' ? 'Cần thẻ ACTIVE/EXPIRED đã bắt đầu tại Gym này.' : 'Cần thẻ hợp lệ và ít nhất một buổi tập đã hoàn thành với PT này.', review: null };
+};
+export const createReviewService = (database: Database = db) => ({
+  list: (target: ReviewTarget, page: number, pageSize: number) => database.transaction(async tx => {
+    await targetScope(tx, target); return createReviewRepository(tx).list(target, page, pageSize);
+  }, { isolationLevel: 'repeatable read' }).catch(staffingDatabaseError),
+  mine: (actor: string, target: ReviewTarget) => database.transaction(async tx => {
+    await tx.execute(sqlTimezone); const gym = await targetScope(tx, target); return eligibility(tx, actor, target, gym);
+  }).catch(staffingDatabaseError),
+  create: async (actor: string, target: ReviewTarget, input: unknown) => {
+    const body = reviewInput.parse(input);
+    return database.transaction(async tx => {
+      await tx.execute(sqlTimezone); const gym = await targetScope(tx, target, true);
+      const result = await eligibility(tx, actor, target, gym);
+      if (result.review) throw new AppError(409, 'REVIEW_ALREADY_EXISTS', 'Bạn đã gửi đánh giá. Hãy tải lại để xem kết quả.');
+      if (!result.eligible) throw new AppError(403, 'REVIEW_NOT_ELIGIBLE', result.reason!);
+      return createReviewRepository(tx).insert(actor, target, body);
+    }).catch(staffingDatabaseError);
+  },
+  hide: createReviewModerationService(database).hide,
+});
+export const reviewService = createReviewService();

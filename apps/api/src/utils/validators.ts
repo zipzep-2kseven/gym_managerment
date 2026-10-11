@@ -11,7 +11,7 @@ export const loginSchema = z.object({
     .string({ message: 'Mật khẩu là bắt buộc.' })
     .min(1, 'Mật khẩu không được để trống.')
     .max(128, 'Mật khẩu tối đa 128 ký tự.'),
-});
+}).strict();
 
 export type LoginInput = z.infer<typeof loginSchema>;
 
@@ -19,15 +19,17 @@ export const changePasswordSchema = z
   .object({
     current_password: z
       .string({ message: 'Mật khẩu hiện tại là bắt buộc.' })
-      .min(1, 'Mật khẩu hiện tại không được để trống.'),
+      .min(1, 'Mật khẩu hiện tại không được để trống.')
+      .max(128, 'Mật khẩu hiện tại tối đa 128 ký tự.'),
     new_password: z
       .string({ message: 'Mật khẩu mới là bắt buộc.' })
       .min(8, 'Mật khẩu mới phải có ít nhất 8 ký tự.')
       .max(128, 'Mật khẩu mới tối đa 128 ký tự.')
       .regex(/[A-Z]/, 'Mật khẩu mới phải chứa ít nhất 1 chữ cái viết hoa.')
       .regex(/[0-9]/, 'Mật khẩu mới phải chứa ít nhất 1 chữ số.'),
-    confirm_password: z.string().optional(),
+    confirm_password: z.string().max(128).optional(),
   })
+  .strict()
   .refine((data) => !data.confirm_password || data.new_password === data.confirm_password, {
     message: 'Xác nhận mật khẩu mới không khớp.',
     path: ['confirm_password'],
@@ -62,7 +64,7 @@ export const registerSchema = z.object({
     .refine((val) => val === null || /^(?:\+84|0)[35789]\d{8}$/.test(val), {
       message: 'Số điện thoại không đúng định dạng.',
     }),
-});
+}).strict();
 
 export type RegisterInput = z.infer<typeof registerSchema>;
 
@@ -93,7 +95,7 @@ export const updateProfileSchema = z
         (val) => {
           if (!val) return true;
           const d = new Date(val);
-          return !isNaN(d.getTime());
+          return !isNaN(d.getTime()) && d.toISOString().slice(0, 10) === val;
         },
         { message: 'Ngày sinh không hợp lệ.' }
       ),
@@ -114,9 +116,14 @@ export const updateProfileSchema = z
       .trim()
       .url('Đường dẫn ảnh đại diện không đúng định dạng URL.')
       .max(2048, 'Đường dẫn ảnh đại diện tối đa 2048 ký tự.')
+      .refine(value => {
+        try { const url = new URL(value); return ['http:', 'https:'].includes(url.protocol) && !url.username && !url.password; }
+        catch { return false; }
+      }, { message: 'Ảnh đại diện phải dùng URL HTTP(S) không chứa tài khoản hoặc mật khẩu.' })
       .nullable()
       .optional(),
   })
+  .strict()
   .refine(
     (data) => {
       const allowedKeys = ['full_name', 'phone', 'date_of_birth', 'gender', 'address', 'avatar_url'];

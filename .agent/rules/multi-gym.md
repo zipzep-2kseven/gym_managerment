@@ -546,3 +546,8 @@ Khi phát hiện thiếu thông tin hoặc yêu cầu không rõ ràng:
 - Ngừng Gym chỉ bởi Admin khi không còn Payment PENDING, Membership PENDING/ACTIVE, Registration ACTIVE, Appointment PENDING/CONFIRMED. Ngừng PT bởi Admin/Manager ACTIVE đúng Gym khi hết Registration ACTIVE và Appointment PENDING/CONFIRMED. Lịch quá giờ chưa kết thúc vẫn chặn.
 - Không cascade, force, hoàn tiền tự động hoặc sửa availability/account/role/history. Kích hoạt lại PT dùng row cũ, kiểm tra Gym/User ACTIVE, role PT, giới hạn một Gym. API trả 409 kèm counts khi còn nghĩa vụ.
 - Policy triển khai tại Domain §10, API §15 và migration 0002; giữ migration 0000/0001, không mở lại GYM-01. DB guards/transaction bảo vệ concurrent writes; rollback policy phải có chủ đích và không xóa dữ liệu. Các phần Q-13 khác còn OPEN.
+
+
+### Thanh toán demo — yêu cầu 2026-10-08
+
+Cho phép backend mô phỏng thành công cho mọi phương thức hợp lệ khi PAYMENT_MODE=demo, NODE_ENV không production. Customer và Gym/Package ACTIVE, validation và idempotency vẫn bắt buộc. Payment SUCCESS + Membership ACTIVE atomic, giá/thời hạn từ DB, prefix/nhãn DEMO; không gọi payment thật. Không thêm snapshot/bảng/migration, không mở refund/cấp thẻ ngoài Payment; demo không chốt Q-01/Q-02/Q-03/Q-08 production.

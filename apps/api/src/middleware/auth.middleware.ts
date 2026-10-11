@@ -2,8 +2,13 @@ import { Request, Response, NextFunction } from 'express';
 import { verifyJwt } from '../utils/jwt.js';
 import { UnauthorizedError } from '../utils/errors.js';
 import { config } from '../config/index.js';
+import { z } from 'zod';
+
+const subjectSchema = z.uuid();
 
 declare global {
+  // Express Request uses ambient namespace augmentation.
+  // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace Express {
     interface Request {
       user?: {
@@ -31,7 +36,7 @@ export function authenticate(req: Request, _res: Response, next: NextFunction): 
 
     try {
       const decoded = verifyJwt(token);
-      if (!decoded || !decoded.sub || typeof decoded.sub !== 'string') {
+      if (!decoded || !subjectSchema.safeParse(decoded.sub).success) {
         throw new UnauthorizedError();
       }
 

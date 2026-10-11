@@ -25,7 +25,7 @@ export const AdminGymPage = () => {
   const { user } = useAuth();
   const gym = useQuery({ queryKey: ['gyms', 'admin', user?.user_id, gymId], queryFn: ({ signal }) => gymService.adminGym(gymId, signal) });
   const mutation = useGymMutation((value: Status) => gymService.status(gymId, value));
-  return <><Link to="/admin/gyms">Danh sách Gym</Link><h1>Cập nhật cơ sở</h1><QueryState pending={gym.isPending} error={gym.error} retry={gym.refetch} />
+  return <><Link to="/admin/gyms">Danh sách Gym</Link><h1>Cập nhật cơ sở</h1><Link to={`/admin/gyms/${gymId}/gallery`}>Ảnh phòng Gym</Link><Link to={`/admin/gyms/${gymId}/packages`}>Quản lý gói tập</Link><Link to={`/admin/gyms/${gymId}/reports`}>Báo cáo sự cố</Link><Link to={`/admin/gyms/${gymId}/pt`}>Giám sát PT và lịch tập</Link><QueryState pending={gym.isPending} error={gym.error} retry={gym.refetch} />
     {gym.data && !gym.isError && <><StatusBadge status={gym.data.status} /><MutationError error={mutation.error} /><ConfirmAction label={gym.data.status === 'ACTIVE' ? 'Ngừng Gym' : 'Kích hoạt Gym'} pending={mutation.isPending} onConfirm={() => mutation.mutate(gym.data.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE')} /><GymForm key={gym.data.gym_id} gym={gym.data} /></>}
   </>;
 };

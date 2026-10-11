@@ -7,9 +7,9 @@ const gym = { gym_id: gymId, gym_name: 'Gym Bình An', address: '12 Nguyễn Tr�
   phone: '0901234567', email: 'gym@example.com', latitude: '10.7', longitude: '106.6', logo_url: null,
   opening_time: '06:00:00', closing_time: '22:00:00', status: 'ACTIVE', created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' };
 const trainer = { gym_trainer_id: trainerId, gym_id: gymId, specialization: 'Sức mạnh', experience_years: 4, bio: 'Tập luyện an toàn.',
-  status: 'ACTIVE', availability: 'BUSY', joined_at: '2026-01-01T00:00:00Z', profile: { full_name: 'Trần An', avatar_url: null },
+  status: 'ACTIVE', availability: 'ALMOST_FULL', joined_at: '2026-01-01T00:00:00Z', profile: { full_name: 'Trần An', avatar_url: null },
   social_links: [{ social_link_id: 'link', platform: 'Website', url: 'https://example.com' }],
-  working_schedules: [{ schedule_id: 'slot', day_of_week: 1, start_time: '08:00:00', end_time: '12:00:00', status: 'ACTIVE' }] };
+  working_schedules: [{ schedule_id: 'slot', day_of_week: 'MONDAY', start_time: '08:00:00', end_time: '12:00:00', status: 'ACTIVE' }] };
 const paged = (data: unknown[], page = 1, total = data.length) => ({ success: true, data, pagination: { page, pageSize: 12, totalItems: total, totalPages: Math.ceil(total / 12), hasNextPage: page < Math.ceil(total / 12), hasPreviousPage: page > 1 } });
 const ok = (data: unknown) => ({ success: true, data });
 const failure = (code: string, message: string, details?: object) => ({ success: false, error: { code, message, details } });
@@ -22,6 +22,9 @@ const setup = async (page: Page, role = 'GUEST', forced = false) => {
         profile: { full_name: 'Người dùng' }, active_gym_assignments: role === 'MANAGER' ? [{ gym_id: gymId, gym_name: gym.gym_name, assignment_type: 'MANAGER' }] : [] }) });
     }
     if (route.request().method() !== 'GET') return route.fulfill({ json: ok(gym) });
+    if (path.endsWith('/reviews')) return route.fulfill({ json: ok({ items: [], page: 1, page_size: 10, total: 0, average_rating: null }) });
+    if (path.endsWith('/reviews/me')) return route.fulfill({ json: ok({ eligible: false, reason: 'Cần thẻ hợp lệ.', review: null }) });
+    if (path.endsWith('/images')) return route.fulfill({ json: ok([]) });
     if (path.endsWith('/management/trainers')) return route.fulfill({ json: paged([{ ...trainer, user_id: userId, status: 'INACTIVE' }]) });
     if (path.endsWith('/managers')) return route.fulfill({ json: ok([{ gym_manager_id: trainerId, gym_id: gymId, user_id: userId, status: 'ACTIVE', assigned_at: gym.created_at }]) });
     if (path.endsWith(`/trainers/${trainerId}`)) return route.fulfill({ json: ok({ ...trainer, user_id: 'PRIVATE USER', email: 'private@secret.test', phone: 'PRIVATE PHONE' }) });
@@ -39,11 +42,11 @@ test('Guest directory, detail, two CTAs and public PT projection', async ({ page
   await expect(page.getByRole('heading', { name: gym.gym_name })).toBeVisible();
   await expect(page.getByText('06:00 / 22:00')).toBeVisible();
   await expect(page.getByRole('link', { name: 'Đăng ký ngay' })).toHaveAttribute('href', `/gyms/${gymId}/packages`);
-  await expect(page.getByRole('link', { name: 'Đặt lịch tư vấn' })).toHaveAttribute('href', `/gyms/${gymId}/consultation`);
+  await expect(page.getByRole('link', { name: 'Đăng ký tư vấn' })).toHaveAttribute('href', `/gyms/${gymId}/consultation`);
   await page.getByRole('link', { name: 'Khám phá đội ngũ PT' }).click();
   await page.getByRole('link', { name: 'Trần An' }).click();
   await expect(page.getByText('Thứ hai: 08:00–12:00')).toBeVisible();
-  await expect(page.getByText('4 năm kinh nghiệm · Đang bận')).toBeVisible();
+  await expect(page.getByText('4 năm kinh nghiệm · Sắp đủ học viên')).toBeVisible();
   await expect(page.getByRole('link', { name: 'Website' })).toHaveAttribute('rel', 'noopener noreferrer');
   await expect(page.locator('body')).not.toContainText('PRIVATE');
   await expect(page.locator('body')).not.toContainText('private@secret.test');
@@ -127,23 +130,35 @@ test('Manager roster uses internal endpoint and shows INACTIVE', async ({ page }
   expect((await request).url()).toContain(`/gyms/${gymId}/management/trainers`);
 });
 
-test('Admin creates allowlisted Gym without account or status and prevents duplicate submit', async ({ page }) => {
+test('Admin creates Gym with Manager, hands off credential and prevents duplicate submit', async ({ page }) => {
   await setup(page, 'ADMIN');
   let posts = 0;
   let resolve: () => void = () => {};
   const gate = new Promise<void>(r => { resolve = r; });
   await page.route('**/api/v1/gyms', async route => {
     posts++;
-    expect(route.request().postDataJSON()).toEqual({ gym_name: 'Gym Mới', address: 'Địa chỉ mới', phone: null, email: null, latitude: null, longitude: null, logo_url: null, opening_time: null, closing_time: null, description: null });
-    await gate; await route.fulfill({ json: ok(gym), status: 201 });
+    expect(route.request().postDataJSON()).toEqual({ gym_name: 'Gym Mới', address: 'Địa chỉ mới', phone: null, email: null, latitude: null, longitude: null, logo_url: null, opening_time: null, closing_time: null, description: null, manager: { full_name: 'Manager Mới', email: 'manager-new@example.test', phone: null } });
+    await gate; await route.fulfill({ json: ok({ ...gym, manager: { user: { email: 'manager-new@example.test' }, assignment: { gym_id: gymId }, temporary_password: 'DemoHandoff1!OnlyTest' } }), status: 201 });
   });
   await page.goto('/admin/gyms/create');
   await page.getByLabel('Tên phòng Gym', { exact: true }).fill('Gym Mới');
   await page.getByLabel('Địa chỉ', { exact: true }).fill('Địa chỉ mới');
-  await page.getByRole('button', { name: 'Tạo Gym', exact: true }).click();
+  await page.getByLabel('Họ và tên Manager').fill('Manager Mới');
+  await page.getByLabel('Email đăng nhập Manager').fill('manager-new@example.test');
+  await page.getByRole('button', { name: 'Tạo cơ sở và Manager', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Đang lưu…' })).toBeDisabled();
   resolve();
-  await expect(page.getByRole('status')).toContainText('Thông tin đã được lưu');
+  await expect(page.locator('p[role="status"]')).toContainText('tài khoản Manager manager-new@example.test');
+  await expect(page.getByLabel('Mật khẩu tạm')).toHaveText('DemoHandoff1!OnlyTest');
+  await expect(page.getByRole('region', { name: 'Kết quả tạo cơ sở' })).toBeFocused();
+  await expect(page.getByRole('button', { name: 'Tạo cơ sở và Manager', exact: true })).toBeDisabled();
+  for (const width of [375, 768, 1024, 1440]) { await page.setViewportSize({ width, height: 900 }); expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true); }
+  expect(await page.evaluate(() => [localStorage.length, sessionStorage.length])).toEqual([0, 0]);
+  await page.getByRole('button', { name: 'Đã bàn giao, ẩn mật khẩu' }).click();
+  await expect(page.getByLabel('Mật khẩu tạm')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Tạo cơ sở khác' }).click();
+  await expect(page.getByLabel('Tên phòng Gym', { exact: true })).toHaveValue('');
+  await expect(page.getByLabel('Email đăng nhập Manager')).toHaveValue('');
   expect(posts).toBe(1);
 });
 
@@ -252,9 +267,24 @@ test('Assign existing PT sends user_id and new profile fields without supplying 
   expect((await request).postDataJSON()).toEqual({ user_id: userId, specialization: 'Sức mạnh', experience_years: 3, bio: 'Tiểu sử' });
 });
 
-test('Unavailable APIs have honest CTA destinations', async ({ page }) => {
+test('Consultation CTA opens the public contact form', async ({ page }) => {
   await setup(page);
   await page.goto(`/gyms/${gymId}/consultation`);
-  await expect(page.getByText('Chức năng này chưa được triển khai.', { exact: false })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Gửi yêu cầu' })).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'Đăng ký tư vấn', exact: true })).toBeVisible();
+  await expect(page.getByLabel('Họ tên', { exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Gửi yêu cầu tư vấn', exact: true })).toBeDisabled();
+});
+
+
+test('Combined creation keeps inputs on identity conflict and validates Manager fields', async ({ page }) => {
+  await setup(page, 'ADMIN'); let posts = 0;
+  await page.route('**/api/v1/gyms', async route => { posts++; await route.fulfill({ status: 409, json: failure('EMAIL_ALREADY_EXISTS', 'Email Manager đã tồn tại.') }); });
+  await page.goto('/admin/gyms/create');
+  await page.getByLabel('Tên phòng Gym', { exact: true }).fill('Gym Mới'); await page.getByLabel('Địa chỉ', { exact: true }).fill('Địa chỉ');
+  await page.getByRole('button', { name: 'Tạo cơ sở và Manager' }).click(); expect(posts).toBe(0);
+  await page.getByLabel('Họ và tên Manager').fill('Manager Mới'); await page.getByLabel('Email đăng nhập Manager').fill('existing@example.test');
+  await page.getByRole('button', { name: 'Tạo cơ sở và Manager' }).click(); await expect(page.getByRole('alert')).toContainText('Email Manager đã tồn tại');
+  await expect(page.getByLabel('Tên phòng Gym', { exact: true })).toHaveValue('Gym Mới'); await expect(page.getByLabel('Email đăng nhập Manager')).toHaveValue('existing@example.test');
+  await expect(page.getByLabel('Mật khẩu tạm')).toHaveCount(0); expect(posts).toBe(1);
+  await page.screenshot({ path: '/tmp/gym-onboarding-conflict.png', fullPage: true });
 });

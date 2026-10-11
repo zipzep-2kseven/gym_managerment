@@ -1,6 +1,6 @@
 import { pgTable, uuid, varchar, text, integer, timestamp, date, time, foreignKey, check, index } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
-import { gyms, gymTrainers } from './gyms.js';
+import { gyms } from './gyms.js';
 import { users } from './users.js';
 
 export const gymImages = pgTable('gym_images', {
@@ -28,6 +28,8 @@ export const consultationRequests = pgTable('consultation_requests', {
   preferredDate: date('preferred_date'),
   preferredTime: time('preferred_time', { precision: 0 }),
   content: text('content'),
+  preferredContact: varchar('preferred_contact', { length: 200 }),
+  processingNote: text('processing_note'),
   status: varchar('status', { length: 20 }).notNull().default('PENDING'),
   assignedTo: uuid('assigned_to'),
   createdAt: timestamp('created_at', { precision: 3, withTimezone: true }).notNull().defaultNow(),

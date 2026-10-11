@@ -35,7 +35,7 @@ export const gyms = pgTable(
     createdAt: timestamp('created_at', { precision: 3, withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { precision: 3, withTimezone: true }).notNull().defaultNow(),
   },
-  (table) => [
+  (_table) => [
     check('gyms_latitude_check', sql`latitude IS NULL OR (latitude >= -90 AND latitude <= 90)`),
     check('gyms_longitude_check', sql`longitude IS NULL OR (longitude >= -180 AND longitude <= 180)`),
     check('gyms_status_check', sql`status IN ('ACTIVE', 'INACTIVE')`),

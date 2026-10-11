@@ -8,6 +8,7 @@ import { JwtPayload } from '../types/auth.types.js';
  */
 export function signJwt(payload: { sub: string; email: string; roles: string[] }): string {
   return jwt.sign(payload, config.jwt.secret, {
+    algorithm: 'HS256',
     expiresIn: config.jwt.expiresIn,
   } as jwt.SignOptions);
 }
@@ -16,5 +17,5 @@ export function signJwt(payload: { sub: string; email: string; roles: string[] }
  * Verifies and decodes a signed JWT string.
  */
 export function verifyJwt(token: string): JwtPayload {
-  return jwt.verify(token, config.jwt.secret) as JwtPayload;
+  return jwt.verify(token, config.jwt.secret, { algorithms: ['HS256'] }) as JwtPayload;
 }

@@ -1,35 +1,38 @@
 import { test, expect } from '@playwright/test';
-import { execSync } from 'child_process';
+import { readFile } from 'node:fs/promises';
+import { randomUUID } from 'node:crypto';
+import pg from 'pg';
+import '../../api/src/config/index.js';
 
-// Helper to execute DB queries against the test Postgres container
-function runDbQuery(sql: string): string {
-  try {
-    return execSync(
-      `docker exec multi_gym_postgres psql -U postgres -d multi_gym_db -t -c "${sql.replace(/"/g, '\\"')}"`,
-      { encoding: 'utf-8' }
-    ).trim();
-  } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : String(err);
-    throw new Error(`DB query failed: ${errorMsg}`);
-  }
-}
+let pool: pg.Pool;
+// Fail closed: privileged test queries may only target this run's disposable DB.
+test.beforeAll(async () => {
+  if (!process.env.AUTH_TEST_DB_INFO) throw new Error('Use playwright.auth.config.ts for isolated auth tests');
+  const { databaseName } = JSON.parse(await readFile(process.env.AUTH_TEST_DB_INFO, 'utf8'));
+  if (!/^gym03_browser_[a-f0-9]{32}$/.test(databaseName)) throw new Error('Invalid disposable database');
+  const url = new URL(process.env.DATABASE_URL!);
+  url.pathname = `/${databaseName}`;
+  pool = new pg.Pool({ connectionString: url.toString() });
+});
+test.afterAll(async () => { await pool?.end(); });
+async function runDbQuery(sql: string) { await pool.query(sql); }
 
 test.describe('AUTH-03 Acceptance Tests — Authentication & Route Guards', () => {
-  const timestamp = Date.now();
-  const customerEmail = `customer.main.${timestamp}@example.com`;
-  const pwdCustomerEmail = `customer.pwd.${timestamp}@example.com`;
-  const forcedCustomerEmail = `customer.forced.${timestamp}@example.com`;
-  const deactCustomerEmail = `customer.deact.${timestamp}@example.com`;
-
+  let customerEmail: string;
+  let pwdCustomerEmail: string;
+  let forcedCustomerEmail: string;
   const defaultPassword = 'Password@12345';
   const newPassword = 'NewPassword@12345';
-
-  // Ensure DB cleanup after all tests complete
-  test.afterAll(async () => {
-    try {
-      runDbQuery(`DELETE FROM users WHERE email IN ('${customerEmail}', '${pwdCustomerEmail}', '${forcedCustomerEmail}', '${deactCustomerEmail}');`);
-    } catch {
-      // Ignore cleanup error
+  test.beforeEach(async ({ playwright }, info) => {
+    customerEmail = `customer.${randomUUID()}@example.com`;
+    pwdCustomerEmail = `password.${randomUUID()}@example.com`;
+    forcedCustomerEmail = `forced.${randomUUID()}@example.com`;
+    if (/TEST [148] —/.test(info.title)) {
+      const request = await playwright.request.newContext({ baseURL: 'http://127.0.0.1:4103' });
+      try {
+        const response = await request.post('/api/v1/auth/register', { data: { full_name: 'Nguyen Van Customer', email: customerEmail, password: defaultPassword } });
+        expect(response.ok()).toBeTruthy();
+      } finally { await request.dispose(); }
     }
   });
 
@@ -195,7 +198,7 @@ test.describe('AUTH-03 Acceptance Tests — Authentication & Route Guards', () =
     await expect(page).not.toHaveURL(/\/register/);
 
     // Set must_change_password = true in database for this customer
-    runDbQuery(`UPDATE users SET must_change_password = true WHERE email = '${forcedCustomerEmail}';`);
+    await runDbQuery(`UPDATE users SET must_change_password = true WHERE email = '${forcedCustomerEmail}';`);
 
     // Simulate login with must_change_password = true
     await context.clearCookies();
@@ -237,7 +240,7 @@ test.describe('AUTH-03 Acceptance Tests — Authentication & Route Guards', () =
     await context.clearCookies();
 
     // Set status to INACTIVE in database for customerEmail
-    runDbQuery(`UPDATE users SET status = 'INACTIVE' WHERE email = '${customerEmail}';`);
+    await runDbQuery(`UPDATE users SET status = 'INACTIVE' WHERE email = '${customerEmail}';`);
 
     // 1. Attempt login with deactivated account
     await page.goto('/login');
@@ -253,14 +256,14 @@ test.describe('AUTH-03 Acceptance Tests — Authentication & Route Guards', () =
 
     // 2. Test when an authenticated session becomes INACTIVE and accesses protected route
     // First reactivate temporarily to get valid session
-    runDbQuery(`UPDATE users SET status = 'ACTIVE' WHERE email = '${customerEmail}';`);
+    await runDbQuery(`UPDATE users SET status = 'ACTIVE' WHERE email = '${customerEmail}';`);
     await page.fill('input[name="email"]', customerEmail);
     await page.fill('input[name="password"]', defaultPassword);
     await page.click('button[type="submit"]');
     await expect(page).not.toHaveURL(/\/login/);
 
     // Now deactivate user in database while session cookie is held
-    runDbQuery(`UPDATE users SET status = 'INACTIVE' WHERE email = '${customerEmail}';`);
+    await runDbQuery(`UPDATE users SET status = 'INACTIVE' WHERE email = '${customerEmail}';`);
 
     // Reload /profile -> GET /api/v1/auth/me returns 403 ACCOUNT_DEACTIVATED
     await page.goto('/profile');

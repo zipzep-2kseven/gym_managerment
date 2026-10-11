@@ -25,6 +25,7 @@ import {
 import { signJwt } from '../utils/jwt.js';
 import { LoginInput, ChangePasswordInput, RegisterInput } from '../utils/validators.js';
 import { UserSession, LoginResult, ActiveGymAssignment } from '../types/auth.types.js';
+import { accountDatabaseError } from './account-database-error.js';
 
 export class AuthService {
   constructor(private readonly database: NodePgDatabase<typeof schema> = db) {}
@@ -146,17 +147,8 @@ export class AuthService {
       });
 
       return { token, session };
-    } catch (error: any) {
-      // Handle concurrent PostgreSQL unique_violation (code 23505)
-      if (error?.code === '23505') {
-        if (error.constraint === 'users_email_key' || error.detail?.includes('email')) {
-          throw new EmailAlreadyExistsError();
-        }
-        if (error.constraint === 'users_phone_key' || error.detail?.includes('phone')) {
-          throw new PhoneAlreadyExistsError();
-        }
-      }
-      throw error;
+    } catch (error) {
+      return accountDatabaseError(error);
     }
   }
 
@@ -351,14 +343,22 @@ export class AuthService {
     });
 
     // 5. Update user password_hash, must_change_password, and updated_at atomically
-    await this.database
+    const changed = await this.database
       .update(users)
       .set({
         passwordHash: newPasswordHash,
         mustChangePassword: false,
         updatedAt: new Date(),
       })
-      .where(eq(users.userId, user.userId));
+      .where(and(eq(users.userId, user.userId), eq(users.status, 'ACTIVE'), eq(users.passwordHash, user.passwordHash)))
+      .returning({ userId: users.userId });
+
+    if (!changed.length) {
+      const [current] = await this.database.select({ status: users.status }).from(users).where(eq(users.userId, userId));
+      if (!current) throw new UnauthorizedError();
+      if (current.status !== 'ACTIVE') throw new AccountDeactivatedError();
+      throw new InvalidCurrentPasswordError();
+    }
 
     return { message: 'Đổi mật khẩu thành công.' };
   }

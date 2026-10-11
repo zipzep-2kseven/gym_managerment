@@ -34,7 +34,16 @@ await adminConnection.query(`CREATE DATABASE "${name}"`);
 const url = new URL(process.env.DATABASE_URL!); url.pathname = `/${name}`;
 const pool = new pg.Pool({ connectionString: url.toString() });
 const db = drizzle(pool, { schema });
-const migrations = fileURLToPath(new URL('../drizzle', import.meta.url));
+const migrationSource = fileURLToPath(new URL('../drizzle', import.meta.url));
+// This frozen suite rolls back 0002 explicitly; keep its chain pinned to 0000–0002.
+// Full current-chain migration is exercised by package/PT/browser suites.
+const migrations = mkdtempSync(join(tmpdir(), 'gym-lifecycle-frozen-'));
+mkdirSync(join(migrations, 'meta'));
+mkdirSync(join(migrations, 'rollback'));
+const sourceJournal = JSON.parse(readFileSync(join(migrationSource, 'meta/_journal.json'), 'utf8'));
+writeFileSync(join(migrations, 'meta/_journal.json'), JSON.stringify({ ...sourceJournal, entries: sourceJournal.entries.slice(0, 3) }));
+for (const entry of sourceJournal.entries.slice(0, 3)) copyFileSync(join(migrationSource, `${entry.tag}.sql`), join(migrations, `${entry.tag}.sql`));
+copyFileSync(join(migrationSource, 'rollback/0002_gym_lifecycle.sql'), join(migrations, 'rollback/0002_gym_lifecycle.sql'));
 const baseline = mkdtempSync(join(tmpdir(), 'gym-lifecycle-upgrade-'));
 mkdirSync(join(baseline, 'meta'));
 const journal = JSON.parse(readFileSync(join(migrations, 'meta/_journal.json'), 'utf8'));
@@ -299,4 +308,5 @@ try {
   await pool.end(); await appPool.end();
   await adminConnection.query(`DROP DATABASE "${name}"`); await adminConnection.end();
   rmSync(baseline, { recursive: true });
+  rmSync(migrations, { recursive: true });
 }

@@ -6,18 +6,21 @@ import {
   AccountDeactivatedError,
   PhoneAlreadyExistsError,
   ValidationError,
+  AppError,
 } from '../utils/errors.js';
 import { UpdateProfileInput } from '../utils/validators.js';
 import { UserProfileView, UserProfileDto } from '../types/auth.types.js';
+import { accountDatabaseError } from './account-database-error.js';
 
 export class UserService {
+  constructor(private readonly database: typeof db = db) {}
   /**
    * Retrieves the current user's profile view (phone + profile details).
    * Strict ownership: derived only from authenticated user context.
    */
   async getProfile(userId: string): Promise<UserProfileView> {
     // 1. Look up user by UUID
-    const [user] = await db
+    const [user] = await this.database
       .select()
       .from(users)
       .where(eq(users.userId, userId))
@@ -31,9 +34,10 @@ export class UserService {
     if (user.status === 'INACTIVE' || user.status === 'SUSPENDED') {
       throw new AccountDeactivatedError();
     }
+    if (user.mustChangePassword) throw new AppError(403, 'PASSWORD_CHANGE_REQUIRED', 'Bạn phải đổi mật khẩu trước khi tiếp tục.');
 
     // 3. Query profile record
-    const [profile] = await db
+    const [profile] = await this.database
       .select()
       .from(userProfiles)
       .where(eq(userProfiles.userId, userId))
@@ -52,7 +56,7 @@ export class UserService {
    */
   async updateProfile(userId: string, input: UpdateProfileInput): Promise<UserProfileView> {
     // 1. Look up user by UUID
-    const [user] = await db
+    const [user] = await this.database
       .select()
       .from(users)
       .where(eq(users.userId, userId))
@@ -66,10 +70,11 @@ export class UserService {
     if (user.status === 'INACTIVE' || user.status === 'SUSPENDED') {
       throw new AccountDeactivatedError();
     }
+    if (user.mustChangePassword) throw new AppError(403, 'PASSWORD_CHANGE_REQUIRED', 'Bạn phải đổi mật khẩu trước khi tiếp tục.');
 
     // 3. Pre-check phone uniqueness if updating phone to a new non-null value
     if (input.phone !== undefined && input.phone !== null && input.phone !== user.phone) {
-      const [existingPhone] = await db
+      const [existingPhone] = await this.database
         .select({ userId: users.userId })
         .from(users)
         .where(and(eq(users.phone, input.phone), ne(users.userId, userId)))
@@ -82,8 +87,13 @@ export class UserService {
 
     try {
       // 4. Execute atomic transaction across users and user_profiles
-      const result = await db.transaction(async (tx) => {
-        let updatedUser = user;
+      const result = await this.database.transaction(async (tx) => {
+        // Serialize with Admin suspension before touching either table.
+        const [current] = await tx.select().from(users).where(eq(users.userId, userId)).for('update');
+        if (!current) throw new UnauthorizedError();
+        if (current.status !== 'ACTIVE') throw new AccountDeactivatedError();
+        if (current.mustChangePassword) throw new AppError(403, 'PASSWORD_CHANGE_REQUIRED', 'Bạn phải đổi mật khẩu trước khi tiếp tục.');
+        let updatedUser = current;
 
         // 4a. Update phone on users table if provided
         if (input.phone !== undefined) {
@@ -153,14 +163,8 @@ export class UserService {
         phone: result.user.phone,
         profile: result.profile ? this.mapProfileDto(result.profile) : null,
       };
-    } catch (error: any) {
-      // Handle concurrent PostgreSQL unique violation (code 23505) on users_phone_key
-      if (error?.code === '23505') {
-        if (error.constraint === 'users_phone_key' || error.detail?.includes('phone')) {
-          throw new PhoneAlreadyExistsError();
-        }
-      }
-      throw error;
+    } catch (error) {
+      return accountDatabaseError(error);
     }
   }
 

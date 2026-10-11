@@ -1,0 +1,23 @@
+import { Router } from 'express';
+import { authenticate } from '../middleware/auth.middleware.js';
+import { createPtWorkflowController } from '../controllers/pt-workflow.controller.js';
+import { ptWorkflowService } from '../services/pt-workflow.service.js';
+export const createPtWorkflowRouter = (service = ptWorkflowService) => {
+  const router = Router(); const c = createPtWorkflowController(service);
+  router.use((_req, res, next) => { res.setHeader('Cache-Control', 'no-store'); next(); });
+  router.get('/gyms/:gymId/memberships', authenticate, c.memberships);
+  router.get('/pt-registrations/me', authenticate, c.mineRegistrations);
+  router.get('/pt-appointments/me', authenticate, c.mineAppointments);
+  router.get('/gyms/:gymId/pt-registrations', authenticate, c.gymRegistrations);
+  router.post('/gyms/:gymId/pt-registrations', authenticate, c.register);
+  router.patch('/gyms/:gymId/pt-registrations/:resourceId/cancel', authenticate, c.cancelRegistration);
+  router.get('/gyms/:gymId/pt-appointments', authenticate, c.gymAppointments);
+  router.post('/gyms/:gymId/pt-appointments', authenticate, c.createAppointment);
+  router.patch('/gyms/:gymId/pt-appointments/:resourceId/confirm', authenticate, c.confirm);
+  router.patch('/gyms/:gymId/pt-appointments/:resourceId/reschedule', authenticate, c.reschedule);
+  router.patch('/gyms/:gymId/pt-appointments/:resourceId/cancel', authenticate, c.cancel);
+  router.patch('/gyms/:gymId/pt-appointments/:resourceId/complete', authenticate, c.complete);
+  router.patch('/gyms/:gymId/trainers/:trainerId/availability', authenticate, c.availability);
+  return router;
+};
+export const ptWorkflowRouter = createPtWorkflowRouter();

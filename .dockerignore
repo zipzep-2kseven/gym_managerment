@@ -27,3 +27,8 @@ agentic-awesome-skills
 coverage
 logs
 *.log
+
+# Browser verification artifacts
+**/.qa-artifacts
+**/playwright-report
+**/test-results

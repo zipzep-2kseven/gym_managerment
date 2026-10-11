@@ -69,10 +69,6 @@ export const gymReports = pgTable(
       'gym_reports_status_check',
       sql`status IN ('PENDING', 'IN_PROGRESS', 'RESOLVED', 'REJECTED')`
     ),
-    check(
-      'gym_reports_equipment_required_check',
-      sql`(report_type <> 'EQUIPMENT' OR equipment_id IS NOT NULL)`
-    ),
     index('gym_reports_gym_status_created_idx').on(
       table.gymId,
       table.status,

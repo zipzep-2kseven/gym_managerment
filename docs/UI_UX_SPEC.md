@@ -320,9 +320,20 @@ Giữ các mã màn hình hiện có; thêm màn hình Payment và Equipment. Ro
 ### SCR-MGR-001: Manager Dashboard (Bàn Làm Việc Quản Lý Phòng Gym)
 
 - **Route:** `/manager/dashboard`.
-- **Feature/API mapping:** `FEAT-MEM-003`, `FEAT-APP-003`, `FEAT-REP-003`.
-- **Dữ liệu và thao tác:** Tổng quan tài nguyên Gym đang quản lý; chỉ hiển thị số liệu đủ nguồn. Không thêm doanh thu/thanh toán toàn Gym khi quyền tài chính chưa chốt.
-- **Trạng thái và quyền:** Loading/empty/error/success theo §1; scope và các action DRAFT kế thừa API. Lỗi 401 dẫn đăng nhập; 403/404 không tiết lộ dữ liệu Gym khác.
+- **Feature/API mapping:** `FEAT-MEM-003`, `FEAT-APP-003`, `FEAT-REP-003`, `FEAT-PKG-007`, `FEAT-TRN-006`.
+- **Khung giao diện:** Nằm trong `ManagementShell` (Sidebar Navy 248px/72px, Topbar 64px, Content Grid 12 cột).
+- **Dữ liệu và thao tác:**
+  - Header: Tiêu đề "Tổng quan [tên Gym]", ngày hiện tại, badge trạng thái cơ sở, nút Primary CTA "Mở lịch tập" (`/manager/pt`).
+  - 4 Khối chỉ số (Summary Metrics):
+    - Tư vấn chờ liên hệ: đếm `PENDING` từ `consultationService.list` (`pagination.totalItems`), link `/manager/consultations?status=PENDING`.
+    - Sự cố chờ xử lý: đếm `PENDING` từ `reportService.list` (`pagination.totalItems`), link `/manager/reports?status=PENDING`.
+    - Gói tập đang bán: đếm `ACTIVE` từ `packageService.list` (`pagination.totalItems`), link `/manager/packages`.
+    - PT đang hoạt động: đếm `ACTIVE` từ `gymService.managedTrainers` (`pagination.totalItems`), link `/manager/trainers`.
+  - Khối nội dung chính (Grid 8-4):
+    - Cột 8: Danh sách lịch hẹn vận hành gần nhất lấy từ `ptService.appointments` (thời gian, hội viên, PT phụ trách, badge trạng thái ca tập). Nút liên kết xem toàn bộ lịch `/manager/pt`.
+    - Cột 4: Khối việc cần xử lý ngay (danh sách yêu cầu tư vấn mới nhất, sự cố mới nhất) và nhóm lối tắt vận hành (Cập nhật thông tin phòng `/manager/gym`, Ảnh phòng `/manager/gallery`, Thêm PT `/manager/trainers/assign`).
+  - Không thêm doanh thu/thanh toán toàn Gym khi quyền tài chính chưa có API.
+- **Trạng thái và quyền:** Loading skeleton giữ đúng chiều cao; empty state kèm mô tả và action; partial failure xử lý độc lập từng khối; 401 dẫn đăng nhập; 403/404 không tiết lộ dữ liệu Gym khác. Giao diện responsive 375px/768px/1024px/1440px không tràn ngang, đạt chuẩn WCAG AA.
 
 ### SCR-MGR-002: Gym Information & Profile Edit (Cập Nhật Thông Tin Cơ Sở)
 
@@ -399,14 +410,14 @@ Giữ các mã màn hình hiện có; thêm màn hình Payment và Equipment. Ro
 - **Route:** `/admin/users`.
 - **Feature/API mapping:** `FEAT-ADM-001`, `FEAT-ADM-002`.
 - **Dữ liệu và thao tác:** Bảng User: user_id, email, phone, status, email_verified_at, must_change_password; không hiển thị hash hoặc mật khẩu tạm trong bảng/log.
-- **Trạng thái và quyền:** Loading/empty/error/success theo §1; scope và các action DRAFT kế thừa API. Lỗi 401 dẫn đăng nhập; 403/404 không tiết lộ dữ liệu Gym khác.
+- **Trạng thái và quyền:** Loading/empty/error/success theo §1; Đã triển khai theo ADM-01/API §30; chỉ Admin ACTIVE đã đổi mật khẩu tạm. Lỗi 401 dẫn đăng nhập; 403/404 không tiết lộ dữ liệu Gym khác.
 
 ### SCR-ADM-003: System Roles & Permissions Viewer (Xem Danh Mục Vai Trò Hệ Thống)
 
 - **Route:** `/admin/roles`.
 - **Feature/API mapping:** `FEAT-ADM-003`.
 - **Dữ liệu và thao tác:** Xem role_id, role_name, description; không có role Guest và không mở CRUD role ngoài contract.
-- **Trạng thái và quyền:** Loading/empty/error/success theo §1; scope và các action DRAFT kế thừa API. Lỗi 401 dẫn đăng nhập; 403/404 không tiết lộ dữ liệu Gym khác.
+- **Trạng thái và quyền:** Loading/empty/error/success theo §1; Đã triển khai theo ADM-01/API §30; chỉ Admin ACTIVE đã đổi mật khẩu tạm. Lỗi 401 dẫn đăng nhập; 403/404 không tiết lộ dữ liệu Gym khác.
 
 ### SCR-ADM-004: Platform Gyms Management (Danh Sách Cơ Sở Toàn Sàn)
 
@@ -607,6 +618,118 @@ GYM-03 nối các API GYM-02 hiện có: Public Gym directory/detail và PT list
 
 Chưa có API đọc Gym riêng cho Manager/Admin. Manager đọc public Gym ACTIVE để khởi tạo form và backend thẩm định scope khi ghi; Gym không còn public trả trạng thái không khả dụng. Admin detail duyệt danh sách nội bộ theo trang để đọc cả Gym INACTIVE, không gọi public detail làm nguồn quản trị.
 
-Hai CTA trên Gym detail dẫn đúng khu vực Package/Consultation, hiện thông báo chức năng chưa triển khai. API/UI Package, gallery, consultation và review thuộc các lát cắt riêng; không hiển thị dữ liệu giả hoặc gửi request đến endpoint chưa có. Upload logo vẫn chưa mở; form nhận URL HTTP/HTTPS theo contract hiện tại.
+Hai CTA trên Gym detail dẫn đúng khu vực Package/Consultation. Package đã có API PKG-01 và UI PKG-02; Consultation vẫn thông báo chưa triển khai. Gallery, consultation và review thuộc các lát cắt riêng; không hiển thị dữ liệu giả hoặc gửi request đến endpoint chưa có. Upload logo vẫn chưa mở; form nhận URL HTTP/HTTPS theo contract hiện tại.
 
 Bằng chứng kiểm thử và giới hạn phát hành: [GYM_03_VERIFICATION.md](GYM_03_VERIFICATION.md).
+
+
+## PKG-02 — Giao diện gói tập đã triển khai
+
+- Public: `/gyms/:gymId/packages` có tìm kiếm, phân trang, sắp xếp tên/giá/thời hạn/ngày tạo và thứ tự; `/gyms/:gymId/packages/:packageId` đọc chi tiết bằng API public. Hiển thị giá decimal chính xác, không quota PT.
+- Manager: `/manager/packages` lấy Gym từ assignment hiện tại `/auth/me`, bỏ qua gymId tự khai trong query; route có RequireAuth, RequireRole và GymScopeGuard.
+- Admin: `/admin/gyms/:gymId/packages`, vào từ liên kết Quản lý gói tập trên trang sửa Gym. Dùng catalog nội bộ kể cả Gym INACTIVE; không dùng public detail để lấy gói INACTIVE.
+- Form tạo/sửa nằm trong catalog nội bộ: tên, mô tả nullable, thời hạn ngày, giá VND dạng decimal string. Chỉ PATCH field thay đổi; snapshot form ổn định qua refetch. Không đưa status/identity/Gym/role vào body form.
+- Mở/ngừng bán có xác nhận; invalidate cache theo Gym sau ghi. Không hủy hoặc sửa Payment/Membership lịch sử.
+- Loading/empty/error/retry, mutation pending/validation/success, safe 403/404; API đọc trả 401 xác nhận lại phiên trước điều hướng login để không bị RequireGuest chuyển về trang chủ theo state cũ.
+- Checkout chưa triển khai: trang chi tiết giải thích thanh toán trực tuyến chưa có và dẫn thông tin liên hệ Gym. Không gọi Payment, tạo Membership hoặc quyết định Q-01/Q-02/Q-17.
+- Taste: giữ native tokens + Tailwind hiện có, navy/đỏ/trắng, dials 5/2/4; responsive 375/768/1024/1440, focus-visible và giảm chuyển động theo nền tảng hiện có.
+
+Bằng chứng kiểm thử và giới hạn: [PKG_02_VERIFICATION.md](PKG_02_VERIFICATION.md).
+
+
+## Thanh toán demo — yêu cầu người dùng ngày 2026-10-08
+
+Người dùng yêu cầu tạm dùng mock: bấm thanh toán với phương thức nào cũng mô phỏng thành công để demo, chưa tích hợp thanh toán thật. Đây là ngoại lệ có phạm vi rõ ràng cho luồng demo, không chốt gateway hoặc chính sách thanh toán thật.
+
+- Backend chỉ bật ghi thanh toán mô phỏng khi `PAYMENT_MODE=demo` và NODE_ENV khác production; mặc định disabled. Customer hiện hành, Gym/Package ACTIVE và request hợp lệ vẫn bắt buộc.
+- Backend đọc price/duration từ Package, tạo Payment SUCCESS và Membership ACTIVE ngay trong cùng transaction. `payment_method`/`transaction_code` mang prefix DEMO; API/UI gắn nhãn demo, không thu tiền thật. Ngày thẻ theo Asia/Ho_Chi_Minh, end_date bao gồm ngày cuối = ngày bắt đầu + duration_days - 1.
+- Idempotency-Key UUID định danh một lần bấm; cùng actor/Gym/input trả kết quả cũ, không tạo lần hai. Body không được tự khai amount/SUCCESS/user_id/Gym/thời hạn. Không có webhook, credentials cổng, refund hoặc cấp thẻ bỏ qua Payment.
+- Không tồn tại Payment PENDING chờ bên ngoài trong luồng này; không thêm duration snapshot, bảng hoặc migration. Đề xuất snapshot trong PLAN-02 trước đó chỉ còn là bản tham khảo cho thanh toán thật sau này.
+- Demo cho phép tạo các lần mua độc lập khi dùng key mới, có thể có nhiều thẻ; đây là hành vi mô phỏng, không đóng Q-08 Customer cho production. Chưa có expiry scheduler hay quyền dùng thẻ cho PT; không tự cascade Registration/Appointment.
+- Q-01/Q-02/Q-03 cho tiền thật và các policy chưa chốt vẫn OPEN. PAY-01/PAY-02/PAY-03 bản production không được đánh dấu hoàn thành dựa trên demo.
+
+## PT và lịch hẹn — quyết định người dùng ngày 2026-10-09
+
+Áp dụng [PLAN-03 §9](PLAN_03_PT_APPOINTMENT_POLICY_PROPOSAL.md#9-chính-sách-được-duyệt-ngày-2026-10-09) và các quy tắc chi tiết §2–§5 không bị §9 thay thế. Thẻ ACTIVE còn hạn theo Asia/Ho_Chi_Minh, gồm thẻ demo, được đăng ký PT cùng Gym. Một Registration ACTIVE/thẻ. NOT_ACCEPTING chặn đăng ký mới; PT chính chủ/Manager đúng Gym đổi availability; không chặn lịch học viên cũ.
+
+Lịch mới PENDING giữ chỗ; PT/Manager xác nhận. Chống chồng lịch của Customer/PT toàn hệ thống kể cả User hai role, khoảng [start,end). Dời trước giờ về PENDING; Customer hủy trước giờ, PT/Manager xử lý quá giờ, lý do bắt buộc. Complete chỉ CONFIRMED sau end. Vắng mặt CANCELLED với lý do. Không tự expire/cascade. Đổi PT kết thúc đăng ký cũ khi hết lịch mở rồi tạo đăng ký mới, giữ quan hệ lịch sử.
+
+Q-04/Q-06/Q-07 chốt theo phạm vi trên; Q-16 chốt availability, còn profile/social. Working Schedule tham khảo; Q-18 ghi lịch vẫn mở. Q-08 Customer và chính sách tiền thật không thay đổi. Không thêm bảng/cột/PT pricing/payment/quota.
+
+
+## APP-02 — Lịch Customer ngày/tuần/danh sách
+
+- `/my-pt`, tài khoản Customer: mặc định danh sách, chuyển Ngày/Tuần; tuần bắt đầu thứ Hai. Bộ lọc Gym/trạng thái kết hợp, chọn ngày, trước/sau và Hôm nay. Giữ flow đăng ký PT/yêu cầu buổi hiện tại.
+- Giờ tính và hiển thị theo Asia/Ho_Chi_Minh, độc lập múi giờ trình duyệt; ngày có năm rõ ràng. Buổi qua nửa đêm xuất hiện ở từng ngày giao nhau theo [start,end), không lặp ở ngày sau nếu kết thúc đúng 00:00.
+- Chọn buổi mở dialog chi tiết PT/Gym/thời gian/trạng thái/ghi chú; chỉ dời hoặc hủy PENDING/CONFIRMED trước giờ bắt đầu. Hủy yêu cầu lý do, dời về PENDING theo backend. Customer không tự xác nhận/hoàn thành.
+- Dialog có nhãn, focus và đóng bằng Escape ở màn chi tiết; trả focus về buổi đã chọn. Form đang gửi khóa input/nút, giữ lỗi API để sửa/thử lại, không đóng bằng Escape trong form.
+- Tải đủ trang API hiện có bằng một query scoped user; loading/error/retry, không công bố calendar thiếu trang hoặc stale khi lỗi. Sau mutation invalidate query PT như flow hiện có.
+- Responsive: desktop 7 cột, tablet 3, mobile 1; sự kiện dùng cả chữ trạng thái và màu. Taste 5/2/4, navy/đỏ, focus-visible nền tảng hiện có.
+- PT/Manager/Admin và tài khoản Customer đồng thời PT giữ workspace hiện có. Không thêm lịch tự tập, slot realtime hoặc thay đổi availability/Working Schedule.
+
+Xem [báo cáo APP-02](APP_02_CUSTOMER_CALENDAR_VERIFICATION.md).
+
+## Tạo cơ sở kèm Manager — 2026-10-09
+
+Admin → Tạo Gym (`/admin/gyms/create`) có một form: Thông tin phòng Gym và Thông tin Manager. Họ tên/email Manager bắt buộc, điện thoại tùy chọn; email là tên đăng nhập. Không nhập mật khẩu: backend sinh tạm và Manager đổi lần đầu.
+
+Nút “Tạo cơ sở và Manager” gửi một request POST /gyms. Pending khóa input/nút. Lỗi giữ nguyên dữ liệu để chỉnh; không báo thành công một phần. Success hiển thị Gym/email Manager và mật khẩu tạm một lần, có nút “Đã bàn giao, ẩn mật khẩu”, liên kết “Xem cơ sở vừa tạo” và “Tạo cơ sở khác”. Form đã thành công khóa tạo lại cho đến khi chọn tạo cơ sở khác. Rời trang/ẩn mật khẩu không thể đọc lại credential; không lưu vào WebStorage hoặc query cache. Mất kết nối chưa xác định kết quả: hướng dẫn kiểm tra Gym/phân công trước khi gửi lại.
+
+Chỉnh sửa Gym giữ form PATCH riêng, không có phần Manager. Bổ nhiệm Manager giữ chức năng cấp/gán/thay đổi sau này. Giao diện kế thừa navy/đỏ, native inputs/focus, responsive một cột điện thoại và hai cột desktop; Taste 5/2/4.
+
+
+## Báo cáo sự cố demo — 2026-10-10
+
+Customer vào Báo cáo sự cố (/reports), chọn Gym có thẻ ACTIVE còn hạn; chọn sẵn nếu một Gym, không có thẻ thì vẫn đọc lịch sử. Nhập nội dung sự cố 5–4000 ký tự và chọn/chụp một ảnh JPEG/PNG ≤5MB tùy chọn. Preview và nút bỏ ảnh; resize/re-encode trước gửi. Không mã máy/danh mục/chọn máy. Báo cáo mới PENDING, không tự đổi tình trạng máy.
+
+Manager vào Xử lý báo cáo (/manager/reports), đọc ảnh/nội dung, lọc trạng thái, tiếp nhận→ghi kết quả giải quyết hoặc từ chối có lý do. Admin đọc/xử lý /admin/gyms/:gymId/reports qua link tại trang Gym. Ảnh private, không URL public. Terminal giữ nội dung/ảnh, không nút sửa/xóa/mở lại.
+
+Loading/error/retry/empty, pending khóa input/nút, lỗi giữ nội dung, giờ Việt Nam. Không tự retry POST; kết nối lỗi sau gửi cần kiểm tra danh sách trước khi gửi lại. Navy/đỏ, native forms, responsive theo Taste5/2/4. Không triển khai màn quản lý từng máy hoặc danh mục loại thiết bị trong demo.
+
+
+## Đăng ký tư vấn đơn giản — quyết định được duyệt 2026-10-10
+
+Người dùng duyệt CON-01/CON-02: CTA “Đăng ký tư vấn”, không đặt slot/giữ chỗ. Guest gửi không login, User hợp lệ được liên kết từ cookie và điền sẵn nhưng sửa được thông tin liên hệ. Gym ACTIVE lấy từ route; họ tên/số điện thoại bắt buộc, nội dung và thời gian tiện liên hệ dạng chữ tùy chọn. Không nhận user_id/status/assigned_to/email/preferred_date/preferred_time từ public body; không trả contact/actor trong public response.
+
+Chỉ Manager có role và assignment ACTIVE đúng Gym xem và xử lý; chưa mở quyền Staff/Admin/PT. PENDING → CONTACTED → COMPLETED; PENDING/CONTACTED → CANCELLED bắt buộc lý do. Không reopen/reassign/xóa hoặc sửa thông tin khách. Manager lưu ghi chú riêng, bấm gọi số điện thoại; COMPLETED không đồng nghĩa mua gói. Thời gian liên hệ chỉ là nguyện vọng, không SLA, không Appointment/Payment/Membership/notification tự động.
+
+Bổ sung hai cột nullable `preferred_contact` VARCHAR(200) và `processing_note` TEXT trong consultation_requests, migration giữ dữ liệu cũ/21 bảng, không ghép ghi chú vào content khách. assigned_to giữ NULL vì chưa phân công; không dùng để suy quyền. Q-19 đóng phần consultation tối giản; Q-14 Staff và Gallery/storage còn OPEN. Giới hạn gửi theo IP trong bộ nhớ một process (5 lần/15 phút), không tin X-Forwarded-For; khóa nút pending/no retry. Chưa CAPTCHA, lịch sử riêng cho khách hoặc idempotency; mất mạng yêu cầu liên hệ Gym trước gửi lại.
+
+
+## Gallery demo — quyết định được duyệt 2026-10-10
+
+Người dùng duyệt GIM-01: Admin mọi Gym, Manager có role/assignment ACTIVE đúng Gym thêm ảnh, sửa caption, đổi thứ tự và xóa có xác nhận. Guest chỉ xem list/bytes của Gym ACTIVE; ngừng Gym giữ ảnh, nội bộ vẫn quản lý được Gym INACTIVE. Logo tách gallery; ảnh đầu theo display_order là ảnh đại diện gallery. Mỗi lần thêm một ảnh, tối đa 10/Gym, đầu vào JPEG/PNG tối đa 5 MiB/20 megapixels, caption tùy chọn tối đa 200 ký tự. UI tự thu nhỏ cạnh dài tối đa 1600 và re-encode JPEG bỏ metadata; backend độc lập kiểm tra và loại metadata ảnh trước lưu. Không video/album/crop/360/versioning/drag-drop.
+
+Demo lưu filesystem trong volume gallery riêng, không dùng volume báo cáo private, không public static; endpoint ảnh kiểm tra Gym ACTIVE mỗi lần, nội bộ có endpoint private có auth/scope. Không provider/package/table/column/migration mới; gym_images hiện có đủ. Upload production disabled đến khi chọn storage. Ghi gallery khóa Gym trong transaction, tối đa 10 và reorder nguyên tử/chống dữ liệu cũ; không lấy gym_id/image_url từ body. Xóa row trước rồi cleanup file, file mồ côi có thể tồn tại nếu crash, không public nếu không còn row. Public DTO không trả storage key/actor. Backup cả DB và volume; không reset dữ liệu cũ hoặc ảnh báo cáo. Q-10/Q-19 đóng gallery demo; storage production còn OPEN.
+
+
+## TPR-01 — Hồ sơ PT / giờ làm việc tham khảo (duyệt 2026-10-10)
+
+PT chính chủ có role/assignment ACTIVE tự sửa bio, liên kết và giờ làm việc tại Gym mình; Manager có role/assignment ACTIVE đúng Gym quản lý specialization/experience_years, xem bio/social/giờ nhưng không sửa thay PT. Phân công/status/availability giữ API/policy hiện có; Admin provisioning hiện có không thay đổi, chưa mở Admin sửa trong API TPR mới. Tên/ảnh dùng User Profile hiện hành, không thêm upload/chứng chỉ/PT pricing/thông tin sức khỏe.
+
+Q-16 phần profile/social và Q-18 giờ tham khảo đã chốt: Asia/Ho_Chi_Minh, nhiều ca/ngày, HH:mm, không overlap cùng ngày hoặc qua nửa đêm, ca liền kề được phép; tối đa 28 ca/tuần cho form đơn giản. Không khai báo ngày là không hiển thị, không đồng nghĩa nghỉ/không được booking. Working Schedule chỉ tham khảo, không giữ slot, không chặn đặt lịch ngoài ca, không tự tạo/dời/hủy Appointment. Không lộ học viên hoặc Appointment trong DTO public. Không approval/lịch nghỉ/calendar sync/sinh slot tự động.
+
+Bio trim tối đa 2000; specialization trim tối đa 200; kinh nghiệm nguyên 0–80 hoặc NULL; tối đa một link cho mỗi platform hiện có, URL HTTP(S) tối đa 2048 không chứa user/password. API strict ownership/allowlist, parent Gym lock và expected_updated_at để chặn stale/concurrent writes; giờ đã bỏ chuyển INACTIVE, giữ ID/history; giờ trùng exact có thể reactivate row cũ. Social set cập nhật theo platform, giữ ID khi có thể. Không tự sửa dữ liệu legacy ngoài thao tác lưu đã yêu cầu. Gym/PT INACTIVE không tự chỉnh hồ sơ; Manager xem được lịch sử tại Gym mình. Production payment/storage và Review còn OPEN.
+
+
+## REV-01 (2026-10-10)
+
+Gym/PT Detail có khu Đánh giá: điểm trung bình/số review VISIBLE, danh sách tên hội viên/rating/ngày/comment theo trang. Guest có link đăng nhập; Customer thấy điều kiện hoặc đánh giá đã gửi (kể cả đã ẩn), form 1–5 sao và nhận xét tùy chọn. Không ảnh/sửa/xóa. Loading/empty/error/retry và phân trang; pending khóa form, không retry POST, giữ draft khi lỗi; thành công làm mới danh sách/trạng thái bản thân. Dùng bố cục navy/red và form hiện có; không dashboard thống kê mới.
+
+
+## REV-02 — Moderation tối giản (2026-10-10)
+
+Người dùng yêu cầu đề xuất thực tế và triển khai. Admin ACTIVE đã đổi mật khẩu tạm xem review Gym/PT toàn hệ thống, gồm Gym/PT INACTIVE; lọc loại Gym/PT, Gym và VISIBLE/HIDDEN, phân trang mới nhất trước. Chỉ hiển thị tên/ID nội bộ cần nhận diện, nội dung gốc và audit ẩn; không email/phone/password. Không tự động ẩn theo điểm thấp, không ép đánh giá tích cực. Giao diện nhắc chỉ ẩn nội dung vi phạm (xúc phạm, spam, thông tin riêng hoặc nội dung không liên quan).
+
+Ẩn cần nhập lý do rõ ràng 1–1.000 ký tự, xác nhận trước gửi; server đặt hidden_by/hidden_at, giữ nguyên rating/comment/created_at. VISIBLE → HIDDEN một lần; hai lần ẩn đồng thời chỉ một commit, lần sau 409 không ghi đè audit. Không sửa/xóa/unhide/duyệt trước đăng, không luồng report review/notification. Public và thống kê chỉ VISIBLE như REV-01. HIDDEN giữ bản riêng cho Customer và audit chỉ Admin. Quyền kiểm tra từ DB trong transaction; khóa parent Gym trước account/role rồi update status có điều kiện. Không package/schema/migration mới.
+
+
+## ADM-01 — Quản lý tài khoản tối giản (2026-10-10)
+
+Người dùng yêu cầu góp ý thực tế và triển khai. Admin ACTIVE đã đổi mật khẩu tạm được đọc User toàn hệ thống, tìm tên/email, lọc role/status, phân trang; đọc danh mục 4 roles, không tạo/sửa role. Projection chỉ identity/contact cần quản lý, tên/avatar, trạng thái/password gate/timestamps, roles và phân công Gym ACTIVE; không hash/password/token, không health/address/birthday.
+
+UI Khóa tạm SUSPENDED / Mở lại ACTIVE, có xác nhận. API giữ allowlist ACTIVE/INACTIVE/SUSPENDED theo spec; INACTIVE là trạng thái cũ có thể đọc và mở lại, UI không thêm nút ngừng vĩnh viễn. Không DELETE/reset password/sửa role. Chặn thay đổi trạng thái mọi tài khoản có role ADMIN, gồm actor, để tránh tự khóa hoặc mất Admin cuối; quản lý Admin ngoài scope này.
+
+Khóa User là ngăn truy cập, không ngừng Gym/PT assignment và không hủy nghĩa vụ. Membership/Payment/Registration/Appointment/report/consultation/assignment giữ nguyên kể cả còn ACTIVE hoặc lịch PENDING/CONFIRMED; không cascade/refund/dời lịch. Manager còn hoạt động đúng Gym (hoặc PT phụ trách còn hoạt động) xử lý lịch theo quyền hiện có; Admin xem lịch và bổ nhiệm Manager tiếp quản, không được cấp thêm quyền sửa lịch; chuyển Manager cần dùng revoke/assign riêng, không tự thay thế. Mở lại không gia hạn thẻ, không reset password gate hoặc tự cấp role/assignment. Role/status được kiểm tra từ DB ở lần gọi tiếp theo; phiên JWT còn hạn không dùng private nghiệp vụ khi User không ACTIVE. JWT không có session revocation store: khi mở lại, token cũ chưa hết hạn có thể dùng lại; không tuyên bố đã thu hồi token vĩnh viễn.
+
+Đổi trạng thái cần expected_updated_at để chống ghi đè; khóa account actor/target theo UUID tăng dần trước đọc quyền/ghi. Không cần Gym lock vì không sửa Gym/assignment/nghĩa vụ; operations Gym hiện có khóa account nên tuần tự hóa với status. Không ghi lý do không có cột lưu, không thêm Audit_Log; phát structured operational log actor/target/old/new/time sau commit, không contact/credential. Log không phải audit history bền vững trên DB. Không migration/package mới.

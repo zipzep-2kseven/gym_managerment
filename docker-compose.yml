@@ -30,10 +30,15 @@ services:
     environment:
       NODE_ENV: ${NODE_ENV:-development}
       PORT: ${PORT:-4000}
+      GALLERY_UPLOAD_DIR: /app/data/gallery-images
+      REPORT_UPLOAD_DIR: /app/data/report-images
+      PAYMENT_MODE: ${PAYMENT_MODE:-disabled}
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres_password}@postgres:5432/${POSTGRES_DB:-multi_gym_db}?schema=public
     ports:
       - "${PORT:-4000}:4000"
     volumes:
+      - gallery_images:/app/data/gallery-images
+      - report_images:/app/data/report-images
       - ./apps/api/src:/app/apps/api/src
       - ./packages/shared/src:/app/packages/shared/src
     depends_on:
@@ -60,6 +65,10 @@ services:
       - multi_gym_network
 
 volumes:
+  gallery_images:
+    name: multi_gym_gallery_images
+  report_images:
+    name: multi_gym_report_images
   postgres_data:
     name: multi_gym_postgres_data
 

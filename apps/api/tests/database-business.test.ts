@@ -83,6 +83,9 @@ try {
   await rejected('INSERT INTO gym_reviews(user_id,gym_id,rating) VALUES ($1,$2,5)',[outsider.user_id,g.gym_id]);
   await rejected('INSERT INTO trainer_reviews(user_id,gym_trainer_id,rating) VALUES ($1,$2,5)',[u.user_id,t2.gym_trainer_id]);
   await rejected('INSERT INTO gym_reviews(user_id,gym_id,rating) VALUES ($1,$2,6)',[u.user_id,g.gym_id]);
+  const customerRole = await insert("INSERT INTO roles(role_name) VALUES ('CUSTOMER') RETURNING role_id");
+  await pool.query('INSERT INTO user_roles(user_id,role_id) VALUES ($1,$3),($2,$3)',[u.user_id,outsider.user_id,customerRole.role_id]);
+  await pool.query("INSERT INTO pt_appointments(registration_id,start_time,end_time,status) SELECT registration_id, NOW()-interval '2 days', NOW()-interval '2 days'+interval '1 hour','COMPLETED' FROM pt_registrations WHERE gym_trainer_id=$1", [t.gym_trainer_id]);
   const service = createReviewService(db);
   await assert.rejects(service.create(outsider.user_id,{kind:'gym',id:g.gym_id},{rating:5}), (e:any)=> e.code==='REVIEW_NOT_ELIGIBLE'); checks++;
   const review = await service.create(u.user_id,{kind:'gym',id:g.gym_id},{rating:5,comment:'Original'});
@@ -97,7 +100,7 @@ try {
   assert.equal(hidden.comment,'Original'); assert.equal(hidden.hiddenBy,a.user_id); assert.ok(hidden.hiddenAt); checks++;
   await rejected("UPDATE gym_reviews SET hidden_reason='Overwrite'");
   // ORM relations are usable and disambiguate author/moderator and requester/assignee.
-  const result = await db.query.gyms.findFirst({ with: { images: true, reviews: { with: { author: true, moderator: true } }, consultations: true } });
+  const result = await db.query.gyms.findFirst({ with: { images: true, reviews: { with: { author: true, moderator: true } }, consultations: { columns: { preferredContact: false, processingNote: false } } } });
   assert.ok(result); checks++;
   const rollbackClient = await pool.connect();
   try {

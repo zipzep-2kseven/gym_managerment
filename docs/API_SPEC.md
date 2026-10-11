@@ -4,7 +4,7 @@
 
 Đồng bộ với ERD 21 bảng tại [DATABASE_SPEC.md](DATABASE_SPEC.md) và nghiệp vụ [DOMAIN_RULES.md](DOMAIN_RULES.md). Giữ REST `/api/v1`, Express/TypeScript, Zod, Drizzle/PostgreSQL, JWT qua cookie. Không tạo CRUD máy móc cho mọi bảng.
 
-Catalog dưới đây mô tả hợp đồng mục tiêu, không khẳng định endpoint đã được triển khai. Các hàng có mã Q là **DRAFT phần phụ thuộc** và chưa được triển khai hành vi đó trước khi chốt Q tại Domain §9. Các thao tác không bị chặn vẫn cần schema/constraints phù hợp trước khi chạy. Giá trị status tham chiếu Database §7; baseline vật lý là VARCHAR + CHECK. Hiện router chỉ mount /auth và /users; contract Gym/PT/Review/Consultation dưới đây chưa phải endpoint hoạt động.
+Catalog dưới đây mô tả hợp đồng mục tiêu, không khẳng định endpoint đã được triển khai. Các hàng có mã Q là **DRAFT phần phụ thuộc** và chưa được triển khai hành vi đó trước khi chốt Q tại Domain §9. Các thao tác không bị chặn vẫn cần schema/constraints phù hợp trước khi chạy. Giá trị status tham chiếu Database §7; baseline vật lý là VARCHAR + CHECK. Auth/User và nhóm Gym/PT của GYM-02 đã hoạt động; PKG-01 triển khai 7 endpoint Package tại §20. Review/Consultation và các nhóm còn lại vẫn là contract mục tiêu nếu chưa có ghi nhận triển khai riêng.
 
 ## 2. Tiêu Chuẩn Giao Thức & Cấu Trúc Chung
 
@@ -236,8 +236,8 @@ Tất cả path dưới đây có tiền tố **/api/v1**. Path :managerId là g
 | FEAT-REP-004 | `PATCH /gyms/:gymId/reports/:reportId/investigate` | Admin, Manager đúng Gym | — | gym_reports | — |
 | FEAT-REP-005 | `PATCH /gyms/:gymId/reports/:reportId/resolve` | Admin, Manager đúng Gym | resolution_note | gym_reports | — |
 | FEAT-REP-006 | `PATCH /gyms/:gymId/reports/:reportId/reject` | Admin, Manager đúng Gym | Chờ Q-13 | gym_reports | Q-13 |
-| FEAT-ADM-001 | `GET /admin/users` | Admin | — | UserAdminView[] | — |
-| FEAT-ADM-002 | `PATCH /admin/users/:userId/status` | Admin | status | UserAdminView | — |
+| FEAT-ADM-001 | `GET /admin/users` | Admin | search, role, status, page, pageSize | {items:UserAdminView[],page,page_size,total} | §30 |
+| FEAT-ADM-002 | `PATCH /admin/users/:userId/status` | Admin | status, expected_updated_at | UserAdminView | §30 |
 | FEAT-ADM-003 | `GET /admin/roles` | Admin | — | roles[] | — |
 | FEAT-GYM-006 | `GET /admin/gyms` | Admin | — | gyms[] | — |
 | FEAT-TRN-006 | `GET /gyms/:gymId/management/trainers` | Admin, Manager đúng Gym | — | gym_trainers[] | — |
@@ -467,11 +467,11 @@ DRAFT: trạng thái REJECTED; điều kiện từ chối và metadata cần ch�
 
 ### `GET /admin/users`
 
-Không trả password_hash, không log dữ liệu xác thực.
+Đã triển khai list/search/filter/pagination và safe projection; contract chính thức tại §30. Không trả password_hash, không log dữ liệu xác thực.
 
 ### `PATCH /admin/users/:userId/status`
 
-ACTIVE/INACTIVE/SUSPENDED; tài khoản không ACTIVE bị từ chối nghiệp vụ, kể cả JWT còn hạn.
+ACTIVE/INACTIVE/SUSPENDED và expected_updated_at; bảo vệ mọi Admin, không cascade nghĩa vụ. Contract chính thức tại §30; tài khoản không ACTIVE bị từ chối nghiệp vụ, kể cả JWT còn hạn.
 
 ### `GET /admin/roles`
 
@@ -567,7 +567,7 @@ TrainerPublicView được mở rộng bằng social_links/working_schedules; re
 | FEAT-CON-001 | `POST /gyms/:gymId/consultation-requests` | Guest hoặc Customer | full_name, phone; email?, preferred_date?, preferred_time?, content? | ConsultationReceipt | Q-19 (validation thời gian) |
 | FEAT-CON-002 | `GET /gyms/:gymId/consultation-requests` | Manager đúng Gym; Staff chờ Q-14 | — | ConsultationManagementView[] | Q-14 (Staff) |
 | FEAT-CON-003 | `PATCH /gyms/:gymId/consultation-requests/:requestId` | Manager đúng Gym; Staff chờ Q-14 | status?, assigned_to? | ConsultationManagementView | Q-14/Q-19 |
-| FEAT-TRN-007 | `PATCH /gyms/:gymId/trainers/:trainerId/availability` | PT chính chủ; quyền thay mặt chờ Q-16 | availability | TrainerPublicView | Q-16 |
+| FEAT-TRN-007 | `PATCH /gyms/:gymId/trainers/:trainerId/availability` | PT chính chủ; Manager ACTIVE đúng Gym | availability | TrainerPublicView | Q-16 |
 | FEAT-TRN-008 | `PUT /gyms/:gymId/trainers/:trainerId/social-links` | PT chính chủ; quyền thay mặt chờ Q-16 | links: [{platform, url}] | PtSocialLinkView[] | Q-16 |
 | FEAT-TRN-009 | `PUT /gyms/:gymId/trainers/:trainerId/working-schedules` | PT chính chủ; quyền thay mặt chờ Q-18 | schedules: [{day_of_week, start_time, end_time, status}] | PtWorkingScheduleView[] | Q-18 |
 | FEAT-REV-001 | `GET /gyms/:gymId/reviews` | Public | — | GymReviewPublicView[] | — |
@@ -642,7 +642,7 @@ TrainerPublicView được mở rộng bằng social_links/working_schedules; re
 
 ## 17. GYM-02 đợt 2 — Tạo/cập nhật thông tin Gym đã triển khai
 
-- `POST /api/v1/gyms`: Admin có account ACTIVE, không bị must_change_password gate và có role ADMIN hiện tại trong DB. Body strict yêu cầu `gym_name`, `address`; nhận tùy chọn description, phone, email, latitude, longitude, logo_url, opening_time, closing_time. Trả 201 `{success:true,data:Gym}` theo projection Gym §6. Gym mới ACTIVE theo default; không tạo User/role/Manager/PT hoặc phân công tự động.
+- `POST /api/v1/gyms`: Admin có account ACTIVE, không bị must_change_password gate và có role ADMIN hiện tại trong DB. Body strict yêu cầu `gym_name`, `address`; nhận tùy chọn description, phone, email, latitude, longitude, logo_url, opening_time, closing_time. Trả 201 `{success:true,data:Gym}` theo projection Gym §6. Gym mới ACTIVE theo default. Khi có `manager`, tạo nguyên tử User/Profile/role MANAGER/phân công và trả credential một lần theo §23; khi không có vẫn chỉ tạo Gym.
 - `PATCH /api/v1/gyms/:gymId`: Admin hoặc User có role MANAGER và assignment ACTIVE đúng Gym, account ACTIVE và đã đổi mật khẩu nếu bắt buộc. Body strict chứa ít nhất một field thông tin nêu trên. Trả 200 Gym DTO. Field bị bỏ qua giữ nguyên; field nullable nhận null để xóa giá trị. gym_name/address không nhận null hoặc chuỗi trắng.
 - gym_name/address trim và không rỗng. description là chuỗi nullable. phone trim, 1–20 ký tự; đây là liên hệ Gym, không ép định dạng điện thoại cá nhân. email trim/lowercase, định dạng email, tối đa 254 ký tự. logo_url chỉ HTTP/HTTPS, không thực hiện upload.
 - latitude/longitude nhận số JSON hoặc chuỗi thập phân hữu hạn trong khoảng [-90,90]/[-180,180]; lưu theo numeric(9,6), response giữ chuỗi decimal. opening_time/closing_time nhận HH:mm hoặc HH:mm:ss (00:00:00–23:59:59), response HH:mm:ss. Không thêm rule closing>opening vì Gym có thể mở qua đêm.
@@ -674,3 +674,202 @@ TrainerPublicView được mở rộng bằng social_links/working_schedules; re
 - Gym INACTIVE vẫn đọc nội bộ được nếu actor còn scope. Quyền này không mở rộng response public: GET /gyms chỉ ACTIVE, public PT không trả assignment INACTIVE hoặc user_id, kể cả người gọi là Admin.
 - Kiểm tra quyền và đọc count/page cùng transaction repeatable-read; giữ share locks trên dữ kiện quyền, PT list khóa Gym trước account/assignment theo thứ tự lifecycle. Không ghi dữ liệu nghiệp vụ. Lỗi serialization/deadlock dùng 409 CONCURRENT_MODIFICATION hiện có; không trả SQL. Mọi response nhóm này dùng Cache-Control: no-store.
 - Không thêm UI, quản trị Package/User/Role hay thay đổi schema/migration trong đợt này.
+
+
+## 20. PKG-01 — Package API đã triển khai
+
+| Feature | Endpoint (prefix `/api/v1`) | Quyền và kết quả |
+| --- | --- | --- |
+| FEAT-PKG-001 | `GET /gyms/:gymId/packages` | Public; Package ACTIVE và Gym ACTIVE; collection envelope §3.2 |
+| FEAT-PKG-002 | `GET /gyms/:gymId/packages/:packageId` | Public; đúng Gym, Package/Gym ACTIVE; 200 Package DTO |
+| FEAT-PKG-003 | `POST /gyms/:gymId/packages` | Admin hoặc Manager có assignment ACTIVE đúng Gym; 201 Package DTO |
+| FEAT-PKG-004 | `PATCH /gyms/:gymId/packages/:packageId` | Cùng quyền quản trị; 200 Package DTO |
+| FEAT-PKG-005 | `PATCH /gyms/:gymId/packages/:packageId/deactivate` | Cùng quyền quản trị; 200, status INACTIVE |
+| FEAT-PKG-006 | `PATCH /gyms/:gymId/packages/:packageId/activate` | Cùng quyền quản trị; 200, status ACTIVE |
+| FEAT-PKG-007 | `GET /gyms/:gymId/management/packages` | Cùng quyền quản trị; ACTIVE/INACTIVE theo filter; collection envelope §3.2 |
+
+- Package DTO tường minh: package_id, gym_id, package_name, description, duration_days, price, status, created_at, updated_at. Timestamp ISO; price luôn decimal string với hai chữ số lẻ. Không join User/Payment/Membership, không quota PT.
+- POST body strict: package_name (trim, không rỗng), duration_days (JSON integer 1–2147483647), price (decimal **string**, không nhận JSON number); description tùy chọn string hoặc null. status mặc định ACTIVE theo schema. PATCH chỉ nhận các field này, có ít nhất một field; field bỏ qua giữ nguyên, description=null xóa mô tả. gym_id/package_id/status/timestamps/actor/role/quota và mọi field lạ trả 400 VALIDATION_ERROR.
+- price trim, 1–12 chữ số nguyên và tùy chọn 1–2 chữ số lẻ; không âm, tối đa 999999999999.99. Không nhận exponent, NaN/Infinity, dấu cộng, dấu phẩy hoặc phần lẻ thứ ba. Chuẩn hóa bằng thao tác chuỗi, không làm tròn floating point: `"00012.5"` → `"12.50"`, `"0"` → `"0.00"`.
+- List query strict: page mặc định 1, pageSize mặc định 20, tối đa 100; search tìm package_name/description, trim, không phân biệt hoa/thường, escape `%`, `_`, `\` thành literal. sortBy: created_at/package_name/duration_days/price; sortOrder asc/desc, mặc định created_at desc; package_id asc phân xử đồng hạng. price sort theo numeric của DB. Chỉ management nhận status ACTIVE/INACTIVE; không gửi status nghĩa là cả hai. Public từ chối filter status và mọi query lạ/lặp tham số; offset phải là số nguyên an toàn. Trang vượt cuối trả data=[], không kết quả totalPages=0.
+- UUID route kiểm tra bằng Zod. Detail/create/update/status không nhận query parameters; status nhận body rỗng hoặc `{}` và không có force/cascade. Public Gym/Package INACTIVE, không tồn tại hoặc Package khác Gym đều trả cùng 404 NOT_FOUND an toàn.
+- Private endpoint có authenticate trước controller; account/role/assignment lấy lại từ DB trong transaction, không tin role JWT. Thiếu phiên/actor: 401; account INACTIVE/SUSPENDED: 403 ACCOUNT_DEACTIVATED; password gate: 403 PASSWORD_CHANGE_REQUIRED; sai role/scope/phân công: 403 theo GymScopeService. Package khác Gym/missing trả 404 sau xác minh scope.
+- Internal catalog vẫn đọc/tạo/sửa/đổi trạng thái trong Gym INACTIVE nếu actor còn scope, tương tự thông tin Gym; việc này không mở Gym public, không cho phép mua gói hoặc cấp hợp đồng. Không sửa account/role/assignment/Payment/Membership. Ngừng bán không bị chặn bởi Membership đã mua và không hủy thẻ; đây là FEAT-PKG-005 đã chốt, không áp dụng rule ngừng Gym/PT vào Package.
+- Public đọc parent visibility và dữ liệu trên read-only repeatable-read snapshot. Management count/page/quyền cùng repeatable-read transaction. Write khóa share Gym trước account/role/assignment, cập nhật row Package theo cả gym_id và package_id; partial updates không ghi đè field ngoài payload. Giữ lock dữ kiện quyền tới commit để revoke/account change an toàn với request đang chờ.
+- Mọi Package response dùng Cache-Control: no-store. JSON sai cú pháp hoặc scalar bị Express từ chối trước Zod cũng trả 400 VALIDATION_ERROR an toàn, không log payload. SQL/stack/credential không trả client; database error → 500 INTERNAL_SERVER_ERROR, deadlock/serialization → 409 CONCURRENT_MODIFICATION. Không tự retry hoặc mở endpoint DELETE.
+- PKG-01 không triển khai checkout, callback/payment method, Membership API, UI hoặc migration mới. Q-01/Q-02 vẫn chặn đúng phần Payment phụ thuộc. Bằng chứng nghiệm thu: [PKG_01_VERIFICATION.md](PKG_01_VERIFICATION.md).
+
+
+## 21. Payment demo — đã triển khai (2026-10-08)
+
+Nguồn SUCCESS là bộ mô phỏng backend được người dùng yêu cầu, không phải dữ kiện tiền thật. Mặc định ghi bị tắt; PAYMENT_MODE=demo trong môi trường không production mới bật. UI/API/DB đánh dấu demo. Không có callback hoặc endpoint Customer tự PATCH SUCCESS.
+
+- POST `/api/v1/gyms/:gymId/payments`: Customer từ DB, strict UUID params, query rỗng, body `{package_id: UUID, payment_method: string trim 1–80}`; bất kỳ phương thức hợp lệ nào đều mô phỏng thành công. Header Idempotency-Key UUID bắt buộc, normalize UUID lowercase.
+- Gym/Package ACTIVE, cùng Gym; backend đọc price/duration dưới lock. Tạo Payment SUCCESS + Membership ACTIVE trong một transaction; amount/purchase_price giữ decimal string, kể cả 0 hoặc numeric max. Paid_at từ server, ngày Việt Nam, số ngày bao gồm ngày cuối. Duration vượt năm 9999 trả 400 INVALID_DURATION trước ghi.
+- HTTP 201 khi tạo mới, 200 khi replay. Data `{demo:true,replayed,payment,membership}`. Payment DTO gồm payment_id/user_id/gym_id/package_id/amount/payment_method/transaction_code/payment_status/paid_at/created_at/updated_at/demo. Membership DTO gồm membership_id/user_id/gym_id/package_id/payment_id/purchase_price/start_date/end_date/status/created_at/updated_at/demo.
+- payment_method lưu `DEMO:<method>`, transaction_code `DEMO:<UUID>`. Replay cùng actor/Gym/package/method giữ nguyên Payment/thẻ dù Package đã đổi hoặc ngừng bán. Key khác input/actor/Gym trả 409 IDEMPOTENCY_CONFLICT an toàn; không lộ dữ liệu. Lỗi Membership rollback Payment; DB serialization/deadlock trả 409 CONCURRENT_MODIFICATION.
+- GET `/api/v1/payments/me`, GET `/api/v1/memberships/me`: Customer chính chủ; collection envelope, strict query page (1–1000000, default1), pageSize (1–100, default20), created_at desc/PK asc. List thẻ nhận demo flag qua Payment nguồn, không suy từ price.
+- GET `/api/v1/payments/:paymentId`: Customer chính chủ, UUID/query rỗng; safe404 nếu sai owner/missing. Không mở lịch sử tài chính toàn Gym cho Manager/Admin.
+- Mọi endpoint authenticate và Cache-Control:no-store; quyền account/role/password gate đọc lại DB. Guest401, sai role403, resource hidden/wrongGym404, strict payload400; demo disabled503 PAYMENT_DEMO_DISABLED. App CORS cho Idempotency-Key.
+- Demo không thực hiện expiry/refund/manual membership hoặc quyết định policy nhiều thẻ tiền thật. Các lần bấm với key mới là giao dịch demo độc lập. Real payment contracts ở §8 vẫn chưa triển khai.
+
+## 22. PT Registration / Appointment / Availability — triển khai 2026-10-09
+
+Chính sách được duyệt tại PLAN-03 §9. Phần này thay thế DRAFT/UNKNOWN tương ứng trong catalog §8/§13; không mở `/assign` ghi đè đăng ký. Tất cả đường dẫn dưới có prefix `/api/v1`, authenticate cookie, Cache-Control no-store; backend đọc account/role/assignment hiện hành và password gate. Body/params/query Zod strict, UUID lowercase.
+
+| Method / Path | Actor | Input | Output |
+| --- | --- | --- | --- |
+| PATCH /gyms/:gymId/trainers/:trainerId/availability | PT chính chủ ACTIVE hoặc Manager ACTIVE đúng Gym | {availability: ACCEPTING/ALMOST_FULL/NOT_ACCEPTING} | {gym_trainer_id,gym_id,availability} |
+| POST /gyms/:gymId/pt-registrations | Customer chính chủ hoặc Manager đúng Gym | {membership_id,gym_trainer_id,note?} | RegistrationView, 201 |
+| GET /pt-registrations/me | Customer/PT | page/pageSize | RegistrationView[] + pagination |
+| GET /gyms/:gymId/pt-registrations | Admin/Manager đúng Gym | page/pageSize | RegistrationView[] + pagination |
+| PATCH /gyms/:gymId/pt-registrations/:registrationId/cancel | Admin/Manager đúng Gym | {note}, lý do bắt buộc | RegistrationView |
+| POST /gyms/:gymId/pt-appointments | Customer chính chủ/PT được giao/Manager đúng Gym | {registration_id,start_time,end_time,note?} | AppointmentView PENDING, 201 |
+| GET /pt-appointments/me | Customer/PT | page/pageSize | AppointmentView[] + pagination |
+| GET /gyms/:gymId/pt-appointments | Admin/Manager đúng Gym | page/pageSize | AppointmentView[] + pagination |
+| PATCH /gyms/:gymId/pt-appointments/:appointmentId/confirm | PT được giao/Manager | {note?} | AppointmentView CONFIRMED |
+| PATCH /gyms/:gymId/pt-appointments/:appointmentId/reschedule | Customer chính chủ/PT được giao/Manager | {start_time,end_time,note?} | AppointmentView PENDING |
+| PATCH /gyms/:gymId/pt-appointments/:appointmentId/cancel | Customer chính chủ/PT được giao/Manager | {note}, bắt buộc | AppointmentView CANCELLED |
+| PATCH /gyms/:gymId/pt-appointments/:appointmentId/complete | PT được giao/Manager | {note?} | AppointmentView COMPLETED |
+
+- Response {success:true,data}; collections có pagination cùng cấp data, page mặc định 1 tối đa 1e6, pageSize mặc định 20 tối đa 100. Registration sort created_at desc/id asc, Appointment sort start_time desc/id asc. Scope Customer theo Membership.user_id; PT theo trainer.user_id và assignment ACTIVE; tài khoản hai role lấy hợp của hai tập. Projection §6, không email/phone/hash/account data.
+- Registration: Membership ACTIVE trong ngày Việt Nam và Gym/PT/account/role ACTIVE; một ACTIVE/thẻ. NOT_ACCEPTING chặn mới. Demo Membership được dùng; không phân biệt thẻ demo trong eligibility. Availability không chặn buổi của đăng ký cũ. Không sửa Membership/PT nguồn hoặc history; cancel chỉ khi không còn Appointment PENDING/CONFIRMED, repeat giữ kết quả cũ.
+- Appointment: Registration ACTIVE và thẻ còn hạn cho create/confirm/reschedule; ISO timestamp phải có offset/Z. Toàn bộ khoảng [start,end) nằm trong ngày thẻ Việt Nam, start > now, end > start. PENDING/CONFIRMED giữ chỗ toàn hệ thống cho cả User học/dạy, kể cả hai role. Conflict chỉ thông báo chung, không lộ lịch Gym khác. Working Schedule chỉ tham khảo.
+- Dời trước giờ bắt đầu, kiểm tra lại và về PENDING. Dời cùng start/end là no-op. Confirm trước giờ chỉ PT/Manager. Customer hủy trước giờ; PT/Manager hủy quá giờ với lý do. Complete chỉ từ CONFIRMED sau end; repeat cùng đích không sửa note/timestamp. Thẻ hết hạn không ngăn xử lý nghĩa vụ cũ. Terminal không chỉnh sửa. Không quota/refund/NO_SHOW mới/cascade.
+- POST Appointment không có cơ chế replay theo Idempotency-Key ở bản đầu: gửi lại cùng giờ trong lúc lịch mở trả 409 APPOINTMENT_OVERLAP; người dùng tải lại danh sách trước thử lại sau lỗi mạng. UI khóa submit pending, mutations retry=false. POST Registration lặp trả 409 ACTIVE_REGISTRATION_EXISTS.
+- Lỗi: 400 VALIDATION_ERROR/INVALID_APPOINTMENT_TIME; 401 không phiên; 403 quyền/account/password; 404 tài nguyên ngoài Gym hoặc không tồn tại; 409 MEMBERSHIP_REQUIRED/PT_INACTIVE/TRAINER_NOT_ACCEPTING/ACTIVE_REGISTRATION_EXISTS/APPOINTMENT_OVERLAP/REGISTRATION_HAS_OPEN_APPOINTMENTS/APPOINTMENT_STARTED/INVALID_STATUS/CONCURRENT_MODIFICATION/PT_POLICY_CONFLICT. SQL/stack không trả client.
+- Migration 0003: unique ACTIVE Registration/thẻ; preflight overlap legacy; immutable Registration source/terminal history và participant identity; overlap trigger khóa Gym → participant User theo UUID. API thêm khóa actor cùng thứ tự, thẩm định scope và state machine. Các ghi Appointment yêu cầu isolation READ COMMITTED; snapshot repeatable-read/serializable bị từ chối để không bỏ sót conflict sau chờ khóa. SQL trực tiếp sai thứ tự có thể bị abort do deadlock. Không thêm bảng/cột. Đã áp dụng migration 0002–0003 lên database Docker development đang dùng ngày 2026-10-09; xem PT_WORKFLOW_VERIFICATION.md.
+
+### Thẻ hội viên cho form Manager (FEAT-MEM-003)
+
+GET `/api/v1/gyms/:gymId/memberships` đã triển khai như phần hỗ trợ đăng ký hộ. Admin hoặc Manager ACTIVE đúng Gym, account/password gate hiện hành; Customer/PT không đọc danh sách Gym. Query strict page/pageSize như §22; created_at desc, membership_id asc; không filter do client tự khai. MembershipView §6 + customer {user_id,full_name} để chọn thẻ bằng tên hội viên. Không email/phone/credential. Trả mọi status cho quản trị; form chỉ đưa thẻ ACTIVE còn hạn vào lựa chọn. DTO, ownership và eligibility ghi Registration vẫn do backend thẩm định.
+
+
+## 23. Tạo Gym kèm Manager — 2026-10-09
+
+`POST /api/v1/gyms`, authenticated Admin hiện hành. Giữ các field Gym §17 và bổ sung field optional `manager: { email, full_name, phone? }`, strict allowlist theo provisioning hiện có. Email trim/lowercase, tên 2–100 ký tự, phone nullable theo validator staff. Không nhận password/roles/status/user_id/gym_id trong manager; PATCH /gyms/:gymId không nhận manager.
+
+Success 201 `{success:true,data:{...Gym,manager:{user:UserSession,assignment:ManagerAssignment,temporary_password:string}}}` khi có manager, `Cache-Control: no-store`. Assignment luôn trỏ Gym vừa tạo. User ACTIVE/MANAGER/must_change_password=true; lần đăng nhập đầu dùng luồng đổi mật khẩu hiện có. Khi không có manager, response Gym cũ không có field credential.
+
+Authorize sơ bộ trước hash, hash ngoài transaction/khóa, recheck DB account/ADMIN grant trong transaction ghi. Insert Gym/User/Profile/Role/Assignment nguyên tử; unique email/phone hoặc thiếu role rollback toàn bộ. 400 strict validation, 401 unauthenticated, 403 role/account/password gate, 409 EMAIL_ALREADY_EXISTS/PHONE_ALREADY_EXISTS/concurrency, 500 cấu hình/hạ tầng. Response lỗi và public/list/update/session không chứa mật khẩu tạm/hash. Không có API đọc lại credential.
+
+Không tự retry POST khi mất kết nối sau commit: Admin kiểm tra danh sách cơ sở/phân công trước khi thao tác tiếp; API chưa có idempotency cho tạo Gym. Manager đã có tài khoản dùng màn Bổ nhiệm Manager.
+
+
+## 24. Báo cáo sự cố bằng nội dung/ảnh — 2026-10-10
+
+Thay draft Report/EQP trước đó trong phạm vi demo; không mở API danh mục/máy. Các endpoint đều cookie authenticated, no-store, quyền DB authoritative; Guest không gửi/đọc ảnh. Không cho sửa/xóa chứng cứ gốc.
+
+- POST /gyms/:gymId/reports: Customer có thẻ ACTIVE còn hạn tại Gym ACTIVE, gồm thẻ demo. Body strict `{content: string(5..4000), image?: {mime_type: 'image/jpeg'|'image/png', data: base64}}`. Không title/type/equipment_id/user_id/Gym/status/image_url tự khai. Tối đa 1 ảnh ≤5MiB, chữ ký MIME/giới hạn kích thước, canonical base64; JSON limit 7MiB, auth/eligibility trước parse lớn và kiểm tra lại transaction ghi. Server gán type OTHER/title từ nội dung/PENDING; không tự tạo quan hệ thiết bị.
+- GET /reports/me: chính chủ, không yêu cầu thẻ còn hạn để đọc lịch sử.
+- GET /gyms/:gymId/reports: Admin/Manager assignment ACTIVE đúng Gym; được xử lý lịch sử khi Gym ngừng.
+- GET /reports/:reportId/image: chính chủ hoặc Admin/Manager đúng Gym, current account ACTIVE/password gate. Trả binary MIME cố định JPEG/PNG, no-store, nosniff, CORP same-site; frontend dùng CORS use-credentials với origin đã cấu hình. Không static public/path tùy ý.
+- PATCH /gyms/:gymId/reports/:reportId/investigate: strict body {}, PENDING→IN_PROGRESS.
+- PATCH /gyms/:gymId/reports/:reportId/resolve: `{resolution_note: string(1..2000)}`, IN_PROGRESS→RESOLVED; server gán actor và resolved_at.
+- PATCH /gyms/:gymId/reports/:reportId/reject: cùng note allowlist, PENDING/IN_PROGRESS→REJECTED, lý do bắt buộc; actor resolved_by, resolved_at NULL, updated_at là thời điểm từ chối. Terminal không mở lại; lặp/action không phù hợp trả 409.
+
+GET collections query strict page (1..1000000), pageSize (1..100), status? (4 giá trị). Response collection envelope chuẩn, projection `{report_id,gym_id,gym_name,content,status,has_image,resolution_note,created_at,updated_at,resolved_at}`. Create/action trả projection trong data; không file key, email, credential, user_id khác Gym.
+
+Lỗi: 400 validation/image sai; 401 thiếu phiên; 403 account/role/scope/card không đủ; 404 Gym/Report/ảnh không tồn tại; 409 chuyển trạng thái hoặc concurrency; 413 vượt body; 503 upload chưa hỗ trợ môi trường production. Ảnh demo local disk volume, tối đa 20M pixels, frontend re-encode JPEG/resize cạnh dài1600 loại metadata. Không tích hợp storage production, Gallery/Avatar/upload chung. POST không tự retry, chưa có idempotency; mất mạng sau commit cần kiểm tra lịch sử trước gửi lại.
+
+## 25. Đăng ký tư vấn — contract được duyệt 2026-10-10
+
+CON-01/CON-02 theo quyết định mới nhất trong Architecture/Domain. Base `/api/v1`.
+
+| Method / route | Quyền | Request / response |
+| :--- | :--- | :--- |
+| POST `/gyms/:gymId/consultation-requests` | Guest hoặc phiên hiện hành hợp lệ; Gym ACTIVE | Strict `{full_name, phone, content?, preferred_contact?}`; 201 `{success:true,data:{message:"Gym đã nhận yêu cầu và sẽ liên hệ để tư vấn."}}` |
+| GET `/gyms/:gymId/consultation-requests` | Chỉ MANAGER và assignment ACTIVE đúng Gym | Strict query page/pageSize/status; `{success:true,data:[Consultation],pagination}` |
+| PATCH `/gyms/:gymId/consultation-requests/:requestId` | Chỉ MANAGER và assignment ACTIVE đúng Gym | Strict `{expected_status,status,processing_note?}`; 200 `{success:true,data:Consultation}` |
+
+Họ tên trim 2–100 ký tự; phone tối đa 20 ký tự đầu vào, loại khoảng trắng/dấu ngoặc/chấm/gạch ngang, sau chuẩn hóa 9–15 chữ số, cho phép dấu + ở đầu. content trim tối đa 2000, preferred_contact trim tối đa 200; rỗng lưu NULL. Không nhận email/preferred_date/preferred_time/user_id/gym_id/status/assigned_to/processing_note từ public body. Cookie không có là Guest; cookie sai trả 401, account INACTIVE/SUSPENDED hoặc must_change_password trả 403, không tự hạ thành Guest. User_id lấy duy nhất từ cookie hợp lệ; không bắt Membership. Response POST không có contact/ID/user/assignment, không mở public GET.
+
+Consultation DTO nội bộ: consultation_request_id, gym_id, full_name, phone, content, preferred_contact, processing_note, status, created_at, updated_at; không trả user_id/email/assigned_to. page mặc định 1, pageSize mặc định 20/tối đa 100, status enum bốn giá trị. UUID route hợp lệ bắt buộc, giới hạn JSON 100 kB.
+
+Transitions: PENDING→CONTACTED→COMPLETED, PENDING/CONTACTED→CANCELLED với processing_note không rỗng làm lý do. Cùng trạng thái PENDING/CONTACTED cho phép lưu ghi chú riêng; cập nhật processing_note thay ghi chú hiện tại, không phải nhật ký. Terminal không sửa/mở lại. expected_status phải bằng trạng thái hiện tại, sai trả 409 INVALID_STATUS_TRANSITION. Khóa Gym trước account/assignment và row khi PATCH; queries read/write luôn có gym_id. Có thể xử lý yêu cầu cũ của Gym INACTIVE; không nhận yêu cầu mới. Admin/PT/Customer/Manager khác Gym không có quyền đọc/xử lý.
+
+POST giới hạn 5 lần/15 phút/IP trong một process, tính cả request bị từ chối sau limiter, map tối đa 10.000 IP còn hiệu lực; dùng req.ip/remoteAddress khi trust proxy tắt, không tin X-Forwarded-For. 429 RATE_LIMITED kèm Retry-After; reset khi restart. Khi chạy nhiều process/proxy cần xem lại limiter trước production. Không CAPTCHA, không idempotency/automatic retry. No-store cho các response route.
+
+400 validation, 401 session, 403 account/password/role/scope, 404 Gym/resource sai scope, 409 state/concurrency, 413 body quá lớn, 429 rate limit, 500 lỗi an toàn. Không tạo Appointment/Payment/Membership, assignment, email/SMS hoặc SLA phản hồi.
+
+## 26. Gallery demo — GIM-01 (2026-10-10)
+
+Theo quyết định Gallery demo mới nhất trong Architecture/Domain. Base `/api/v1`.
+
+| Method / route | Quyền | Contract |
+| :--- | :--- | :--- |
+| GET `/gyms/:gymId/images` | Guest, Gym ACTIVE | 200 `{success:true,data:GalleryImage[]}` theo thứ tự; tối đa 10 ảnh qua API ghi hiện tại |
+| GET `/gyms/:gymId/management/images` | Admin hoặc Manager ACTIVE đúng Gym | Cùng DTO, gồm Gym INACTIVE |
+| POST `/gyms/:gymId/images` | Admin hoặc Manager ACTIVE đúng Gym | Strict `{image:{mime_type,data},caption?}`; 201 GalleryImage |
+| PATCH `/gyms/:gymId/images/:imageId` | Admin hoặc Manager ACTIVE đúng Gym | Strict `{caption,expected_updated_at}`; 200 GalleryImage |
+| PATCH `/gyms/:gymId/images/order` | Admin hoặc Manager ACTIVE đúng Gym | Strict `{expected_image_ids,image_ids}`; 200 GalleryImage[] |
+| DELETE `/gyms/:gymId/images/:imageId` | Admin hoặc Manager ACTIVE đúng Gym | Body vắng hoặc strict {}; 200 `{message:"Đã xóa ảnh."}` |
+| GET `/gyms/:gymId/images/:imageId/file` | Guest, Gym ACTIVE | Bytes JPEG/PNG, no-store/nosniff; row phải đúng Gym |
+| GET `/gyms/:gymId/management/images/:imageId/file` | Admin hoặc Manager ACTIVE đúng Gym | Bytes private, gồm Gym INACTIVE |
+
+GalleryImage DTO: image_id, gym_id, caption, display_order, updated_at; không trả storage key/image_url hoặc actor. Đường ảnh được frontend tạo từ Gym/image ID và endpoint tương ứng; không redirect hoặc fetch URL do client cung cấp. List không có query parameters, strict UUID route. Ảnh đầu tiên là cover của gallery; logo riêng không bị thay đổi.
+
+Upload một JPEG/PNG base64 canonical tối đa 5 MiB/20 megapixels, caption trim tối đa 200, rỗng NULL. UI mã hóa lại JPEG và thu nhỏ cạnh dài 1600 trước gửi; server kiểm tra độc lập, loại PNG text/EXIF và JPEG EXIF/XMP/IPTC/comments, không nhận filename/image_url/gym_id/display_order từ body. Parser riêng 7 MiB sau authenticate/authorize sơ bộ; request khác giữ 100 kB. Demo dùng GALLERY_UPLOAD_DIR/volume riêng, production upload trả 503 GALLERY_UPLOAD_DISABLED khi chưa có storage được chọn.
+
+Mọi write khóa Gym trước quyền account/assignment và gallery: recheck quota trong transaction insert, tối đa 10 row/Gym qua API. Reorder phải chứa chính xác mỗi image ID hiện tại một lần và expected_image_ids đúng thứ tự hiện hành, mọi cập nhật nguyên tử. Caption expected_updated_at phải bằng timestamp ISO server đã trả; sai dữ liệu cũ trả 409 GALLERY_CHANGED. DELETE row commit trước cleanup file, URL cũ trả 404. Không sửa/xóa bản ghi hoặc file báo cáo sự cố. Ngừng Gym giữ row/file, các request public mới trả 404; không thu hồi bytes đã tải trước đó.
+
+400 validation/ảnh sai, 401 chưa login, 403 account/password/role/scope, 404 Gym/resource sai scope, 409 GALLERY_LIMIT/GALLERY_CHANGED/concurrency, 413 body vượt giới hạn, 503 storage disabled, 500 lỗi an toàn. No-store cho list và file. Public bytes Cross-Origin-Resource-Policy cross-origin; private bytes same-site và browser dùng CORS credentials. Không static directory, không provider/crop/album/video/versioning/drag-drop. Không tự retry POST khi mất mạng, UI hướng dẫn kiểm tra danh sách trước gửi lại.
+
+## 27. TPR-01 — Hồ sơ và giờ làm việc tham khảo (2026-10-10)
+
+Q-16/Q-18 đã được người dùng duyệt, theo quyết định mới nhất trong Architecture/Domain. Base `/api/v1`.
+
+| Method / route | Quyền | Contract |
+| :--- | :--- | :--- |
+| GET `/trainer-profile/me` | PT chính chủ có assignment ACTIVE | 200 TrainerProfile, actor từ cookie/DB, không nhận user/gym/trainer ID |
+| PUT `/trainer-profile/me` | PT chính chủ, Gym/PT ACTIVE | Strict `{expected_updated_at,bio,social_links,working_schedules}` toàn bộ hồ sơ tự quản lý |
+| GET `/gyms/:gymId/management/trainers/:trainerId/profile` | Manager ACTIVE đúng Gym | 200 TrainerProfile, đọc được PT/Gym INACTIVE trong scope |
+| PATCH `/gyms/:gymId/management/trainers/:trainerId/profile` | Manager ACTIVE đúng Gym, Gym/PT ACTIVE | Strict `{expected_updated_at,specialization,experience_years}` |
+
+TrainerProfile DTO: gym_id, gym_trainer_id, specialization, experience_years, bio, availability, status, updated_at, profile:{full_name,avatar_url}|null, social_links:[{platform,url}], working_schedules:[{day_of_week,start_time,end_time}]. Không email/phone/user_id/password/hash/Appointment/học viên. List children ACTIVE-only cho working schedules, thứ Hai→Chủ nhật rồi giờ bắt đầu; query GET strict rỗng, route UUID chuẩn hóa lowercase.
+
+Bio string trim ≤2000, rỗng NULL. Manager specialization string trim ≤200, rỗng NULL; experience_years int 0–80 hoặc NULL. Self không nhận chuyên môn/kinh nghiệm/trạng thái/availability/actor; Manager không nhận bio/social/schedule. availability giữ endpoint hiện có, các mutation invalidate cả trainer-profile để timestamp được cập nhật. Tên/ảnh dùng User Profile hiện có, không mở upload mới.
+
+social_links toàn bộ set, ≤5, platform enum hiện có FACEBOOK/INSTAGRAM/YOUTUBE/TIKTOK/WEBSITE, mỗi platform một URL HTTP(S) ≤2048 không chứa user/password. Giữ ID khi sửa platform hiện có, xóa liên kết bị bỏ khi lưu; không audit/version. working_schedules toàn bộ set ACTIVE, ≤28 ca, day enum thứ trong tuần, HH:mm giờ Việt Nam, end>start, không overlap cùng ngày, ca liền kề được phép, không qua nửa đêm. Không khai báo giờ không chặn booking. Không công khai Appointment hoặc chỗ trống từ dữ liệu này.
+
+Write khóa parent Gym trước account/role/assignment/trainer, quyền lấy lại trong transaction. expected_updated_at so với timestamp server hiện hành; stale/concurrent trả 409 PROFILE_CHANGED. Parent updated_at tăng tối thiểu 1 ms khi API hồ sơ mới ghi để version không lặp. Các ca bị bỏ chuyển INACTIVE, không xóa lịch sử; exact day/time có thể reactivate ID cũ, ca mới tạo row. Thao tác không ghi pt_appointments/pt_registrations/memberships hoặc sửa check chống trùng Appointment; không tạo/dời/hủy lịch tự động, không giữ slot.
+
+400 validation/allowlist/url/overlap, 401 cookie, 403 role/account/password/assignment/Gym/PT inactive, 404 PT sai Gym trong scope, 409 stale/concurrency, 500 lỗi an toàn. No-store, parser 100 kB hiện có. Admin không có quyền API TPR mới chỉ vì role ADMIN; provisioning/lifecycle hiện có giữ nguyên.
+
+
+## 28. REV-01 — Review Customer và public (2026-10-10)
+
+GET/POST `/gyms/:gymId/reviews`, GET/POST `/gyms/:gymId/trainers/:trainerId/reviews`: GET public; POST authentication Customer và Q-15 mới. Body strict `{rating: integer 1..5, comment?: string|null <=2000}`; không nhận actor/status/audit. POST 201 `{success:true,data:{review_id,rating,comment,status,created_at}}`. Duplicate kể cả HIDDEN trả 409 REVIEW_ALREADY_EXISTS; thiếu eligibility 403 REVIEW_NOT_ELIGIBLE; target inactive/khác Gym 404. Không PATCH/DELETE review.
+
+GET public query strict `page` 1..100000, `pageSize` 1..50, mặc định 1/10; data `{items:[{review_id,rating,comment,created_at,author_name}],page,page_size,total,average_rating}`. Chỉ VISIBLE, mới nhất trước/ID để ổn định; average=null khi chưa có review. Không contact/User ID/audit. Target Gym/PT inactive 404. No-store.
+
+GET `/gyms/:gymId/reviews/me` và `/gyms/:gymId/trainers/:trainerId/reviews/me`: authenticated Customer; query rỗng. data `{eligible,reason,review:null|{review_id,rating,comment,status,created_at}}`. Trả review chính chủ cả HIDDEN nhưng không audit; không đổi eligibility thành quyền từ frontend. Mọi ghi kiểm tra lại DB; account/role/password/assignment và ownership hiện hành. Q-15 theo quyết định 2026-10-10; REV-02 ngoài phạm vi.
+
+
+## 29. REV-02 — Admin moderation (2026-10-10)
+
+GET `/admin/reviews`: authenticated Admin ACTIVE, đã đổi mật khẩu tạm. Query strict `{kind?:gym|trainer (default gym), gym_id?:UUID, status?:VISIBLE|HIDDEN, page?:1..100000 (default1), pageSize?:1..50 (default10)}`. data `{items:ReviewModerationView[],page,page_size,total}`. Sắp created_at DESC/id DESC. Đọc cả target INACTIVE; Gym không tồn tại là empty. View: review_id/kind/rating/comment/status/created_at, gym {gym_id,gym_name,status}, trainer null|{gym_trainer_id,full_name,status}, author {user_id,full_name}, moderation null|{hidden_by,moderator_name,hidden_at,hidden_reason}. Không email/phone/hash/token.
+
+PATCH `/admin/reviews/:kind/:reviewId/hide`: params kind gym|trainer + UUID; query rỗng; body strict `{hidden_reason:trimmed string 1..1000}`. 200 `{success:true,data:ReviewModerationView}`. Server tự ghi actor/thời gian, không nhận audit/status/content/rating từ client. 404 ID không tồn tại ở đúng kind; 409 REVIEW_NOT_VISIBLE nếu đã HIDDEN; 401 Guest, 403 non-Admin/current role revoked/account/password gate. No-store mọi response nội bộ. Không PATCH nội dung/DELETE/unhide. Không ẩn vì rating thấp; policy/lời nhắc UI theo quyết định REV-02.
+
+
+## 30. ADM-01 — Admin User management (2026-10-10)
+
+GET `/admin/users`: authenticated Admin ACTIVE, đã đổi mật khẩu tạm. Query strict `{search?:trim <=100, role?:ADMIN|MANAGER|PT|CUSTOMER, status?:ACTIVE|INACTIVE|SUSPENDED, page?:1..100000 (default1), pageSize?:1..50 (default20)}`. Search literal case-insensitive email/full_name; created_at DESC/user_id ASC ổn định. data `{items:UserAdminView[],page,page_size,total}`. View: user_id/email/phone/status/must_change_password/email_verified_at/created_at/updated_at, profile null|{full_name,avatar_url}, roles string[], active_gym_assignments [{gym_id,gym_name,assignment_type:MANAGER|PT}]. Không credential/hash/token/thông tin hồ sơ sức khỏe, địa chỉ hoặc ngày sinh.
+
+GET `/admin/roles`: quyền như trên, query rỗng; data `[{role_id,role_name,description}]`. Chỉ đọc roles.
+
+PATCH `/admin/users/:userId/status`: UUID params/query rỗng; strict body `{status:ACTIVE|INACTIVE|SUSPENDED,expected_updated_at:ISO datetime offset}`. Server auth từ DB; 200 UserAdminView, 403 ADMIN_ACCOUNT_PROTECTED cho Admin target (gồm self), 404 target missing, 409 USER_CHANGED stale, 409 INVALID_STATUS_TRANSITION nếu cùng status. Không body actor/role/password/gym_id. No-store private responses. Có xác nhận UI; không cascade, không đổi role/gate/phân công/nghĩa vụ. Token cũ bị chặn khi User không ACTIVE, không session revocation vĩnh viễn. Quyết định ADM-01 ở Architecture/Domain.
+
+CAS chuẩn hóa expected_updated_at về UTC trước so sánh; offset biểu diễn cùng thời điểm không tạo conflict giả. Profile write khóa User và đọc lại status trong transaction; password update kiểm tra ACTIVE/hash đã xác minh trong chính UPDATE sau hashing, không giữ khóa trong Argon2.
+
+## QA-01 — Hợp đồng bảo vệ dùng chung (2026-10-11)
+
+- `/api/v1` luôn có `Cache-Control: no-store`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer`; response không lộ X-Powered-By.
+- POST/PUT/PATCH/DELETE: Origin phải khớp chính xác một entry `CORS_ORIGIN`; Referer là fallback khi thiếu Origin. Nguồn sai/null/malformed, hoặc browser có Sec-Fetch-Site mà thiếu nguồn: 403 `{success:false,error:{code:"UNTRUSTED_ORIGIN",message,details:null}}` trước parse/auth/ghi. Client không có browser source headers được hỗ trợ. GET/HEAD/OPTIONS giữ contract hiện hành.
+- Login: sau 10 request sai/đang xử lý/phút/IP, 429 RATE_LIMITED có Retry-After (giây). Thành công không tích lũy vào giới hạn; IP không lấy từ X-Forwarded-For. Limiter một process, không lưu email/password.
+- Login/register/change-password/update-profile không nhận field ngoài allowlist. current_password và confirm_password tối đa 128; ngày sinh phải đúng lịch; avatar_url HTTP(S), không username/password. Legacy không tự reconcile.
+- must_change_password chặn GET/PATCH `/users/me/profile` với PASSWORD_CHANGE_REQUIRED, gồm recheck trong transaction; đọc session/đổi mật khẩu/logout vẫn được phép.
+- JWT subject sai định dạng, hết hạn, chữ ký/algorithm không hợp lệ đều 401 UNAUTHORIZED. Chỉ HS256 được chấp nhận.
+- Concurrent email/phone unique conflict vẫn là 409 EMAIL_ALREADY_EXISTS/PHONE_ALREADY_EXISTS; transaction không ghi profile/account một phần.
+- Route `/api/v1` không tồn tại: 404 `{success:false,error:{code:"NOT_FOUND",message:"Không tìm thấy API.",details:null}}`.

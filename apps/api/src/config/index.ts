@@ -61,6 +61,7 @@ function getCorsOrigins(): string[] {
 export const config = {
   port: parseInt(process.env.PORT || '4000', 10),
   nodeEnv,
+  paymentDemoEnabled: process.env.PAYMENT_MODE === 'demo' && nodeEnv !== 'production',
   isProduction: nodeEnv === 'production',
   cors: {
     origin: getCorsOrigins(),
