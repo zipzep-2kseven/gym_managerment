@@ -1,0 +1,69 @@
+{
+  "checkedAt": "2026-10-11T15:38:15.011249+00:00",
+  "scope": "Frontend Admin đang chạy; lát cắt đầu tiên ADM-UI-01",
+  "checks": [
+    {
+      "command": "npm run build --workspace @multi-gym/web",
+      "exitCode": 0
+    },
+    {
+      "command": "npm run typecheck:e2e --workspace @multi-gym/web",
+      "exitCode": 0
+    },
+    {
+      "command": "npm run test:admin-dashboard --workspace @multi-gym/web",
+      "exitCode": 0,
+      "passed": 5,
+      "failed": 0
+    },
+    {
+      "command": "npm run test:gym-ui --workspace @multi-gym/web",
+      "exitCode": 0,
+      "passed": 25,
+      "failed": 0
+    },
+    {
+      "command": "npm run test:admin-users --workspace @multi-gym/web",
+      "exitCode": 0,
+      "passed": 3,
+      "failed": 0
+    }
+  ],
+  "totalBrowserTests": 33,
+  "failures": [],
+  "viewports": [
+    375,
+    768,
+    1024,
+    1440
+  ],
+  "screenshots": [
+    "previews/dashboard-desktop.png",
+    "previews/dashboard-mobile.png"
+  ],
+  "manuallyInspected": [
+    "dashboard-desktop",
+    "dashboard-mobile"
+  ],
+  "regression": "Kiểm tra vị trí nhãn/hồ sơ mobile đã FAIL trước sửa và PASS sau sửa.",
+  "limits": [
+    "Dashboard/Gym UI dùng API mock; tài khoản dùng DB tạm.",
+    "Không xác nhận môi trường triển khai đã nhận build.",
+    "Không nghiệm thu toàn bộ Requirement/prototype UX nâng cao."
+  ],
+  "sourceHashes": {
+    "apps/web/e2e/admin-dashboard.spec.ts": "31580833c0e6cbe590ed9c125f3070915dcc8225a585728ce069a911a6cb805c",
+    "apps/web/e2e/gym-ui.spec.ts": "1d3b4ee1456c1b6bd3ab9c7f1159ed4ac19020c8a44856fc7f53025b3ead85de",
+    "apps/web/src/components/gym/StaffForm.tsx": "2845a9e4a759936bc4902ded14dd1b5648ef7c7f8d91ee83b632a5eb16fbd292",
+    "apps/web/src/components/navigation/Topbar.tsx": "18ebac09e0784fd39ba15b1ee131bd76973c9165ea9ab5a84e61dcba37bf72df",
+    "apps/web/src/layouts/AdminLayout.tsx": "8d37c05a964554891a4e8c1ab4237395cdc649479177502fda2403fcd455ea8a",
+    "apps/web/src/layouts/ManagementShell.tsx": "722d68dffeaa51fd27b7d46af0dc72627defcd86337fd4f050675c8d95a9b254",
+    "apps/web/src/management.css": "5aedbf9eea2ddbc01f9cc09e9f7bd1be367a2c6c3e34762c3556119d403e6095",
+    "apps/web/src/pages/admin/AdminRolesPage.tsx": "39368c94f1a1fca8a195be49c4db213a21adb91186da0a0ae10881bda37697c5",
+    "apps/web/src/pages/admin/AdminUsersPage.tsx": "2167670ecb00db56f5de364c33b07ee6f420e4f0faed63c3133ee9be4fddc0de",
+    "apps/web/src/pages/dashboard/AdminDashboardPage.tsx": "68e9844e8de63a591c167bf19ebf3c2957ed8dddf481b2d8fe32f16eadb0897c",
+    "apps/web/src/pages/gym/AdminGymsPage.tsx": "c81b5100ce18abb0f7bc810ea4f34e7a37f884ac0722f8dc50860ad3ea3ac74c",
+    "apps/web/src/pages/gym/AdminManagersPage.tsx": "1ef16540ab66110c51549c79f74299c2c90d869efe986025950ef92ff5d0d315",
+    "apps/web/src/admin.css": "927a817e8271687eb6970ccfd268025ce8677c1b13f6cb2d6016824081ac83c3"
+  }
+}

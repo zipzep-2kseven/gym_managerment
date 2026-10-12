@@ -10,6 +10,7 @@ interface ManagementShellProps {
   scopeTitle?: string;
   roleBadge?: string;
   children?: React.ReactNode;
+  className?: string;
 }
 
 export const ManagementShell: React.FC<ManagementShellProps> = ({
@@ -17,12 +18,13 @@ export const ManagementShell: React.FC<ManagementShellProps> = ({
   scopeTitle,
   roleBadge,
   children,
+  className = '',
 }) => {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <div className="management-shell">
+    <div className={`management-shell ${className}`}>
       <a className="skip-link" href="#gym-main">
         Đến nội dung chính
       </a>

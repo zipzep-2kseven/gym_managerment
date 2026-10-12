@@ -125,23 +125,113 @@ Review mới VISIBLE; HIDDEN phải có đủ audit. Trigger hiện tại chỉ 
 
 ## 8. Ma trận hành động
 
+Bảng tổng quan dưới đây giữ phạm vi các actor; quyền Admin chi tiết theo quyết định hiện hành được đối chiếu tại §8.1–8.3 (ADM-SPEC-02). Những Q ghi trong các cột khác phải đọc cùng các cập nhật nghiệp vụ cuối tài liệu, không tự hiểu tất cả Q vẫn mở.
+
 | Dữ liệu | Customer | PT | Manager | Admin |
 | :--- | :--- | :--- | :--- | :--- |
 | Hồ sơ/tài khoản cá nhân | Xem/sửa của mình | Của mình | Của mình | Của mình; quản trị status User |
 | Gym/Package/PT công khai | Xem | Xem | Xem; quản lý Gym mình | Quản lý toàn hệ thống |
 | Phân công Manager | — | — | Xem Gym mình | Tạo/gán/thu hồi, giữ INV-010 |
-| Payment | Tạo PENDING, xem của mình | — | Quyền tài chính chờ Q-01/Q-02 | Quyền tài chính chờ Q-01/Q-02 |
-| Membership | Xem của mình | Qua nghiệp vụ học viên được giao, không danh sách toàn Gym | Xem Gym mình; ghi chờ Q-02/Q-03 | Xem; ghi chờ Q-02/Q-03 |
-| Registration | Đăng ký/xem của mình | Xem được giao | Xem/tạo trong Gym; đổi PT chờ Q-07 | Quản trị theo scope và policy |
+| Payment | Tạo PENDING, xem của mình | — | Quyền tài chính chờ Q-01/Q-02 | Quản lý tiền thật ngoài lộ trình hiện tại; không suy quyền đọc giao dịch Customer từ ADMIN |
+| Membership | Xem của mình | Qua nghiệp vụ học viên được giao, không danh sách toàn Gym | Xem Gym mình; ghi chờ Q-02/Q-03 | Đọc theo Gym; ghi thủ công/gia hạn/hủy chưa mở trong đợt này |
+| Registration | Đăng ký/xem của mình | Xem được giao | Xem/tạo trong Gym; đổi PT chờ Q-07 | Đọc và kết thúc có điều kiện; ADMIN riêng không tạo đăng ký mới |
 | Appointment | Xem/đặt/dời/hủy của mình theo Q-06 | Xem/đặt/quản lý được giao theo Q-06 | Xem/đặt/quản lý Gym theo Q-06 | Giám sát; không tự thêm action ngoài API |
-| Equipment | Tra cứu để gửi report theo scope | Không mặc định quyền sửa | Thêm/sửa máy của Gym | Quản trị theo scope |
+| Equipment | Tra cứu để gửi report theo scope | Không mặc định quyền sửa | Thêm/sửa máy của Gym | Deferred ngoài demo; quyền ghi/API chưa mở trong lộ trình này |
 | Equipment Type | Đọc phục vụ luồng hợp lệ | Đọc phục vụ luồng hợp lệ | Đọc danh mục | Quyền ghi chờ Q-09 |
 | Report | Tạo/xem của mình | — | Xem/tiếp nhận/giải quyết Gym mình | Giám sát/xử lý theo API |
-| Consultation | Gửi yêu cầu; xem riêng chưa đặc tả | Không mặc định quyền xem | Tiếp nhận/xử lý đúng Gym | Không tự mở quyền đọc liên hệ toàn hệ thống ngoài policy Q-14/Q-19 |
-| Working Schedule / Social / Availability | Xem phần công khai | Khai báo lịch mình; quyền profile theo Q-16/Q-18 | Quyền thay PT chờ Q-16/Q-18 | Không mặc định sửa thay PT |
+| Consultation | Gửi yêu cầu; xem riêng chưa đặc tả | Không mặc định quyền xem | Tiếp nhận/xử lý đúng Gym | ADMIN riêng không đọc/ghi inbox; public submit không cấp inbox |
+| Working Schedule / Social / Availability | Xem phần công khai | Khai báo lịch mình; quyền profile theo Q-16/Q-18 | Quyền thay PT chờ Q-16/Q-18 | ADMIN riêng không read/write TPR-01 nội bộ hoặc sửa availability; public projection vẫn đọc được |
 | Gym/Trainer Review | Tạo khi đủ điều kiện, xem VISIBLE | Xem VISIBLE, không sửa/xóa | Xem VISIBLE, không sửa/xóa | Xem audit theo scope quản trị; ẩn vi phạm, không sửa nội dung/xóa |
 
 Guest cũng được xem dữ liệu public và gửi Consultation; không được xem danh sách liên hệ của người khác.
+
+### 8.1. Quy ước ma trận Admin — ADM-SPEC-02
+
+Snapshot đối chiếu ngày 11/10/2026, phục vụ review catalog và đặc tả pilot; không cấp quyền mới. Bảng §8 là bảng tổng quan theo actor; bảng chi tiết dưới đây làm rõ cột Admin theo các quyết định cập nhật hiện hành và backend. Mã `P-ADM-*` là **ID dòng quyền tài liệu**, không phải permission key/role mới trong code.
+
+- **ALLOW:** policy hiện hành cho phép hành động sau kiểm tra xác thực chung.
+- **CONDITIONAL:** cho phép nếu thêm điều kiện target/scope/lifecycle/validation ở dòng tương ứng.
+- **DENY:** ADMIN riêng không được cấp hành động trong policy/API hiện hành. Tài khoản có role khác chỉ làm được nếu thỏa quyền/ownership/assignment của role đó.
+- **UNKNOWN:** chưa có policy/contract được duyệt cho thao tác điều tra; không được hiểu là có thể thực hiện.
+
+**Điều kiện chung A0:** authenticated actor từ phiên, User ACTIVE, không còn must_change_password, role hiện hành đọc từ DB. Không tin role/Gym/actor do client tự gửi; frontend guards/hidden buttons chỉ là UX. Ở thao tác scoped, Gym phải tồn tại và resource phải thuộc Gym tương ứng; Gym INACTIVE không phải lệnh cấm mọi thao tác nội bộ, điều kiện ACTIVE phụ thuộc action cụ thể. Giữ Application-Level Gym Isolation/Drizzle theo Architecture, không thêm RLS/tenant_id hoặc cơ chế auth khác trong task docs.
+
+**Scope:** system cho users/roles và danh sách toàn sàn được cho phép; Gym cụ thể cho package/report/gallery/assignment/Membership; Registration qua Membership và Gym Trainer; Appointment qua Registration; Trainer Review qua Gym Trainer. Không tạo quan hệ chéo Gym hoặc cột gym_id giả để làm UI.
+
+### 8.2. Ma trận hành động Admin chi tiết
+
+Tất cả dòng ALLOW/CONDITIONAL chịu A0; các mutation phải theo contract strict và quyền được tái kiểm tra ở backend. Nguồn E01–E12 ở §8.3. Đây là quyền hiện hành được đối chiếu, còn màn mới là proposal ở Feature §5.1.
+
+| ID | Tài nguyên / hành động | Quyền | Scope và điều kiện; giới hạn read/write | Nguồn |
+| --- | --- | --- | --- | --- |
+| P-ADM-01 | User: list/search/filter/paging | ALLOW | System; UserAdminView allowlist, không đọc toàn bộ Profile/credentials | E01 |
+| P-ADM-02 | User không có role ADMIN: đổi status | CONDITIONAL | Target tồn tại; status allowlist ACTIVE/INACTIVE/SUSPENDED, expected_updated_at; stale/same-status 409. UI chỉ khóa tạm/mở lại, không cascade hoặc reset gate/role | E01 |
+| P-ADM-03 | User có role ADMIN, gồm self: đổi status | DENY | ADMIN_ACCOUNT_PROTECTED; không suy quyền quản trị Admin từ quyền list | E01 |
+| P-ADM-04 | Role: đọc catalog | ALLOW | System; đúng 4 role, chỉ id/name/description | E01 |
+| P-ADM-05 | Gym: đọc list nội bộ | ALLOW | System; ACTIVE/INACTIVE theo filter; không thay public projection | E02 |
+| P-ADM-06 | Gym: tạo, có thể kèm provision Manager theo contract | CONDITIONAL | Allowlist; tạo Gym/Manager atomic; identity/assignment constraints; credential tạm trong kết quả handoff, không lộ list/log | E03 |
+| P-ADM-07 | Gym: sửa thông tin | CONDITIONAL | Gym/field hợp lệ; không sửa identity/status qua PATCH thông tin; status có API riêng | E03 |
+| P-ADM-08 | Gym: ACTIVE/INACTIVE | CONDITIONAL | Ngừng khi hết Payment PENDING, Membership PENDING/ACTIVE, Registration ACTIVE, Appointment PENDING/CONFIRMED theo Q-13; không force/cascade/refund | E04 |
+| P-ADM-09 | Manager: provision tài khoản/phân công | CONDITIONAL | Gym và identity hợp lệ; giới hạn ACTIVE, mật khẩu tạm/đổi lần đầu; không ghi một phần | E05 |
+| P-ADM-10 | Manager: đọc assignments | CONDITIONAL | Gym cụ thể; không lấy dòng unique Gym/User làm lịch sử đầy đủ của mọi lần tái bổ nhiệm | E05 |
+| P-ADM-11 | Manager: assign/reactivate | CONDITIONAL | Target ACTIVE có MANAGER, constraints INV-010; tái dùng cặp cũ nếu hợp lệ; không tự thu hồi Manager cũ | E05 |
+| P-ADM-12 | Manager: revoke | CONDITIONAL | Assignment tồn tại trong Gym và ACTIVE; ngừng phân công, không đổi User/role hoặc xóa nghĩa vụ | E05 |
+| P-ADM-13 | PT: assign tài khoản có sẵn | CONDITIONAL | Target ACTIVE có PT; đúng Gym; một assignment ACTIVE toàn hệ thống theo Q-08, không tự revoke Gym trước | E04/E05 |
+| P-ADM-14 | PT assignment: đổi status | CONDITIONAL | Target thuộc Gym; ngừng khi hết Registration ACTIVE/lịch mở; kích hoạt cần target ACTIVE/PT và constraints một Gym. Không đổi availability/account/role | E04 |
+| P-ADM-15 | PT: provision tài khoản mới | CONDITIONAL | Đúng Gym; identity/provision constraints, credential handoff; không tự cấp quyền sửa hồ sơ TPR-01 về sau | E05 |
+| P-ADM-16 | PT: đọc roster quản trị | CONDITIONAL | Gym cụ thể, internal DTO/search/status/paging allowlist; khác public PT projection | E02 |
+| P-ADM-17 | Package: list/create/update/activate/deactivate | CONDITIONAL | Gym/Package đúng scope; validator allowlist/decimal price. Không ghi giá mua lịch sử, không hủy thẻ cũ; không áp thêm nghĩa vụ Gym/PT cho ngừng bán gói | E06 |
+| P-ADM-18 | Gallery: internal list/image, upload/caption/order/delete | CONDITIONAL | Image thuộc Gym; cả Gym INACTIVE theo policy; 10 ảnh/Gym, JPEG/PNG/size/caption/concurrency theo GIM-01; xác nhận xóa UI. Không tự mở storage production | E07 |
+| P-ADM-19 | Report: scoped list/ảnh private | CONDITIONAL | Report thuộc Gym nguồn; ảnh qua endpoint có auth, không public static; không inbox tất cả Gym mặc định | E08 |
+| P-ADM-20 | Report: investigate | CONDITIONAL | PENDING→IN_PROGRESS; đúng Gym, actor từ phiên | E08 |
+| P-ADM-21 | Report: resolve | CONDITIONAL | IN_PROGRESS→RESOLVED; resolution_note trim 1–2000; server ghi actor/time, không tự sửa thiết bị | E08 |
+| P-ADM-22 | Report: reject | CONDITIONAL | PENDING/IN_PROGRESS→REJECTED; lý do bắt buộc; resolved_by lưu actor, resolved_at NULL; không reopen/delete | E08 |
+| P-ADM-23 | Membership: list theo Gym | CONDITIONAL | Read-only, page/pageSize hiện hành; không list cá nhân người khác qua `/memberships/me`; không suy unique customer count từ số thẻ | E09 |
+| P-ADM-24 | Registration: list theo Gym | CONDITIONAL | Read đúng chuỗi Membership/Trainer cùng Gym; không tự có create Registration bởi ADMIN riêng | E09 |
+| P-ADM-25 | Registration: cancel/kết thúc | CONDITIONAL | Target cùng Gym; note bắt buộc; ACTIVE và không còn Appointment PENDING/CONFIRMED; CANCELLED trả bản hiện có theo implementation. Không hủy lịch dây chuyền hay tự tạo Registration mới | E09 |
+| P-ADM-26 | Appointment: list theo Gym | CONDITIONAL | Read qua Registration; không phải quyền create/confirm/reschedule/cancel/complete | E09 |
+| P-ADM-27 | Review Gym/PT: moderation list | ALLOW | System/filter Gym; gồm target INACTIVE; DTO identity tối thiểu + audit, không contact; public chỉ VISIBLE và không audit | E10 |
+| P-ADM-28 | Review: hide vi phạm | CONDITIONAL | Đúng kind/target; chỉ VISIBLE→HIDDEN, hidden_reason trim 1–1000, server actor/time, audit một lần; không ẩn chỉ vì điểm thấp | E10 |
+| P-ADM-29 | Review: edit rating/comment, DELETE, unhide | DENY | Policy immutable và trigger/contract; không khôi phục hoặc sửa audit đã ghi | E10 |
+| P-ADM-30 | Appointment writes và create Registration | DENY | ADMIN riêng không nằm trong participant/Manager write policy. Tài khoản nhiều role phải đáp ứng scope/ownership role khác; lịch Admin UI read-only | E09 |
+| P-ADM-31 | PT availability; read/write TPR-01 nội bộ | DENY | Availability chỉ PT chính chủ/Manager hợp lệ; TPR-01 own PT hoặc managed Manager; không kế thừa từ quyền provisioning/status PT | E09/E11 |
+| P-ADM-32 | Consultation inbox: list/update | DENY | Manager role + assignment ACTIVE đúng Gym; không ADMIN bypass. Khả năng gửi yêu cầu public là luồng khác, không cấp inbox | E11 |
+| P-ADM-33 | Role CRUD; reset password; DELETE User | DENY | ADM-01 chỉ read roles/status; không có các action này trong phạm vi policy/contract hiện hành | E01 |
+| P-ADM-34 | Ghi Membership thủ công/gia hạn/hủy/bảo lưu | UNKNOWN | Q-02/Q-03/Q-13 tương ứng chưa có contract cho đợt này; không suy từ payment_id nullable; không mở action UI | E09/E12 |
+| P-ADM-35 | Audit viewer/settings/notifications/search toàn sàn và equipment writes | UNKNOWN | Backlog/deferred; cần policy/action/contract riêng. Có timestamp hoặc bảng thiết bị không chứng minh đã có quyền/API vận hành | E12 |
+| P-ADM-36 | Quản lý giao dịch tiền thật/refund/revenue analytics | UNKNOWN — ngoài phạm vi | Người dùng đã loại khỏi lộ trình này; không cần quyết định để tiếp tục pilot, không mở action hoặc thu tiền thật | E12 |
+
+**Dữ liệu nhạy cảm và ghi vết:**
+
+| Nhóm | Projection/ghi vết được xác nhận | Giới hạn |
+| --- | --- | --- |
+| UserAdminView | identity/contact quản trị, tên/avatar, status/password gate/timestamps, roles/assignments ACTIVE | Không hash/password/token/address/birthday/health; status event sau commit không phải DB audit history |
+| Provision Manager/PT | Kết quả bàn giao credential tạm theo onboarding/provision contract | Không lưu vào WebStorage/list/cache bền vững/log; không có chức năng xem lại/reset ngoài contract |
+| Moderation | original rating/comment, target, author name/ID và hidden_by/at/reason | Không contact/credentials; không gửi audit ra public/self DTO không được phép |
+| Report | nội dung/ảnh và kết quả xử lý; actor/time theo API | Ảnh private, đúng quyền mỗi request; không tự biến timestamps thành lịch sử tất cả chuyển trạng thái |
+| Membership/Registration/Appointment | DTO scoped đang có, tên/ID và quan hệ cần vận hành | Field trong DB không đồng nghĩa được đọc qua UI/API; không thêm contact/health hoặc transaction details ngoài projection |
+| Gym/Package/Gallery | DTO nội bộ/public riêng theo contract | Không trả storage key nội bộ ra public; price catalog không thay purchase_price |
+
+### 8.3. Nguồn quyền và coverage để review
+
+Các đường dẫn services là bằng chứng phân quyền backend; routes/auth trước service và validators giới hạn input. Test sources dưới đây có assertion liên quan, **chưa chạy lại ở task docs**; không suy test coverage đầy đủ cho mọi ô hoặc nhận PASS mới.
+
+| Mã | Policy/contract và implementation | Test sources liên quan |
+| --- | --- | --- |
+| E01 | Architecture ADM-01; API §30; [admin-user.service.ts](../apps/api/src/services/admin-user.service.ts), [admin-user.validator.ts](../apps/api/src/validators/admin-user.validator.ts), [admin-user.repository.ts](../apps/api/src/repositories/admin-user.repository.ts) | [admin-user.integration.test.ts](../apps/api/tests/admin-user.integration.test.ts), [admin-users.spec.ts](../apps/web/e2e/admin-users.spec.ts): auth/protection/DTO/CAS/no-cascade/pending |
+| E02 | API §19; [gym-management.service.ts](../apps/api/src/services/gym-management.service.ts), [gym-scope.service.ts](../apps/api/src/services/gym-scope.service.ts) | [gym-management.integration.test.ts](../apps/api/tests/gym-management.integration.test.ts): Admin list và scoped roster |
+| E03 | Architecture onboarding/Gym; API §17/23; [gym-write.service.ts](../apps/api/src/services/gym-write.service.ts) | [gym-write.integration.test.ts](../apps/api/tests/gym-write.integration.test.ts), [gym-onboarding.integration.test.ts](../apps/api/tests/gym-onboarding.integration.test.ts), [gym-ui.spec.ts](../apps/web/e2e/gym-ui.spec.ts) |
+| E04 | Domain §10/Q-08/Q-13; API §15; [gym-lifecycle.service.ts](../apps/api/src/services/gym-lifecycle.service.ts); migration [0002_gym_lifecycle.sql](../apps/api/drizzle/0002_gym_lifecycle.sql) | [gym-lifecycle.integration.test.ts](../apps/api/tests/gym-lifecycle.integration.test.ts): lifecycle/constraints |
+| E05 | Architecture Q-10/Q-12; [staffing.service.ts](../apps/api/src/services/staffing.service.ts), [staff-provisioning.ts](../apps/api/src/services/staff-provisioning.ts), [staffing.validator.ts](../apps/api/src/validators/staffing.validator.ts) | [staffing.integration.test.ts](../apps/api/tests/staffing.integration.test.ts), gym-ui tests: provisioning/assignment/credential |
+| E06 | PKG-01/02, API §20; [package.service.ts](../apps/api/src/services/package.service.ts) | [package-auth.cases.ts](../apps/api/tests/package-auth.cases.ts), [package-ui.spec.ts](../apps/web/e2e/package-ui.spec.ts) |
+| E07 | Architecture GIM-01; [gallery.service.ts](../apps/api/src/services/gallery.service.ts), [gallery.routes.ts](../apps/api/src/routes/gallery.routes.ts) | [gallery.integration.test.ts](../apps/api/tests/gallery.integration.test.ts), [gallery.spec.ts](../apps/web/e2e/gallery.spec.ts) |
+| E08 | Architecture report demo; [report.service.ts](../apps/api/src/services/report.service.ts), [report.validator.ts](../apps/api/src/validators/report.validator.ts) | [report.integration.test.ts](../apps/api/tests/report.integration.test.ts), [reports.spec.ts](../apps/web/e2e/reports.spec.ts) |
+| E09 | Architecture PT workflow; [pt-workflow-policy.ts](../apps/api/src/services/pt-workflow-policy.ts), [pt-workflow.service.ts](../apps/api/src/services/pt-workflow.service.ts), [pt-workflow.validator.ts](../apps/api/src/validators/pt-workflow.validator.ts), [PtWorkspacePage.tsx](../apps/web/src/pages/pt/PtWorkspacePage.tsx) | [pt-workflow.integration.test.ts](../apps/api/tests/pt-workflow.integration.test.ts), [pt-workflow.spec.ts](../apps/web/e2e/pt-workflow.spec.ts) |
+| E10 | Architecture REV-02/API §29; [review-moderation.service.ts](../apps/api/src/services/review-moderation.service.ts), [review.validator.ts](../apps/api/src/validators/review.validator.ts); Database immutable triggers | [review-moderation.integration.test.ts](../apps/api/tests/review-moderation.integration.test.ts), [review-moderation.spec.ts](../apps/web/e2e/review-moderation.spec.ts) |
+| E11 | Architecture Consultation/TPR-01; [consultation.service.ts](../apps/api/src/services/consultation.service.ts), [trainer-profile.service.ts](../apps/api/src/services/trainer-profile.service.ts), E09 availability | [consultation.integration.test.ts](../apps/api/tests/consultation.integration.test.ts), [trainer-profile.integration.test.ts](../apps/api/tests/trainer-profile.integration.test.ts), PT workflow tests: Admin bị từ chối inbox/TPR/availability |
+| E12 | Domain §9 Q còn mở; [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) EQP deferred; [roadmap](ADMIN_SPECIFICATION_ROADMAP.md) §1/5 và yêu cầu người dùng chưa áp dụng tiền thật | Không có test dùng để chứng minh quyền mới; acceptance chỉ xác nhận không mở action ngoài phạm vi |
+
+Không có quyết định mới thay thế các Q hoặc phê duyệt backlog ở bảng này. Những mở rộng UI ADM-DEC-02/03/04, KPI ADM-DEC-01 và mẫu/Figma ADM-DEC-05/06 tiếp tục chờ review đúng phần phụ thuộc.
 
 ## 9. Câu hỏi mở và phạm vi chặn
 

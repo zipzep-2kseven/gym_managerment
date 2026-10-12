@@ -2,6 +2,8 @@
 
 Multi-Gym is a centralized multi-tenant platform where multiple gyms and branches operate within a shared web application, providing gym-scoped operations for Customers, Personal Trainers (PTs), and Gym Managers, under global administration.
 
+**Giao diện Admin đang chạy:** đã áp dụng đợt đầu vào frontend: dashboard, tài khoản, vai trò, cơ sở và bổ nhiệm Manager. Xem [phạm vi triển khai/kiểm chứng](docs/ADMIN_UI_01_IMPLEMENTATION.md) · [ảnh dashboard mới](docs/design/admin-frontend/previews/dashboard-desktop.png). Mở `/admin/dashboard` trong ứng dụng Vite để xem; các prototype trong `docs/design/admin-pilot` và `admin-workspace` là tài liệu tham chiếu. Các nhóm Admin còn lại tiếp tục theo roadmap; chưa áp dụng giao dịch tiền thật.
+
 ---
 
 ## 1. Monorepo Structure

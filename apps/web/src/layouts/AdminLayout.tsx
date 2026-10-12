@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import '../admin.css';
 import { useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../hooks/useAuth';
@@ -232,6 +233,7 @@ export const AdminLayout: React.FC = () => {
 
   return (
     <ManagementShell
+      className="admin-workspace"
       groups={groups}
       scopeTitle={isGymScoped ? gymName : 'Toàn hệ thống'}
       roleBadge={isGymScoped ? 'Giám sát cơ sở' : 'Quản trị viên'}

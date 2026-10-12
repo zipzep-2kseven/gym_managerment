@@ -588,3 +588,5 @@
     align-items: flex-start;
   }
 }
+
+.management-profile-icon { display:none; }

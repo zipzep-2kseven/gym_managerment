@@ -1,6 +1,14 @@
 # Kế hoạch dashboard và quy luật thiết kế khu quản trị Multi-Gym
 
-Ngày: 11/10/2026. Trạng thái: ĐÃ HOÀN THÀNH TRIỂN KHAI TOÀN BỘ (Steps 1–13). Tất cả 4 Workspaces (Manager, Admin, PT, Customer), 4 Dashboards và suite E2E đã nghiệm thu 100%.
+**Cập nhật triển khai frontend — 11/10/2026:** theo yêu cầu tiếp tục đưa thiết kế vào ứng dụng, đã áp dụng lát cắt Admin đầu tiên (dashboard/tài khoản/vai trò/Gym/bổ nhiệm Manager). Xem [phạm vi và kiểm chứng ADM-UI-01](ADMIN_UI_01_IMPLEMENTATION.md). ADM-UI-01 IN_PROGRESS; các ghi chú “chưa sửa frontend” dưới đây mô tả trạng thái trước đợt này, không phải trạng thái hiện tại. Không suy ra duyệt toàn bộ thiết kế hoặc hoàn thành mọi Requirement.
+
+Ngày: 11/10/2026. Trạng thái triển khai Steps 1–13 được ghi nhận tại [báo cáo nghiệm thu dashboard](DASHBOARD_VERIFICATION.md). Các kết quả kiểm thử trong tài liệu này là kết quả lịch sử; audit ADM-SPEC-01 không chạy lại suite hoặc xác nhận runtime hiện tại.
+
+**Lộ trình Admin tiếp theo:** [Hoàn thiện đặc tả và giao diện Admin](ADMIN_SPECIFICATION_ROADMAP.md). Tài liệu mới lập kế hoạch theo thứ tự nguồn → quyền → pilot tài khoản → chức năng còn thiếu → thiết kế → frontend → nghiệm thu. Đây là kế hoạch đề xuất, không phải xác nhận đã triển khai các mở rộng. Theo yêu cầu hiện tại, quản lý giao dịch tiền thật nằm ngoài phạm vi.
+
+**Đợt thiết kế đang thực hiện:** [pilot Admin quản lý tài khoản và checklist review G3](ADMIN_DESIGN_02_PILOT_REVIEW.md). Prototype HTML có thể thao tác; Figma đã tạo nhưng còn dở vì hạn mức công cụ. G3 chưa duyệt, chưa đổi frontend production; đã tiếp tục [vai trò/Gym/bổ nhiệm Manager](ADMIN_DESIGN_02_GYM_MANAGER_REVIEW.md) theo yêu cầu ưu tiên Admin; tổng cộng5/15 Screen IDs đã dựng bằng HTML,10 IDs còn lại chưa thiết kế.
+
+**Audit bước đầu ADM-SPEC-01:** đã đối chiếu và đồng bộ mô tả tài liệu ngày 11/10/2026; xem [inventory và sổ khác biệt](ADMIN_SPECIFICATION_ROADMAP.md#21-inventory-nguồn--adm-spec-01-11102026). Admin workspace hiện có được giữ nguyên; KPI review và các màn mở rộng tiếp tục là các quyết định cần review, không chuyển sang phê duyệt khi hoàn thành audit.
 
 ## 1. Cách hiểu yêu cầu
 
@@ -8,7 +16,9 @@ Dashboard là một trang tổng quan nằm **bên trong không gian quản tr�
 
 Ảnh SB Admin Pro và Maxton là tham chiếu về bố cục: sidebar trái, topbar trên, nội dung phía phải, các khối tổng quan. Không sao chép dữ liệu bán hàng, widget trang trí hoặc bảng màu tím/neon. Định hướng đề xuất: khu quản trị vận hành Gym chuyên nghiệp, mật độ vừa, ưu tiên công việc cần xử lý.
 
-## 2. Hiện trạng đã đối chiếu
+## 2. Baseline tại thời điểm lập kế hoạch ban đầu
+
+Các mô tả layout/route bên dưới là baseline trước triển khai khung quản trị, không phải hiện trạng code ngày 11/10/2026. Code hiện đã có AdminLayout và `/admin/dashboard`; inventory Admin và khoảng trống tiếp theo được ghi tại [roadmap Admin §2](ADMIN_SPECIFICATION_ROADMAP.md#2-baseline-và-bằng-chứng).
 
 - `apps/web/src/layouts/GymLayout.tsx` đang chứa cả điều hướng công khai và liên kết Customer/PT/Manager/Admin trong một header ngang.
 - `apps/web/src/routes/AppRoutes.tsx` đặt phần lớn các màn nghiệp vụ dưới layout đó; chưa khai báo route dashboard riêng cho từng vai trò.
@@ -76,12 +86,12 @@ Nguồn đối chiếu: `docs/ARCHITECTURE_DECISIONS.md`, `docs/DOMAIN_RULES.md`
 | Admin | Bổ nhiệm Manager | `/admin/managers` | `RequireRole(['ADMIN'])` | `AdminManagersPage` | Cấp Manager độc lập |
 | Admin | Tài khoản | `/admin/users` | `RequireRole(['ADMIN'])` | `AdminUsersPage` | Khóa/mở tài khoản |
 | Admin | Vai trò hệ thống | `/admin/roles` | `RequireRole(['ADMIN'])` | `AdminRolesPage` | Danh sách vai trò chỉ đọc |
-| Admin | Kiểm duyệt đánh giá | `/admin/reviews` | `RequireRole(['ADMIN'])` | `ReviewModerationPage` | Ẩn/hiện review toàn sàn |
+| Admin | Kiểm duyệt đánh giá | `/admin/reviews` | `RequireRole(['ADMIN'])` | `ReviewModerationPage` | Xem và ẩn review vi phạm; không unhide |
 | Admin (Gym scoped) | Chi tiết Gym | `/admin/gyms/:gymId` | `RequireRole(['ADMIN'])` | `AdminGymPage` | Thông tin cơ sở |
 | Admin (Gym scoped) | Gói tập Gym | `/admin/gyms/:gymId/packages` | `RequireRole(['ADMIN'])` | `ManagedPackagesPage admin` | Giám sát gói tập |
 | Admin (Gym scoped) | Ảnh Gym | `/admin/gyms/:gymId/gallery` | `RequireRole(['ADMIN'])` | `GalleryPage admin` | Giám sát ảnh |
 | Admin (Gym scoped) | Báo cáo Gym | `/admin/gyms/:gymId/reports` | `RequireRole(['ADMIN'])` | `ReportsPage mode="admin"` | Giám sát sự cố |
-| Admin (Gym scoped) | Lịch tập Gym | `/admin/gyms/:gymId/pt` | `RequireRole(['ADMIN'])` | `PtWorkspacePage mode="admin"` | Giám sát lịch (chỉ đọc) |
+| Admin (Gym scoped) | Lịch tập Gym | `/admin/gyms/:gymId/pt` | `RequireRole(['ADMIN'])` | `PtWorkspacePage mode="admin"` | Appointment chỉ đọc; kết thúc Registration theo điều kiện hiện có |
 | **PT** | Tổng quan | `/pt/dashboard` | `RequireRole(['PT'])` | `PtDashboardPage` | Lịch dạy sắp tới |
 | PT | PT và lịch tập | `/my-pt` | `RequireRole(['PT'])` | `PtWorkspacePage` | Quản lý ca tập & học viên |
 | PT | Hồ sơ cá nhân | `/pt/profile` | `RequireRole(['PT'])` | `TrainerProfilePage` | Cập nhật bio & lịch làm |

@@ -29,7 +29,8 @@ export const AdminDashboardPage: React.FC = () => {
   const recentGyms = gymsQuery.data?.data?.slice(0, 5) || [];
 
   return (
-    <div>
+    <div className="admin-dashboard">
+      <p className="admin-eyebrow">KHÔNG GIAN QUẢN TRỊ</p>
       <PageHeader
         title="Tổng quan ban quản trị"
         subtitle={
@@ -69,7 +70,7 @@ export const AdminDashboardPage: React.FC = () => {
         />
 
         <SummaryMetric
-          title="Đánh giá toàn sàn"
+          title="Đánh giá Gym toàn sàn"
           value={totalReviews}
           actionText="Kiểm duyệt đánh giá"
           to="/admin/reviews"
@@ -135,7 +136,6 @@ export const AdminDashboardPage: React.FC = () => {
                     <Link
                       to={`/admin/gyms/${gym.gym_id}`}
                       className="btn-secondary"
-                      style={{ fontSize: '13px', padding: '4px 10px', minHeight: 'auto' }}
                     >
                       Chi tiết
                     </Link>

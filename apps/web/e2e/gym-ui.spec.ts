@@ -199,6 +199,7 @@ test('PT provisioning uses new fields and temporary password can be dismissed', 
 
 test('Manager assignment uses selected Gym; switching clears form and credential', async ({ page }) => {
   await setup(page, 'ADMIN');
+  await page.route('**/api/v1/gyms/*/managers', route => route.fulfill({ json: ok([]) }));
   await page.goto('/admin/managers');
   await page.getByLabel('Chọn Gym').selectOption(gymId);
   await page.getByLabel('User ID', { exact: true }).fill(userId);
@@ -287,4 +288,24 @@ test('Combined creation keeps inputs on identity conflict and validates Manager 
   await expect(page.getByLabel('Tên phòng Gym', { exact: true })).toHaveValue('Gym Mới'); await expect(page.getByLabel('Email đăng nhập Manager')).toHaveValue('existing@example.test');
   await expect(page.getByLabel('Mật khẩu tạm')).toHaveCount(0); expect(posts).toBe(1);
   await page.screenshot({ path: '/tmp/gym-onboarding-conflict.png', fullPage: true });
+});
+
+
+test('Admin must revoke the active Manager before assigning a replacement', async ({ page }) => {
+  await setup(page, 'ADMIN');
+  let active = true, writes = 0;
+  await page.route(`**/api/v1/gyms/${gymId}/managers`, route => route.fulfill({ json: ok(active ? [{ gym_manager_id: trainerId, gym_id: gymId, user_id: userId, status: 'ACTIVE', assigned_at: gym.created_at }] : []) }));
+  await page.route(`**/api/v1/gyms/${gymId}/managers/${trainerId}/revoke`, route => { active = false; return route.fulfill({ json: ok({}) }); });
+  page.on('request', request => { if (request.url().endsWith('/managers/assign')) writes++; });
+  await page.goto('/admin/managers');
+  await page.getByLabel('Chọn Gym').selectOption(gymId);
+  await expect(page.getByRole('button', { name: 'Lưu phân công' })).toBeDisabled();
+  await expect(page.getByLabel('User ID', { exact: true })).toBeDisabled();
+  expect(writes).toBe(0);
+  await page.getByRole('button', { name: 'Thu hồi phân công', exact: true }).click();
+  await page.getByRole('button', { name: 'Xác nhận', exact: true }).click();
+  await expect(page.getByLabel('User ID', { exact: true })).toBeEnabled();
+  await page.getByLabel('User ID', { exact: true }).fill(userId);
+  await page.getByRole('button', { name: 'Lưu phân công' }).click();
+  await expect.poll(() => writes).toBe(1);
 });

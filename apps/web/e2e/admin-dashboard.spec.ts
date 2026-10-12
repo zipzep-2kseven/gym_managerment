@@ -142,7 +142,7 @@ test.describe('Admin Workspace & Dashboard E2E', () => {
     await expect(userMetric.locator('.management-metric-value')).toHaveText('42');
     await expect(userMetric).toHaveAttribute('href', '/admin/users');
 
-    const reviewMetric = page.locator('a.management-metric-card').filter({ hasText: 'Đánh giá toàn sàn' });
+    const reviewMetric = page.locator('a.management-metric-card').filter({ hasText: 'Đánh giá Gym toàn sàn' });
     await expect(reviewMetric.locator('.management-metric-value')).toHaveText('18');
     await expect(reviewMetric).toHaveAttribute('href', '/admin/reviews');
 
@@ -178,7 +178,7 @@ test.describe('Admin Workspace & Dashboard E2E', () => {
 
     // Gym and Review metrics succeed
     await expect(page.locator('a.management-metric-card').filter({ hasText: 'Tổng số cơ sở' }).locator('.management-metric-value')).toHaveText('2');
-    await expect(page.locator('a.management-metric-card').filter({ hasText: 'Đánh giá toàn sàn' }).locator('.management-metric-value')).toHaveText('18');
+    await expect(page.locator('a.management-metric-card').filter({ hasText: 'Đánh giá Gym toàn sàn' }).locator('.management-metric-value')).toHaveText('18');
 
     // Users metric is in error state with retry button
     const userMetric = page.locator('a.management-metric-card').filter({ hasText: 'Tài khoản toàn sàn' });
@@ -249,6 +249,11 @@ test.describe('Admin Workspace & Dashboard E2E', () => {
       }));
       expect(overflow.scrollWidth, `Overflow detected at ${width}px`).toBeLessThanOrEqual(overflow.innerWidth + 1);
 
+      if (width === 375) {
+        const context = await page.locator('.management-scope-badge').boundingBox();
+        const account = await page.locator('.management-user-profile-link').boundingBox();
+        expect(context!.x + context!.width).toBeLessThanOrEqual(account!.x);
+      }
       // Run Axe accessibility audit on both mobile and desktop
       if (width === 375 || width === 1440) {
         const results = await new AxeBuilder({ page })
@@ -258,8 +263,10 @@ test.describe('Admin Workspace & Dashboard E2E', () => {
       }
     }
 
+    await page.screenshot({ path: '../../docs/design/admin-frontend/previews/dashboard-desktop.png', fullPage: true });
     // Test mobile drawer toggle on 375px
     await page.setViewportSize({ width: 375, height: 900 });
+    await page.screenshot({ path: '../../docs/design/admin-frontend/previews/dashboard-mobile.png', fullPage: true });
     const menuButton = page.getByRole('button', { name: 'Mở menu' });
     await expect(menuButton).toBeVisible();
     await menuButton.click();
