@@ -33,10 +33,40 @@ function getJwtSecret(): string {
   return secret;
 }
 
+function getCookieSecure(): boolean {
+  if (nodeEnv === 'production') {
+    // Production MUST always enforce Secure cookies
+    return true;
+  }
+  if (process.env.COOKIE_SECURE !== undefined) {
+    return process.env.COOKIE_SECURE === 'true';
+  }
+  // Default to true according to Security by Default contract
+  return true;
+}
+
+function getCorsOrigins(): string[] {
+  const envOrigins = process.env.CORS_ORIGIN;
+  const defaults = [
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+    'http://localhost:5173',
+    'http://127.0.0.1:5173',
+  ];
+  if (!envOrigins) return defaults;
+  const parsed = envOrigins.split(',').map((s) => s.trim()).filter(Boolean);
+  return parsed.length > 0 ? parsed : defaults;
+}
+
 export const config = {
   port: parseInt(process.env.PORT || '4000', 10),
   nodeEnv,
+  paymentDemoEnabled: process.env.PAYMENT_MODE === 'demo' && nodeEnv !== 'production',
   isProduction: nodeEnv === 'production',
+  cors: {
+    origin: getCorsOrigins(),
+    credentials: true,
+  },
   jwt: {
     secret: getJwtSecret(),
     expiresIn: process.env.JWT_EXPIRES_IN || '7d',
@@ -44,9 +74,10 @@ export const config = {
   cookie: {
     name: 'auth_token',
     httpOnly: true,
-    secure: process.env.COOKIE_SECURE === 'true' || nodeEnv === 'production',
+    secure: getCookieSecure(),
     sameSite: 'lax' as const,
     path: '/api/v1',
-    maxAge: 7 * 24 * 60 * 60 * 1000, // 604800000 ms (7 days)
+    // maxAge in milliseconds for Express res.cookie(), which serializes to Max-Age=604800 (seconds) in HTTP header
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 604,800,000 ms -> HTTP Max-Age=604800
   },
 } as const;

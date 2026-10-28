@@ -1,0 +1,72 @@
+[
+  {
+    "suite": "admin-packages",
+    "round": 1,
+    "code": 0,
+    "seconds": 54,
+    "result": "40 passed (53.0s)"
+  },
+  {
+    "suite": "package",
+    "round": 1,
+    "code": 0,
+    "seconds": 24,
+    "result": "23 passed (23.7s)"
+  },
+  {
+    "suite": "package-live",
+    "round": 1,
+    "code": 0,
+    "seconds": 12,
+    "result": "2 passed (11.1s)"
+  },
+  {
+    "suite": "admin-dashboard",
+    "round": 1,
+    "code": 0,
+    "seconds": 31,
+    "result": "26 passed (30.0s)"
+  },
+  {
+    "suite": "auth",
+    "round": 1,
+    "code": 0,
+    "seconds": 15,
+    "result": "8 passed (14.4s)"
+  },
+  {
+    "suite": "admin-packages",
+    "round": 2,
+    "code": 0,
+    "seconds": 47,
+    "result": "40 passed (46.5s)"
+  },
+  {
+    "suite": "package",
+    "round": 2,
+    "code": 0,
+    "seconds": 21,
+    "result": "23 passed (20.4s)"
+  },
+  {
+    "suite": "package-live",
+    "round": 2,
+    "code": 0,
+    "seconds": 12,
+    "result": "2 passed (11.4s)"
+  },
+  {
+    "suite": "admin-dashboard",
+    "round": 2,
+    "code": 0,
+    "seconds": 30,
+    "result": "26 passed (29.4s)"
+  },
+  {
+    "suite": "auth",
+    "round": 2,
+    "code": 0,
+    "seconds": 16,
+    "result": "8 passed (14.9s)"
+  }
+]

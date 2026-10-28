@@ -1,0 +1,33 @@
+{
+  "checkedAt": "2026-10-11T15:23:50.389Z",
+  "scope": "Prototype HTML SCR-ADM-002, không phải production",
+  "checks": [
+    "Reflow 375",
+    "Reflow 768",
+    "Reflow 1024",
+    "Reflow 1440",
+    "Search submit và select không áp dụng draft chưa submit",
+    "Admin được bảo vệ; hủy trả focus đúng target",
+    "Khóa thành công, pending chặn ghi/hủy và giữ phân công",
+    "Mở lại giữ yêu cầu đổi mật khẩu",
+    "Recovery conflict",
+    "Recovery unknown",
+    "Recovery validation",
+    "Recovery gone",
+    "Recovery protected",
+    "Trang cuối tự clamp sau khóa khi đang lọc ACTIVE",
+    "Lưu thành công và lỗi đọc không giả rollback",
+    "INACTIVE/null roles/phone/profile và mở lại",
+    "Empty/loading/read error/mất quyền",
+    "Drawer focus trap/Escape/return focus và resize",
+    "Axe default",
+    "Axe conflict",
+    "Axe permission",
+    "Axe drawer",
+    "Nút Đóng menu có chữ đọc được và Tab vào skip link",
+    "Không có lỗi JavaScript hoặc gọi API"
+  ],
+  "failures": [],
+  "jsErrors": [],
+  "apiRequests": []
+}

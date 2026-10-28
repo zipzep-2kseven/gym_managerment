@@ -1,0 +1,94 @@
+{
+  "date": "2026-10-14",
+  "scope": "R22 related regression, not all 28 suites or root QA-02",
+  "retries": 0,
+  "totalBrowserPasses": 188,
+  "browser": [
+    {
+      "suite": "admin-pt-workspace",
+      "round": 1,
+      "code": 0,
+      "seconds": 26,
+      "result": "16 passed (25.6s)"
+    },
+    {
+      "suite": "pt-workflow",
+      "round": 1,
+      "code": 0,
+      "seconds": 15,
+      "result": "2 passed (14.0s)"
+    },
+    {
+      "suite": "admin-trainers",
+      "round": 1,
+      "code": 0,
+      "seconds": 73,
+      "result": "67 passed (1.2m)"
+    },
+    {
+      "suite": "auth",
+      "round": 1,
+      "code": 0,
+      "seconds": 15,
+      "result": "8 passed (14.5s)"
+    },
+    {
+      "suite": "security",
+      "round": 1,
+      "code": 0,
+      "seconds": 7,
+      "result": "1 passed (6.0s)"
+    },
+    {
+      "suite": "admin-pt-workspace",
+      "round": 2,
+      "code": 0,
+      "seconds": 28,
+      "result": "16 passed (27.3s)"
+    },
+    {
+      "suite": "pt-workflow",
+      "round": 2,
+      "code": 0,
+      "seconds": 15,
+      "result": "2 passed (14.5s)"
+    },
+    {
+      "suite": "admin-trainers",
+      "round": 2,
+      "code": 0,
+      "seconds": 73,
+      "result": "67 passed (1.2m)"
+    },
+    {
+      "suite": "auth",
+      "round": 2,
+      "code": 0,
+      "seconds": 16,
+      "result": "8 passed (14.9s)"
+    },
+    {
+      "suite": "security",
+      "round": 2,
+      "code": 0,
+      "seconds": 6,
+      "result": "1 passed (5.8s)"
+    }
+  ],
+  "checks": {
+    "lint": "PASS",
+    "typecheck": "PASS 3 workspaces",
+    "apiTestTypecheck": "PASS",
+    "e2eTypecheck": "PASS",
+    "build": "PASS 3 workspaces, web chunk 512.03 kB warning",
+    "dashboardCache": "PASS 4/4",
+    "backendQA01": "PASS",
+    "ptWorkflow": "PASS 19 HTTP/DB groups and 3 migration checks",
+    "readbackRegression": "RED expected 1 scan, received 2 without guard; GREEN with guard"
+  },
+  "cleanup": {
+    "remainingBrowserDatabases": 0,
+    "remainingPackageDatabases": 1,
+    "packageDatabaseNote": "No active connections; does not match failed R22 fixture. Origin unverified; left untouched."
+  }
+}

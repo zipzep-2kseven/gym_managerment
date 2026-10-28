@@ -1,0 +1,14 @@
+{
+  "date": "2026-10-14",
+  "parser": "@dbml/core",
+  "parserVersion": "10.3.1",
+  "format": "dbmlv2",
+  "tables": 21,
+  "columns": 189,
+  "foreignKeys": 36,
+  "checks": 43,
+  "representedIndexes": 45,
+  "conditionalIndexesInNotes": 4,
+  "triggersInNotes": 19,
+  "verification": "PASS: names/types/nullability/defaults/PKs/indexes/checks/FKs/actions and trigger notes match read-only PostgreSQL catalog"
+}

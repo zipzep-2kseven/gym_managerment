@@ -1,0 +1,674 @@
+// Multi-Gym — current physical ERD (21 business tables).
+// Snapshot: 2026-10-14; source: PostgreSQL catalog, matched to Drizzle table names.
+// Original ERD: 15 tables. Added tables are marked below.
+// Status columns are VARCHAR + CHECK, not native PostgreSQL ENUM.
+// Conditional indexes and triggers are documented in Notes; DBML SQL export is not a migration.
+
+Project multi_gym_current {
+  database_type: 'PostgreSQL'
+  Note: '''21 bảng nghiệp vụ hiện tại. UUID thay khóa int trong ERD cũ.
+Nguồn: schema Drizzle và migrations 0000–0005, đối chiếu catalog PostgreSQL.
+Giữ khóa ngoại tổ hợp theo Gym để tránh liên kết khác cơ sở.
+Index có WHERE và trigger được ghi chú, không chuyển thành UNIQUE toàn bảng.
+File dùng để dựng ERD; triển khai database vẫn qua migrations trong repository.'''
+}
+
+//////////////////////////////////////////////////////
+// USERS
+//////////////////////////////////////////////////////
+
+Table users {
+  user_id uuid [pk, not null, default: `gen_random_uuid()`]
+  email varchar(254) [not null]
+  phone varchar(20)
+  password_hash text [not null]
+  email_verified_at timestamptz(3)
+  must_change_password boolean [not null, default: `false`]
+  status varchar(20) [not null, default: `'ACTIVE'::character varying`]
+  created_at timestamptz(3) [not null, default: `now()`]
+  updated_at timestamptz(3) [not null, default: `now()`]
+
+  indexes {
+    email [unique, name: 'users_email_key']
+    phone [unique, name: 'users_phone_key']
+  }
+
+  checks {
+    `(((email)::text = lower(btrim((email)::text))) AND ((email)::text <> ''::text))` [name: 'users_email_check']
+    `((phone IS NULL) OR (btrim((phone)::text) <> ''::text))` [name: 'users_phone_check']
+    `((status)::text = ANY ((ARRAY['ACTIVE'::character varying, 'INACTIVE'::character varying, 'SUSPENDED'::character varying])::text[]))` [name: 'users_status_check']
+  }
+}
+
+//////////////////////////////////////////////////////
+// USER_PROFILES
+//////////////////////////////////////////////////////
+
+Table user_profiles {
+  profile_id uuid [pk, not null, default: `gen_random_uuid()`]
+  user_id uuid [not null]
+  full_name varchar(100) [not null]
+  date_of_birth date
+  gender text
+  address text
+  avatar_url text
+  created_at timestamptz(3) [not null, default: `now()`]
+  updated_at timestamptz(3) [not null, default: `now()`]
+
+  indexes {
+    user_id [unique, name: 'user_profiles_user_key']
+  }
+
+  checks {
+    `((char_length(btrim((full_name)::text)) >= 2) AND (char_length(btrim((full_name)::text)) <= 100))` [name: 'user_profiles_full_name_check']
+  }
+}
+
+//////////////////////////////////////////////////////
+// ROLES
+//////////////////////////////////////////////////////
+
+Table roles {
+  role_id uuid [pk, not null, default: `gen_random_uuid()`]
+  role_name varchar(20) [not null]
+  description text
+
+  indexes {
+    role_name [unique, name: 'roles_role_name_key']
+  }
+
+  checks {
+    `((role_name)::text = ANY ((ARRAY['ADMIN'::character varying, 'MANAGER'::character varying, 'PT'::character varying, 'CUSTOMER'::character varying])::text[]))` [name: 'roles_role_name_check']
+  }
+}
+
+//////////////////////////////////////////////////////
+// USER_ROLES
+//////////////////////////////////////////////////////
+
+Table user_roles {
+  user_id uuid [not null]
+  role_id uuid [not null]
+  assigned_at timestamptz(3) [not null, default: `now()`]
+
+  indexes {
+    (user_id, role_id) [pk, name: 'user_roles_pkey']
+    role_id [name: 'user_roles_role_idx']
+  }
+}
+
+//////////////////////////////////////////////////////
+// GYMS
+//////////////////////////////////////////////////////
+
+Table gyms {
+  gym_id uuid [pk, not null, default: `gen_random_uuid()`]
+  gym_name text [not null]
+  description text
+  phone varchar(20)
+  email varchar(254)
+  address text [not null]
+  latitude numeric(9,6)
+  longitude numeric(9,6)
+  logo_url text
+  opening_time time(0)
+  closing_time time(0)
+  status varchar(20) [not null, default: `'ACTIVE'::character varying`]
+  created_at timestamptz(3) [not null, default: `now()`]
+  updated_at timestamptz(3) [not null, default: `now()`]
+
+  checks {
+    `((latitude IS NULL) OR ((latitude >= ('-90'::integer)::numeric) AND (latitude <= (90)::numeric)))` [name: 'gyms_latitude_check']
+    `((longitude IS NULL) OR ((longitude >= ('-180'::integer)::numeric) AND (longitude <= (180)::numeric)))` [name: 'gyms_longitude_check']
+    `((status)::text = ANY ((ARRAY['ACTIVE'::character varying, 'INACTIVE'::character varying])::text[]))` [name: 'gyms_status_check']
+  }
+
+  Note: '''TRIGGER (định nghĩa hàm nằm trong migration):
+CREATE TRIGGER gym_shutdown_guard BEFORE UPDATE OF status ON public.gyms FOR EACH ROW EXECUTE FUNCTION guard_gym_shutdown();'''
+}
+
+//////////////////////////////////////////////////////
+// GYM_MANAGERS
+//////////////////////////////////////////////////////
+
+Table gym_managers {
+  gym_manager_id uuid [pk, not null, default: `gen_random_uuid()`]
+  gym_id uuid [not null]
+  user_id uuid [not null]
+  assigned_at timestamptz(3) [not null, default: `now()`]
+  status varchar(20) [not null, default: `'ACTIVE'::character varying`]
+  created_at timestamptz(3) [not null, default: `now()`]
+  updated_at timestamptz(3) [not null, default: `now()`]
+
+  indexes {
+    (gym_id, user_id) [unique, name: 'gym_managers_gym_user_key']
+    user_id [name: 'gym_managers_user_idx']
+  }
+
+  checks {
+    `((status)::text = ANY ((ARRAY['ACTIVE'::character varying, 'INACTIVE'::character varying])::text[]))` [name: 'gym_managers_status_check']
+  }
+
+  Note: '''INDEX CÓ ĐIỀU KIỆN (chỉ áp dụng cho hàng thỏa WHERE, không phải UNIQUE toàn bảng):
+CREATE UNIQUE INDEX gym_managers_active_gym_key ON public.gym_managers USING btree (gym_id) WHERE ((status)::text = 'ACTIVE'::text);
+
+INDEX CÓ ĐIỀU KIỆN (chỉ áp dụng cho hàng thỏa WHERE, không phải UNIQUE toàn bảng):
+CREATE UNIQUE INDEX gym_managers_active_user_key ON public.gym_managers USING btree (user_id) WHERE ((status)::text = 'ACTIVE'::text);
+
+TRIGGER (định nghĩa hàm nằm trong migration):
+CREATE TRIGGER manager_lifecycle_guard BEFORE INSERT OR UPDATE OF status, gym_id, user_id ON public.gym_managers FOR EACH ROW EXECUTE FUNCTION guard_assignment_lifecycle();'''
+}
+
+//////////////////////////////////////////////////////
+// GYM_TRAINERS
+//////////////////////////////////////////////////////
+
+Table gym_trainers {
+  gym_trainer_id uuid [pk, not null, default: `gen_random_uuid()`]
+  gym_id uuid [not null]
+  user_id uuid [not null]
+  specialization text
+  experience_years integer
+  bio text
+  status varchar(20) [not null, default: `'ACTIVE'::character varying`]
+  joined_at timestamptz(3) [not null, default: `now()`]
+  created_at timestamptz(3) [not null, default: `now()`]
+  updated_at timestamptz(3) [not null, default: `now()`]
+  availability varchar(20) [not null, default: `'NOT_ACCEPTING'::character varying`]
+
+  indexes {
+    (gym_id, user_id) [unique, name: 'gym_trainers_gym_user_key']
+    user_id [name: 'gym_trainers_user_idx']
+  }
+
+  checks {
+    `((availability)::text = ANY ((ARRAY['ACCEPTING'::character varying, 'ALMOST_FULL'::character varying, 'NOT_ACCEPTING'::character varying])::text[]))` [name: 'gym_trainers_availability_check']
+    `((experience_years IS NULL) OR (experience_years >= 0))` [name: 'gym_trainers_experience_years_check']
+    `((status)::text = ANY ((ARRAY['ACTIVE'::character varying, 'INACTIVE'::character varying])::text[]))` [name: 'gym_trainers_status_check']
+  }
+
+  Note: '''INDEX CÓ ĐIỀU KIỆN (chỉ áp dụng cho hàng thỏa WHERE, không phải UNIQUE toàn bảng):
+CREATE UNIQUE INDEX gym_trainers_active_user_key ON public.gym_trainers USING btree (user_id) WHERE ((status)::text = 'ACTIVE'::text);
+
+TRIGGER (định nghĩa hàm nằm trong migration):
+CREATE TRIGGER pt_trainer_identity_guard BEFORE UPDATE OF user_id ON public.gym_trainers FOR EACH ROW EXECUTE FUNCTION guard_pt_trainer_identity();
+
+TRIGGER (định nghĩa hàm nằm trong migration):
+CREATE TRIGGER trainer_lifecycle_guard BEFORE INSERT OR UPDATE OF status, gym_id, user_id ON public.gym_trainers FOR EACH ROW EXECUTE FUNCTION guard_assignment_lifecycle();
+
+TRIGGER (định nghĩa hàm nằm trong migration):
+CREATE TRIGGER trainer_pt_gym_guard BEFORE UPDATE OF gym_id ON public.gym_trainers FOR EACH ROW EXECUTE FUNCTION protect_pt_parent_gym();'''
+}
+
+//////////////////////////////////////////////////////
+// PACKAGES
+//////////////////////////////////////////////////////
+
+Table packages {
+  package_id uuid [pk, not null, default: `gen_random_uuid()`]
+  gym_id uuid [not null]
+  package_name text [not null]
+  description text
+  duration_days integer [not null]
+  price numeric(14,2) [not null]
+  status varchar(20) [not null, default: `'ACTIVE'::character varying`]
+  created_at timestamptz(3) [not null, default: `now()`]
+  updated_at timestamptz(3) [not null, default: `now()`]
+
+  indexes {
+    (gym_id, status, created_at) [name: 'packages_gym_status_created_idx']
+    (package_id, gym_id) [unique, name: 'packages_package_gym_key']
+  }
+
+  checks {
+    `(duration_days > 0)` [name: 'packages_duration_days_check']
+    `((price >= (0)::numeric) AND (price <> 'NaN'::numeric))` [name: 'packages_price_check']
+    `((status)::text = ANY ((ARRAY['ACTIVE'::character varying, 'INACTIVE'::character varying])::text[]))` [name: 'packages_status_check']
+  }
+}
+
+//////////////////////////////////////////////////////
+// PAYMENTS
+//////////////////////////////////////////////////////
+
+Table payments {
+  payment_id uuid [pk, not null, default: `gen_random_uuid()`]
+  user_id uuid [not null]
+  gym_id uuid [not null]
+  package_id uuid [not null]
+  amount numeric(14,2) [not null]
+  payment_method text [not null]
+  transaction_code text
+  payment_status varchar(20) [not null, default: `'PENDING'::character varying`]
+  paid_at timestamptz(3)
+  created_at timestamptz(3) [not null, default: `now()`]
+  updated_at timestamptz(3) [not null, default: `now()`]
+
+  indexes {
+    (gym_id, payment_status, created_at) [name: 'payments_gym_status_created_idx']
+    (package_id, gym_id) [name: 'payments_package_gym_idx']
+    (payment_id, user_id, gym_id, package_id) [unique, name: 'payments_payment_user_gym_package_key']
+    transaction_code [unique, name: 'payments_transaction_code_key']
+    (user_id, created_at) [name: 'payments_user_created_idx']
+  }
+
+  checks {
+    `((amount >= (0)::numeric) AND (amount <> 'NaN'::numeric))` [name: 'payments_amount_check']
+    `((payment_status)::text = ANY ((ARRAY['PENDING'::character varying, 'SUCCESS'::character varying, 'FAILED'::character varying, 'CANCELLED'::character varying, 'REFUNDED'::character varying])::text[]))` [name: 'payments_payment_status_check']
+    `((transaction_code IS NULL) OR (btrim(transaction_code) <> ''::text))` [name: 'payments_transaction_code_check']
+  }
+
+  Note: '''TRIGGER (định nghĩa hàm nằm trong migration):
+CREATE TRIGGER payment_lifecycle_guard BEFORE INSERT OR UPDATE OF gym_id, payment_status ON public.payments FOR EACH ROW EXECUTE FUNCTION guard_gym_obligation();'''
+}
+
+//////////////////////////////////////////////////////
+// MEMBERSHIPS
+//////////////////////////////////////////////////////
+
+Table memberships {
+  membership_id uuid [pk, not null, default: `gen_random_uuid()`]
+  user_id uuid [not null]
+  gym_id uuid [not null]
+  package_id uuid [not null]
+  payment_id uuid
+  start_date date [not null]
+  end_date date [not null]
+  purchase_price numeric(14,2) [not null]
+  status varchar(20) [not null]
+  created_at timestamptz(3) [not null, default: `now()`]
+  updated_at timestamptz(3) [not null, default: `now()`]
+
+  indexes {
+    (gym_id, status, created_at) [name: 'memberships_gym_status_created_idx']
+    (package_id, gym_id) [name: 'memberships_package_gym_idx']
+    payment_id [unique, name: 'memberships_payment_id_key']
+    (user_id, created_at) [name: 'memberships_user_created_idx']
+  }
+
+  checks {
+    `(end_date >= start_date)` [name: 'memberships_end_date_check']
+    `((purchase_price >= (0)::numeric) AND (purchase_price <> 'NaN'::numeric))` [name: 'memberships_purchase_price_check']
+    `((status)::text = ANY ((ARRAY['PENDING'::character varying, 'ACTIVE'::character varying, 'EXPIRED'::character varying, 'CANCELLED'::character varying])::text[]))` [name: 'memberships_status_check']
+  }
+
+  Note: '''TRIGGER (định nghĩa hàm nằm trong migration):
+CREATE TRIGGER membership_lifecycle_guard BEFORE INSERT OR UPDATE OF gym_id, status ON public.memberships FOR EACH ROW EXECUTE FUNCTION guard_gym_obligation();
+
+TRIGGER (định nghĩa hàm nằm trong migration):
+CREATE TRIGGER membership_pt_gym_guard BEFORE UPDATE OF gym_id ON public.memberships FOR EACH ROW EXECUTE FUNCTION protect_pt_parent_gym();
+
+TRIGGER (định nghĩa hàm nằm trong migration):
+CREATE TRIGGER pt_membership_identity_guard BEFORE UPDATE OF user_id ON public.memberships FOR EACH ROW EXECUTE FUNCTION guard_pt_participant_identity();'''
+}
+
+//////////////////////////////////////////////////////
+// PT_REGISTRATIONS
+//////////////////////////////////////////////////////
+
+Table pt_registrations {
+  registration_id uuid [pk, not null, default: `gen_random_uuid()`]
+  membership_id uuid [not null]
+  gym_trainer_id uuid [not null]
+  registered_at timestamptz(3) [not null, default: `now()`]
+  status varchar(20) [not null]
+  note text
+  created_at timestamptz(3) [not null, default: `now()`]
+  updated_at timestamptz(3) [not null, default: `now()`]
+
+  indexes {
+    gym_trainer_id [name: 'pt_registrations_gym_trainer_idx']
+    membership_id [name: 'pt_registrations_membership_idx']
+  }
+
+  checks {
+    `((status)::text = ANY ((ARRAY['ACTIVE'::character varying, 'CANCELLED'::character varying, 'COMPLETED'::character varying])::text[]))` [name: 'pt_registrations_status_check']
+  }
+
+  Note: '''INDEX CÓ ĐIỀU KIỆN (chỉ áp dụng cho hàng thỏa WHERE, không phải UNIQUE toàn bảng):
+CREATE UNIQUE INDEX pt_registrations_active_membership_key ON public.pt_registrations USING btree (membership_id) WHERE ((status)::text = 'ACTIVE'::text);
+
+TRIGGER (định nghĩa hàm nằm trong migration):
+CREATE TRIGGER pt_registration_gym_guard BEFORE INSERT OR UPDATE OF membership_id, gym_trainer_id ON public.pt_registrations FOR EACH ROW EXECUTE FUNCTION enforce_pt_registration_gym();
+
+TRIGGER (định nghĩa hàm nằm trong migration):
+CREATE TRIGGER pt_registration_history_guard BEFORE UPDATE ON public.pt_registrations FOR EACH ROW EXECUTE FUNCTION guard_pt_history();
+
+TRIGGER (định nghĩa hàm nằm trong migration):
+CREATE TRIGGER registration_lifecycle_guard BEFORE INSERT OR UPDATE OF gym_trainer_id, membership_id, status ON public.pt_registrations FOR EACH ROW EXECUTE FUNCTION guard_pt_obligation();'''
+}
+
+//////////////////////////////////////////////////////
+// PT_APPOINTMENTS
+//////////////////////////////////////////////////////
+
+Table pt_appointments {
+  appointment_id uuid [pk, not null, default: `gen_random_uuid()`]
+  registration_id uuid [not null]
+  start_time timestamptz(3) [not null]
+  end_time timestamptz(3) [not null]
+  status varchar(20) [not null]
+  note text
+  created_at timestamptz(3) [not null, default: `now()`]
+  updated_at timestamptz(3) [not null, default: `now()`]
+
+  indexes {
+    (registration_id, start_time) [name: 'pt_appointments_registration_start_idx']
+    start_time [name: 'pt_appointments_start_idx']
+  }
+
+  checks {
+    `((status)::text = ANY ((ARRAY['PENDING'::character varying, 'CONFIRMED'::character varying, 'COMPLETED'::character varying, 'CANCELLED'::character varying])::text[]))` [name: 'pt_appointments_status_check']
+    `(end_time > start_time)` [name: 'pt_appointments_time_check']
+  }
+
+  Note: '''TRIGGER (định nghĩa hàm nằm trong migration):
+CREATE TRIGGER appointment_lifecycle_guard BEFORE INSERT OR UPDATE OF registration_id, status ON public.pt_appointments FOR EACH ROW EXECUTE FUNCTION guard_pt_obligation();
+
+TRIGGER (định nghĩa hàm nằm trong migration):
+CREATE TRIGGER pt_appointment_history_guard BEFORE UPDATE ON public.pt_appointments FOR EACH ROW EXECUTE FUNCTION guard_pt_history();
+
+TRIGGER (định nghĩa hàm nằm trong migration):
+CREATE TRIGGER pt_appointment_overlap_guard BEFORE INSERT OR UPDATE ON public.pt_appointments FOR EACH ROW EXECUTE FUNCTION guard_pt_overlap();'''
+}
+
+//////////////////////////////////////////////////////
+// EQUIPMENT_TYPES
+//////////////////////////////////////////////////////
+
+Table equipment_types {
+  equipment_type_id uuid [pk, not null, default: `gen_random_uuid()`]
+  name text [not null]
+  description text
+  created_at timestamptz(3) [not null, default: `now()`]
+  updated_at timestamptz(3) [not null, default: `now()`]
+}
+
+//////////////////////////////////////////////////////
+// EQUIPMENTS
+//////////////////////////////////////////////////////
+
+Table equipments {
+  equipment_id uuid [pk, not null, default: `gen_random_uuid()`]
+  gym_id uuid [not null]
+  equipment_type_id uuid [not null]
+  equipment_code text [not null]
+  purchase_date date
+  condition varchar(20) [not null]
+  status varchar(20) [not null]
+  created_at timestamptz(3) [not null, default: `now()`]
+  updated_at timestamptz(3) [not null, default: `now()`]
+
+  indexes {
+    (equipment_id, gym_id) [unique, name: 'equipments_equipment_gym_key']
+    (gym_id, equipment_code) [unique, name: 'equipments_gym_code_key']
+    equipment_type_id [name: 'equipments_type_idx']
+  }
+
+  checks {
+    `((condition)::text = ANY ((ARRAY['GOOD'::character varying, 'MAINTENANCE'::character varying, 'BROKEN'::character varying, 'OUT_OF_SERVICE'::character varying])::text[]))` [name: 'equipments_condition_check']
+    `((status)::text = ANY ((ARRAY['ACTIVE'::character varying, 'INACTIVE'::character varying])::text[]))` [name: 'equipments_status_check']
+  }
+}
+
+//////////////////////////////////////////////////////
+// GYM_REPORTS
+//////////////////////////////////////////////////////
+
+Table gym_reports {
+  report_id uuid [pk, not null, default: `gen_random_uuid()`]
+  user_id uuid [not null]
+  gym_id uuid [not null]
+  equipment_id uuid
+  report_type varchar(20) [not null]
+  title text [not null]
+  content text [not null]
+  image_url text
+  status varchar(20) [not null, default: `'PENDING'::character varying`]
+  resolved_by uuid
+  resolved_at timestamptz(3)
+  resolution_note text
+  created_at timestamptz(3) [not null, default: `now()`]
+  updated_at timestamptz(3) [not null, default: `now()`]
+
+  indexes {
+    (equipment_id, gym_id) [name: 'gym_reports_equipment_gym_idx']
+    (gym_id, status, created_at) [name: 'gym_reports_gym_status_created_idx']
+    (gym_id, report_type, created_at) [name: 'gym_reports_gym_type_created_idx']
+    resolved_by [name: 'gym_reports_resolver_idx']
+    (user_id, created_at) [name: 'gym_reports_user_created_idx']
+  }
+
+  checks {
+    `((report_type)::text = ANY ((ARRAY['EQUIPMENT'::character varying, 'FACILITY'::character varying, 'CLEANLINESS'::character varying, 'SERVICE'::character varying, 'OTHER'::character varying])::text[]))` [name: 'gym_reports_report_type_check']
+    `((status)::text = ANY ((ARRAY['PENDING'::character varying, 'IN_PROGRESS'::character varying, 'RESOLVED'::character varying, 'REJECTED'::character varying])::text[]))` [name: 'gym_reports_status_check']
+  }
+}
+
+//////////////////////////////////////////////////////
+// GYM_IMAGES — ADDED IN MIGRATION 0001
+//////////////////////////////////////////////////////
+
+Table gym_images {
+  image_id uuid [pk, not null, default: `gen_random_uuid()`]
+  gym_id uuid [not null]
+  image_url text [not null]
+  caption text
+  display_order integer [not null, default: `0`]
+  created_at timestamptz(3) [not null, default: `now()`]
+  updated_at timestamptz(3) [not null, default: `now()`]
+
+  indexes {
+    (gym_id, display_order) [name: 'gym_images_gym_order_idx']
+  }
+
+  checks {
+    `(display_order >= 0)` [name: 'gym_images_order_check']
+    `(btrim(image_url) <> ''::text)` [name: 'gym_images_url_check']
+  }
+
+  Note: '''Bảng bổ sung trong migration 0001_gym_business_update.'''
+}
+
+//////////////////////////////////////////////////////
+// CONSULTATION_REQUESTS — ADDED IN MIGRATION 0001
+//////////////////////////////////////////////////////
+
+Table consultation_requests {
+  consultation_request_id uuid [pk, not null, default: `gen_random_uuid()`]
+  user_id uuid
+  gym_id uuid [not null]
+  full_name varchar(100) [not null]
+  phone varchar(20) [not null]
+  email varchar(254)
+  preferred_date date
+  preferred_time time(0)
+  content text
+  status varchar(20) [not null, default: `'PENDING'::character varying`]
+  assigned_to uuid
+  created_at timestamptz(3) [not null, default: `now()`]
+  updated_at timestamptz(3) [not null, default: `now()`]
+  preferred_contact varchar(200)
+  processing_note text
+
+  indexes {
+    assigned_to [name: 'consultation_requests_assignee_idx']
+    (gym_id, status) [name: 'consultation_requests_gym_status_idx']
+    user_id [name: 'consultation_requests_user_idx']
+  }
+
+  checks {
+    `((btrim((full_name)::text) <> ''::text) AND (btrim((phone)::text) <> ''::text))` [name: 'consultation_requests_contact_check']
+    `((status)::text = ANY ((ARRAY['PENDING'::character varying, 'CONTACTED'::character varying, 'COMPLETED'::character varying, 'CANCELLED'::character varying])::text[]))` [name: 'consultation_requests_status_check']
+  }
+
+  Note: '''Bảng bổ sung trong migration 0001_gym_business_update.'''
+}
+
+//////////////////////////////////////////////////////
+// PT_SOCIAL_LINKS — ADDED IN MIGRATION 0001
+//////////////////////////////////////////////////////
+
+Table pt_social_links {
+  social_link_id uuid [pk, not null, default: `gen_random_uuid()`]
+  gym_trainer_id uuid [not null]
+  platform varchar(20) [not null]
+  url text [not null]
+  created_at timestamptz(3) [not null, default: `now()`]
+  updated_at timestamptz(3) [not null, default: `now()`]
+
+  indexes {
+    gym_trainer_id [name: 'pt_social_links_trainer_idx']
+  }
+
+  checks {
+    `((platform)::text = ANY ((ARRAY['FACEBOOK'::character varying, 'INSTAGRAM'::character varying, 'YOUTUBE'::character varying, 'TIKTOK'::character varying, 'WEBSITE'::character varying])::text[]))` [name: 'pt_social_links_platform_check']
+    `(btrim(url) <> ''::text)` [name: 'pt_social_links_url_check']
+  }
+
+  Note: '''Bảng bổ sung trong migration 0001_gym_business_update.'''
+}
+
+//////////////////////////////////////////////////////
+// PT_WORKING_SCHEDULES — ADDED IN MIGRATION 0001
+//////////////////////////////////////////////////////
+
+Table pt_working_schedules {
+  schedule_id uuid [pk, not null, default: `gen_random_uuid()`]
+  gym_trainer_id uuid [not null]
+  day_of_week varchar(20) [not null]
+  start_time time(0) [not null]
+  end_time time(0) [not null]
+  status varchar(20) [not null, default: `'ACTIVE'::character varying`]
+  created_at timestamptz(3) [not null, default: `now()`]
+  updated_at timestamptz(3) [not null, default: `now()`]
+
+  indexes {
+    (gym_trainer_id, day_of_week) [name: 'pt_working_schedules_trainer_day_idx']
+  }
+
+  checks {
+    `((day_of_week)::text = ANY ((ARRAY['MONDAY'::character varying, 'TUESDAY'::character varying, 'WEDNESDAY'::character varying, 'THURSDAY'::character varying, 'FRIDAY'::character varying, 'SATURDAY'::character varying, 'SUNDAY'::character varying])::text[]))` [name: 'pt_working_schedules_day_check']
+    `((status)::text = ANY ((ARRAY['ACTIVE'::character varying, 'INACTIVE'::character varying])::text[]))` [name: 'pt_working_schedules_status_check']
+    `(end_time > start_time)` [name: 'pt_working_schedules_time_check']
+  }
+
+  Note: '''Bảng bổ sung trong migration 0001_gym_business_update.'''
+}
+
+//////////////////////////////////////////////////////
+// GYM_REVIEWS — ADDED IN MIGRATION 0001
+//////////////////////////////////////////////////////
+
+Table gym_reviews {
+  gym_review_id uuid [pk, not null, default: `gen_random_uuid()`]
+  gym_id uuid [not null]
+  user_id uuid [not null]
+  rating integer [not null]
+  comment text
+  status varchar(20) [not null, default: `'VISIBLE'::character varying`]
+  hidden_at timestamptz(3)
+  hidden_by uuid
+  hidden_reason text
+  created_at timestamptz(3) [not null, default: `now()`]
+  updated_at timestamptz(3) [not null, default: `now()`]
+
+  indexes {
+    hidden_by [name: 'gym_reviews_moderator_idx']
+    (gym_id, status) [name: 'gym_reviews_target_status_idx']
+    user_id [name: 'gym_reviews_user_idx']
+  }
+
+  checks {
+    `((((status)::text = 'VISIBLE'::text) AND (hidden_at IS NULL) AND (hidden_by IS NULL) AND (hidden_reason IS NULL)) OR (((status)::text = 'HIDDEN'::text) AND (hidden_at IS NOT NULL) AND (hidden_by IS NOT NULL) AND (hidden_reason IS NOT NULL) AND (btrim(hidden_reason) <> ''::text)))` [name: 'gym_reviews_moderation_check']
+    `((rating >= 1) AND (rating <= 5))` [name: 'gym_reviews_rating_check']
+    `((status)::text = ANY ((ARRAY['VISIBLE'::character varying, 'HIDDEN'::character varying])::text[]))` [name: 'gym_reviews_status_check']
+  }
+
+  Note: '''Bảng bổ sung trong migration 0001_gym_business_update.
+
+TRIGGER (định nghĩa hàm nằm trong migration):
+CREATE TRIGGER gym_review_guard BEFORE INSERT OR DELETE OR UPDATE ON public.gym_reviews FOR EACH ROW EXECUTE FUNCTION protect_customer_review();
+
+TRIGGER (định nghĩa hàm nằm trong migration):
+CREATE TRIGGER gym_review_truncate_guard BEFORE TRUNCATE ON public.gym_reviews FOR EACH STATEMENT EXECUTE FUNCTION protect_customer_review();'''
+}
+
+//////////////////////////////////////////////////////
+// TRAINER_REVIEWS — ADDED IN MIGRATION 0001
+//////////////////////////////////////////////////////
+
+Table trainer_reviews {
+  trainer_review_id uuid [pk, not null, default: `gen_random_uuid()`]
+  gym_trainer_id uuid [not null]
+  user_id uuid [not null]
+  rating integer [not null]
+  comment text
+  status varchar(20) [not null, default: `'VISIBLE'::character varying`]
+  hidden_at timestamptz(3)
+  hidden_by uuid
+  hidden_reason text
+  created_at timestamptz(3) [not null, default: `now()`]
+  updated_at timestamptz(3) [not null, default: `now()`]
+
+  indexes {
+    hidden_by [name: 'trainer_reviews_moderator_idx']
+    (gym_trainer_id, status) [name: 'trainer_reviews_target_status_idx']
+    user_id [name: 'trainer_reviews_user_idx']
+  }
+
+  checks {
+    `((((status)::text = 'VISIBLE'::text) AND (hidden_at IS NULL) AND (hidden_by IS NULL) AND (hidden_reason IS NULL)) OR (((status)::text = 'HIDDEN'::text) AND (hidden_at IS NOT NULL) AND (hidden_by IS NOT NULL) AND (hidden_reason IS NOT NULL) AND (btrim(hidden_reason) <> ''::text)))` [name: 'trainer_reviews_moderation_check']
+    `((rating >= 1) AND (rating <= 5))` [name: 'trainer_reviews_rating_check']
+    `((status)::text = ANY ((ARRAY['VISIBLE'::character varying, 'HIDDEN'::character varying])::text[]))` [name: 'trainer_reviews_status_check']
+  }
+
+  Note: '''Bảng bổ sung trong migration 0001_gym_business_update.
+
+TRIGGER (định nghĩa hàm nằm trong migration):
+CREATE TRIGGER trainer_review_guard BEFORE INSERT OR DELETE OR UPDATE ON public.trainer_reviews FOR EACH ROW EXECUTE FUNCTION protect_customer_review();
+
+TRIGGER (định nghĩa hàm nằm trong migration):
+CREATE TRIGGER trainer_review_truncate_guard BEFORE TRUNCATE ON public.trainer_reviews FOR EACH STATEMENT EXECUTE FUNCTION protect_customer_review();'''
+}
+
+//////////////////////////////////////////////////////
+// RELATIONSHIPS — actual foreign keys, including composite Gym scope
+//////////////////////////////////////////////////////
+
+Ref user_profiles_user_fk: users.user_id - user_profiles.user_id [delete: cascade, update: restrict]
+Ref user_roles_role_fk: user_roles.role_id > roles.role_id [delete: restrict, update: restrict]
+Ref user_roles_user_fk: user_roles.user_id > users.user_id [delete: cascade, update: restrict]
+Ref gym_managers_gym_fk: gym_managers.gym_id > gyms.gym_id [delete: restrict, update: restrict]
+Ref gym_managers_user_fk: gym_managers.user_id > users.user_id [delete: restrict, update: restrict]
+Ref gym_trainers_gym_fk: gym_trainers.gym_id > gyms.gym_id [delete: restrict, update: restrict]
+Ref gym_trainers_user_fk: gym_trainers.user_id > users.user_id [delete: restrict, update: restrict]
+Ref packages_gym_fk: packages.gym_id > gyms.gym_id [delete: restrict, update: restrict]
+Ref payments_gym_fk: payments.gym_id > gyms.gym_id [delete: restrict, update: restrict]
+Ref payments_package_gym_fk: payments.(package_id, gym_id) > packages.(package_id, gym_id) [delete: restrict, update: restrict]
+Ref payments_user_fk: payments.user_id > users.user_id [delete: restrict, update: restrict]
+Ref memberships_gym_fk: memberships.gym_id > gyms.gym_id [delete: restrict, update: restrict]
+Ref memberships_package_gym_fk: memberships.(package_id, gym_id) > packages.(package_id, gym_id) [delete: restrict, update: restrict]
+Ref memberships_payment_source_fk: payments.(payment_id, user_id, gym_id, package_id) - memberships.(payment_id, user_id, gym_id, package_id) [delete: restrict, update: restrict]
+Ref memberships_user_fk: memberships.user_id > users.user_id [delete: restrict, update: restrict]
+Ref pt_registrations_gym_trainer_fk: pt_registrations.gym_trainer_id > gym_trainers.gym_trainer_id [delete: restrict, update: restrict]
+Ref pt_registrations_membership_fk: pt_registrations.membership_id > memberships.membership_id [delete: restrict, update: restrict]
+Ref pt_appointments_registration_fk: pt_appointments.registration_id > pt_registrations.registration_id [delete: restrict, update: restrict]
+Ref equipments_gym_fk: equipments.gym_id > gyms.gym_id [delete: restrict, update: restrict]
+Ref equipments_type_fk: equipments.equipment_type_id > equipment_types.equipment_type_id [delete: restrict, update: restrict]
+Ref gym_reports_equipment_gym_fk: gym_reports.(equipment_id, gym_id) > equipments.(equipment_id, gym_id) [delete: restrict, update: restrict]
+Ref gym_reports_gym_fk: gym_reports.gym_id > gyms.gym_id [delete: restrict, update: restrict]
+Ref gym_reports_resolver_fk: gym_reports.resolved_by > users.user_id [delete: set null, update: restrict]
+Ref gym_reports_user_fk: gym_reports.user_id > users.user_id [delete: restrict, update: restrict]
+Ref gym_images_gym_fk: gym_images.gym_id > gyms.gym_id [delete: restrict, update: restrict]
+Ref consultation_requests_assignee_fk: consultation_requests.assigned_to > users.user_id [delete: restrict, update: restrict]
+Ref consultation_requests_gym_fk: consultation_requests.gym_id > gyms.gym_id [delete: restrict, update: restrict]
+Ref consultation_requests_user_fk: consultation_requests.user_id > users.user_id [delete: restrict, update: restrict]
+Ref pt_social_links_trainer_fk: pt_social_links.gym_trainer_id > gym_trainers.gym_trainer_id [delete: restrict, update: restrict]
+Ref pt_working_schedules_trainer_fk: pt_working_schedules.gym_trainer_id > gym_trainers.gym_trainer_id [delete: restrict, update: restrict]
+Ref gym_reviews_moderator_fk: gym_reviews.hidden_by > users.user_id [delete: restrict, update: restrict]
+Ref gym_reviews_target_fk: gym_reviews.gym_id > gyms.gym_id [delete: restrict, update: restrict]
+Ref gym_reviews_user_fk: gym_reviews.user_id > users.user_id [delete: restrict, update: restrict]
+Ref trainer_reviews_moderator_fk: trainer_reviews.hidden_by > users.user_id [delete: restrict, update: restrict]
+Ref trainer_reviews_target_fk: trainer_reviews.gym_trainer_id > gym_trainers.gym_trainer_id [delete: restrict, update: restrict]
+Ref trainer_reviews_user_fk: trainer_reviews.user_id > users.user_id [delete: restrict, update: restrict]

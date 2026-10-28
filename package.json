@@ -12,9 +12,19 @@
     "dev": "npm run dev --workspaces",
     "build": "npm run build --workspaces",
     "typecheck": "npm run typecheck --workspaces",
-    "lint": "echo \"Linting workspaces...\""
+    "lint": "eslint . --max-warnings=0",
+    "test:qa02": "npm run lint && npm run typecheck && npm run build && npm run typecheck:tests --workspace @multi-gym/api && npm run typecheck:e2e --workspace @multi-gym/web && npm run test:dashboard-cache --workspace @multi-gym/web && npm run test:qa01 --workspace @multi-gym/api && npm run test:qa02 --workspace @multi-gym/web"
   },
   "dependencies": {
     "drizzle-orm": "^0.45.2"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
+    "@eslint/js": "^9.39.5",
+    "eslint": "^9.39.5",
+    "eslint-plugin-jsx-a11y": "^6.10.2",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.13.0",
+    "typescript-eslint": "^8.71.1"
   }
 }

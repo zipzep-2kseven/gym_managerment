@@ -1,0 +1,394 @@
+[
+  {
+    "suite": "auth",
+    "round": 1,
+    "code": 0,
+    "seconds": 15,
+    "result": "8 passed (14.5s)"
+  },
+  {
+    "suite": "gym",
+    "round": 1,
+    "code": 0,
+    "seconds": 31,
+    "result": "25 passed (30.4s)"
+  },
+  {
+    "suite": "gym-live",
+    "round": 1,
+    "code": 0,
+    "seconds": 14,
+    "result": "2 passed (13.7s)"
+  },
+  {
+    "suite": "package",
+    "round": 1,
+    "code": 0,
+    "seconds": 21,
+    "result": "23 passed (20.8s)"
+  },
+  {
+    "suite": "package-live",
+    "round": 1,
+    "code": 0,
+    "seconds": 12,
+    "result": "2 passed (11.7s)"
+  },
+  {
+    "suite": "payment-demo",
+    "round": 1,
+    "code": 0,
+    "seconds": 13,
+    "result": "4 passed (12.4s)"
+  },
+  {
+    "suite": "pt-workflow",
+    "round": 1,
+    "code": 0,
+    "seconds": 15,
+    "result": "2 passed (14.0s)"
+  },
+  {
+    "suite": "customer-calendar",
+    "round": 1,
+    "code": 0,
+    "seconds": 9,
+    "result": "4 passed (8.6s)"
+  },
+  {
+    "suite": "reports",
+    "round": 1,
+    "code": 0,
+    "seconds": 11,
+    "result": "3 passed (10.2s)"
+  },
+  {
+    "suite": "consultation",
+    "round": 1,
+    "code": 0,
+    "seconds": 10,
+    "result": "3 passed (9.6s)"
+  },
+  {
+    "suite": "gallery",
+    "round": 1,
+    "code": 0,
+    "seconds": 10,
+    "result": "2 passed (9.6s)"
+  },
+  {
+    "suite": "trainer-profile",
+    "round": 1,
+    "code": 0,
+    "seconds": 10,
+    "result": "3 passed (9.8s)"
+  },
+  {
+    "suite": "reviews",
+    "round": 1,
+    "code": 0,
+    "seconds": 10,
+    "result": "2 passed (9.1s)"
+  },
+  {
+    "suite": "review-moderation",
+    "round": 1,
+    "code": 0,
+    "seconds": 45,
+    "result": "36 passed (44.5s)"
+  },
+  {
+    "suite": "admin-users",
+    "round": 1,
+    "code": 0,
+    "seconds": 12,
+    "result": "3 passed (11.1s)"
+  },
+  {
+    "suite": "security",
+    "round": 1,
+    "code": 0,
+    "seconds": 7,
+    "result": "1 passed (5.9s)"
+  },
+  {
+    "suite": "qa02",
+    "round": 1,
+    "code": 0,
+    "seconds": 66,
+    "result": "3 passed (1.1m)"
+  },
+  {
+    "suite": "admin-dashboard",
+    "round": 1,
+    "code": 0,
+    "seconds": 31,
+    "result": "26 passed (29.9s)"
+  },
+  {
+    "suite": "admin-dashboard-live",
+    "round": 1,
+    "code": 0,
+    "seconds": 13,
+    "result": "5 passed (12.0s)"
+  },
+  {
+    "suite": "manager-dashboard",
+    "round": 1,
+    "code": 0,
+    "seconds": 9,
+    "result": "5 passed (7.9s)"
+  },
+  {
+    "suite": "pt-dashboard",
+    "round": 1,
+    "code": 0,
+    "seconds": 8,
+    "result": "5 passed (7.4s)"
+  },
+  {
+    "suite": "customer-dashboard",
+    "round": 1,
+    "code": 0,
+    "seconds": 8,
+    "result": "5 passed (7.7s)"
+  },
+  {
+    "suite": "admin-trainers",
+    "round": 1,
+    "code": 0,
+    "seconds": 73,
+    "result": "67 passed (1.2m)"
+  },
+  {
+    "suite": "admin-memberships",
+    "round": 1,
+    "code": 0,
+    "seconds": 28,
+    "result": "24 passed (27.8s)"
+  },
+  {
+    "suite": "admin-reports",
+    "round": 1,
+    "code": 0,
+    "seconds": 49,
+    "result": "44 passed (48.4s)"
+  },
+  {
+    "suite": "admin-packages",
+    "round": 1,
+    "code": 0,
+    "seconds": 47,
+    "result": "40 passed (46.6s)"
+  },
+  {
+    "suite": "admin-gallery",
+    "round": 1,
+    "code": 0,
+    "seconds": 56,
+    "result": "49 passed (55.3s)"
+  },
+  {
+    "suite": "admin-pt-workspace",
+    "round": 1,
+    "code": 0,
+    "seconds": 24,
+    "result": "16 passed (23.2s)"
+  },
+  {
+    "suite": "auth",
+    "round": 2,
+    "code": 0,
+    "seconds": 15,
+    "result": "8 passed (14.7s)"
+  },
+  {
+    "suite": "gym",
+    "round": 2,
+    "code": 0,
+    "seconds": 31,
+    "result": "25 passed (30.7s)"
+  },
+  {
+    "suite": "gym-live",
+    "round": 2,
+    "code": 0,
+    "seconds": 14,
+    "result": "2 passed (13.1s)"
+  },
+  {
+    "suite": "package",
+    "round": 2,
+    "code": 0,
+    "seconds": 22,
+    "result": "23 passed (21.2s)"
+  },
+  {
+    "suite": "package-live",
+    "round": 2,
+    "code": 0,
+    "seconds": 13,
+    "result": "2 passed (11.9s)"
+  },
+  {
+    "suite": "payment-demo",
+    "round": 2,
+    "code": 0,
+    "seconds": 13,
+    "result": "4 passed (12.4s)"
+  },
+  {
+    "suite": "pt-workflow",
+    "round": 2,
+    "code": 0,
+    "seconds": 15,
+    "result": "2 passed (14.2s)"
+  },
+  {
+    "suite": "customer-calendar",
+    "round": 2,
+    "code": 0,
+    "seconds": 9,
+    "result": "4 passed (8.8s)"
+  },
+  {
+    "suite": "reports",
+    "round": 2,
+    "code": 0,
+    "seconds": 11,
+    "result": "3 passed (10.1s)"
+  },
+  {
+    "suite": "consultation",
+    "round": 2,
+    "code": 0,
+    "seconds": 10,
+    "result": "3 passed (9.3s)"
+  },
+  {
+    "suite": "gallery",
+    "round": 2,
+    "code": 0,
+    "seconds": 10,
+    "result": "2 passed (9.6s)"
+  },
+  {
+    "suite": "trainer-profile",
+    "round": 2,
+    "code": 0,
+    "seconds": 11,
+    "result": "3 passed (9.9s)"
+  },
+  {
+    "suite": "reviews",
+    "round": 2,
+    "code": 0,
+    "seconds": 10,
+    "result": "2 passed (8.9s)"
+  },
+  {
+    "suite": "review-moderation",
+    "round": 2,
+    "code": 0,
+    "seconds": 45,
+    "result": "36 passed (44.6s)"
+  },
+  {
+    "suite": "admin-users",
+    "round": 2,
+    "code": 0,
+    "seconds": 12,
+    "result": "3 passed (11.3s)"
+  },
+  {
+    "suite": "security",
+    "round": 2,
+    "code": 0,
+    "seconds": 7,
+    "result": "1 passed (5.9s)"
+  },
+  {
+    "suite": "qa02",
+    "round": 2,
+    "code": 0,
+    "seconds": 65,
+    "result": "3 passed (1.1m)"
+  },
+  {
+    "suite": "admin-dashboard",
+    "round": 2,
+    "code": 0,
+    "seconds": 30,
+    "result": "26 passed (29.5s)"
+  },
+  {
+    "suite": "admin-dashboard-live",
+    "round": 2,
+    "code": 0,
+    "seconds": 13,
+    "result": "5 passed (11.9s)"
+  },
+  {
+    "suite": "manager-dashboard",
+    "round": 2,
+    "code": 0,
+    "seconds": 9,
+    "result": "5 passed (7.9s)"
+  },
+  {
+    "suite": "pt-dashboard",
+    "round": 2,
+    "code": 0,
+    "seconds": 8,
+    "result": "5 passed (7.5s)"
+  },
+  {
+    "suite": "customer-dashboard",
+    "round": 2,
+    "code": 0,
+    "seconds": 8,
+    "result": "5 passed (7.7s)"
+  },
+  {
+    "suite": "admin-trainers",
+    "round": 2,
+    "code": 0,
+    "seconds": 72,
+    "result": "67 passed (1.2m)"
+  },
+  {
+    "suite": "admin-memberships",
+    "round": 2,
+    "code": 0,
+    "seconds": 28,
+    "result": "24 passed (27.7s)"
+  },
+  {
+    "suite": "admin-reports",
+    "round": 2,
+    "code": 0,
+    "seconds": 49,
+    "result": "44 passed (48.0s)"
+  },
+  {
+    "suite": "admin-packages",
+    "round": 2,
+    "code": 0,
+    "seconds": 47,
+    "result": "40 passed (46.2s)"
+  },
+  {
+    "suite": "admin-gallery",
+    "round": 2,
+    "code": 0,
+    "seconds": 56,
+    "result": "49 passed (55.2s)"
+  },
+  {
+    "suite": "admin-pt-workspace",
+    "round": 2,
+    "code": 0,
+    "seconds": 24,
+    "result": "16 passed (22.9s)"
+  }
+]

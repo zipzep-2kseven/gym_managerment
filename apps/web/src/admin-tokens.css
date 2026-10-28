@@ -1,0 +1,16 @@
+/* Minimal SaaS × Enterprise Operations; inherited only by Admin workspace. */
+.admin-workspace {
+  --admin-action: #2563eb;
+  --admin-action-hover: #1d4ed8;
+  --admin-action-soft: #eff6ff;
+  --admin-focus: #2563eb;
+  --admin-focus-on-navy: #93c5fd;
+  --admin-sidebar: #0b132b;
+  --admin-sidebar-active: #1e40af;
+  --admin-sidebar-text: #cbd5e1;
+  --admin-radius-card: var(--radius-lg);
+  --admin-panel-padding: var(--space-6);
+  --admin-section-gap: var(--space-5);
+  --admin-page-title-size: 28px;
+  --admin-metric-size: 36px;
+}

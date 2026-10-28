@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Multi-Gym · Vai trò, cơ sở và Manager · Review G3</title>
+  <link rel="stylesheet" href="../admin-pilot/pilot.css">
+  <link rel="stylesheet" href="workspace.css">
+  <script defer src="workspace-fixtures.js"></script>
+  <script defer src="workspace-view.js"></script>
+  <script defer src="workspace-forms.js"></script>
+  <script defer src="workspace-controller.js"></script>
+  <script defer src="workspace-shell.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#page-title">Đến nội dung chính</a>
+  <header class="review-bar" aria-label="Công cụ review prototype">
+    <div><strong>Review G3 · Admin / Vai trò · Gym · Manager</strong><span>Prototype độc lập · Dữ liệu hư cấu</span></div>
+    <label>Tình huống mẫu <select id="scenario"><option value="default">Mặc định</option><option value="loading">Đang tải</option><option value="empty">Không có dữ liệu</option><option value="get-error">Lỗi tải dữ liệu</option><option value="permission">Mất quyền truy cập</option><option value="conflict">Xung đột khi lưu</option><option value="unknown">Kết quả ghi chưa rõ</option><option value="obligations">Gym còn nghĩa vụ</option><option value="paging">Danh sách nhiều trang</option></select></label>
+    <button id="reset" type="button">Làm lại ví dụ</button><a href="../../ADMIN_DESIGN_02_GYM_MANAGER_REVIEW.md">Ghi chú review</a>
+  </header>
+  <div class="management-shell">
+    <aside id="sidebar" class="sidebar" aria-label="Điều hướng Admin">
+      <button id="close-menu" class="drawer-close" type="button">Đóng menu</button>
+      <div class="brand">Multi-Gym<small>QUẢN TRỊ VIÊN</small></div>
+      <nav aria-label="Chức năng Admin"><p class="nav-heading">TOÀN HỆ THỐNG</p>
+        <a href="#overview" aria-disabled="true" title="Tổng quan"><span class="nav-symbol" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="7" height="9" />
+                <rect x="14" y="3" width="7" height="5" />
+                <rect x="14" y="12" width="7" height="9" />
+                <rect x="3" y="16" width="7" height="5" />
+              </svg></span><span class="nav-label">Tổng quan</span></a>
+        <a href="#gyms" title="Quản lý cơ sở"><span class="nav-symbol" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
+                <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
+              </svg></span><span class="nav-label">Quản lý cơ sở</span></a>
+        <a href="#managers" title="Bổ nhiệm Manager"><span class="nav-symbol" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <line x1="20" y1="8" x2="20" y2="14" />
+                <line x1="23" y1="11" x2="17" y2="11" />
+              </svg></span><span class="nav-label">Bổ nhiệm Manager</span></a>
+        <a href="../admin-pilot/index.html" title="Quản lý tài khoản"><span class="nav-symbol" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+              </svg></span><span class="nav-label">Quản lý tài khoản</span></a>
+        <a href="#roles" title="Vai trò hệ thống"><span class="nav-symbol" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+              </svg></span><span class="nav-label">Vai trò hệ thống</span></a>
+        <a href="#reviews" aria-disabled="true" title="Kiểm duyệt đánh giá"><span class="nav-symbol" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+              </svg></span><span class="nav-label">Kiểm duyệt đánh giá</span></a>
+        <a href="#reports" aria-disabled="true" title="Báo cáo · chọn Gym"><span class="nav-symbol" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                </svg></span><span class="nav-label">Báo cáo · chọn Gym</span></a>
+      </nav>
+      <div class="sidebar-footer">Phiên Admin<small>Toàn hệ thống</small></div>
+    </aside>
+    <button id="scrim" class="scrim" type="button" aria-label="Đóng menu"></button>
+    <div class="workspace">
+      <header class="topbar"><button id="open-menu" type="button" aria-controls="sidebar" aria-expanded="false">Menu</button><strong>Toàn hệ thống</strong><div class="actor"><span class="badge info">Admin</span><span>Quản trị viên</span></div></header>
+      <main id="main-content"><div id="page"></div></main>
+    </div>
+  </div>
+</body>
+</html>

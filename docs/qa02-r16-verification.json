@@ -1,0 +1,131 @@
+{
+  "task": "R16 Admin PT acceptance",
+  "date": "2026-10-12",
+  "environment": "Chromium and isolated API/PostgreSQL fixtures",
+  "command": "npm run test:e2e --workspace @multi-gym/web -- --suites=admin-trainers,gym,admin-dashboard,manager-dashboard,pt-dashboard,customer-dashboard,auth,admin-users --rounds=2",
+  "retries": 0,
+  "suite_count": 8,
+  "rounds": 2,
+  "passed_executions": 288,
+  "unique_browser_cases": 144,
+  "pt_cases": {
+    "total": 67,
+    "mock": 63,
+    "live": 4
+  },
+  "results": [
+    {
+      "suite": "admin-trainers",
+      "round": 1,
+      "code": 0,
+      "seconds": 81,
+      "result": "67 passed (1.3m)"
+    },
+    {
+      "suite": "gym",
+      "round": 1,
+      "code": 0,
+      "seconds": 30,
+      "result": "25 passed (29.5s)"
+    },
+    {
+      "suite": "admin-dashboard",
+      "round": 1,
+      "code": 0,
+      "seconds": 29,
+      "result": "26 passed (28.4s)"
+    },
+    {
+      "suite": "manager-dashboard",
+      "round": 1,
+      "code": 0,
+      "seconds": 9,
+      "result": "5 passed (7.9s)"
+    },
+    {
+      "suite": "pt-dashboard",
+      "round": 1,
+      "code": 0,
+      "seconds": 8,
+      "result": "5 passed (6.9s)"
+    },
+    {
+      "suite": "customer-dashboard",
+      "round": 1,
+      "code": 0,
+      "seconds": 8,
+      "result": "5 passed (6.9s)"
+    },
+    {
+      "suite": "auth",
+      "round": 1,
+      "code": 0,
+      "seconds": 15,
+      "result": "8 passed (14.3s)"
+    },
+    {
+      "suite": "admin-users",
+      "round": 1,
+      "code": 0,
+      "seconds": 11,
+      "result": "3 passed (10.7s)"
+    },
+    {
+      "suite": "admin-trainers",
+      "round": 2,
+      "code": 0,
+      "seconds": 68,
+      "result": "67 passed (1.1m)"
+    },
+    {
+      "suite": "gym",
+      "round": 2,
+      "code": 0,
+      "seconds": 29,
+      "result": "25 passed (28.0s)"
+    },
+    {
+      "suite": "admin-dashboard",
+      "round": 2,
+      "code": 0,
+      "seconds": 29,
+      "result": "26 passed (28.5s)"
+    },
+    {
+      "suite": "manager-dashboard",
+      "round": 2,
+      "code": 0,
+      "seconds": 8,
+      "result": "5 passed (7.5s)"
+    },
+    {
+      "suite": "pt-dashboard",
+      "round": 2,
+      "code": 0,
+      "seconds": 7,
+      "result": "5 passed (6.8s)"
+    },
+    {
+      "suite": "customer-dashboard",
+      "round": 2,
+      "code": 0,
+      "seconds": 8,
+      "result": "5 passed (7.3s)"
+    },
+    {
+      "suite": "auth",
+      "round": 2,
+      "code": 0,
+      "seconds": 15,
+      "result": "8 passed (13.9s)"
+    },
+    {
+      "suite": "admin-users",
+      "round": 2,
+      "code": 0,
+      "seconds": 12,
+      "result": "3 passed (11.4s)"
+    }
+  ],
+  "scope": "Related suites; not a full 23-suite run or deployment verification"
+}

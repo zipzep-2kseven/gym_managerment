@@ -1,11 +1,18 @@
-import { APP_NAME } from '@multi-gym/shared';
+import { BrowserRouter } from 'react-router-dom';
+import { AuthProvider } from './contexts/AuthContext.js';
+import { AppRoutes } from './routes/AppRoutes.js';
+import './index.css';
+import './gym.css';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false, staleTime: 0, networkMode: 'always' }, mutations: { retry: false, gcTime: 0, networkMode: 'always' } } });
 
 export function App() {
   return (
-    <div style={{ fontFamily: 'system-ui, -apple-system, sans-serif', padding: '2rem' }}>
-      <h1>{APP_NAME} Platform</h1>
-      <p>Initial monorepo scaffold running successfully.</p>
-    </div>
+    <QueryClientProvider client={queryClient}><BrowserRouter>
+      <AuthProvider>
+        <AppRoutes />
+      </AuthProvider>
+    </BrowserRouter></QueryClientProvider>
   );
 }
 

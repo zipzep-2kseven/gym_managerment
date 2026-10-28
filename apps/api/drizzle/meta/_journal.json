@@ -8,6 +8,41 @@
       "when": 1789972948852,
       "tag": "0000_stiff_blur",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1790580907366,
+      "tag": "0001_gym_business_update",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791163218834,
+      "tag": "0002_gym_lifecycle",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1791515253565,
+      "tag": "0003_pt_workflow",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1791604093689,
+      "tag": "0004_report_without_equipment",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1791628147361,
+      "tag": "0005_consultation_simple",
+      "breakpoints": true
     }
   ]
 }

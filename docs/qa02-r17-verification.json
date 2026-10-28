@@ -1,0 +1,161 @@
+{
+  "task": "R17 Admin Membership read-only",
+  "date": "2026-10-12",
+  "environment": "Chromium and isolated API/PostgreSQL fixtures",
+  "command": "npm run test:e2e --workspace @multi-gym/web -- --suites=admin-memberships,admin-trainers,gym,admin-dashboard,manager-dashboard,pt-dashboard,customer-dashboard,auth,admin-users --rounds=2",
+  "retries": 0,
+  "suite_count": 9,
+  "rounds": 2,
+  "passed_executions": 336,
+  "unique_browser_cases": 168,
+  "membership_cases": {
+    "total": 24,
+    "mock": 23,
+    "live": 1
+  },
+  "backend": {
+    "admin_membership_groups": 7,
+    "pt_workflow_groups": 17,
+    "pt_migration_scenarios": 3
+  },
+  "static": [
+    "lint",
+    "typecheck workspaces",
+    "typecheck API tests",
+    "typecheck E2E tests",
+    "build workspaces"
+  ],
+  "dashboard_cache": {
+    "passed": 4,
+    "failed": 0
+  },
+  "results": [
+    {
+      "suite": "admin-memberships",
+      "round": 1,
+      "code": 0,
+      "seconds": 34,
+      "result": "24 passed (32.5s)"
+    },
+    {
+      "suite": "admin-trainers",
+      "round": 1,
+      "code": 0,
+      "seconds": 69,
+      "result": "67 passed (1.1m)"
+    },
+    {
+      "suite": "gym",
+      "round": 1,
+      "code": 0,
+      "seconds": 35,
+      "result": "25 passed (34.8s)"
+    },
+    {
+      "suite": "admin-dashboard",
+      "round": 1,
+      "code": 0,
+      "seconds": 38,
+      "result": "26 passed (37.2s)"
+    },
+    {
+      "suite": "manager-dashboard",
+      "round": 1,
+      "code": 0,
+      "seconds": 10,
+      "result": "5 passed (9.2s)"
+    },
+    {
+      "suite": "pt-dashboard",
+      "round": 1,
+      "code": 0,
+      "seconds": 8,
+      "result": "5 passed (6.9s)"
+    },
+    {
+      "suite": "customer-dashboard",
+      "round": 1,
+      "code": 0,
+      "seconds": 8,
+      "result": "5 passed (7.3s)"
+    },
+    {
+      "suite": "auth",
+      "round": 1,
+      "code": 0,
+      "seconds": 15,
+      "result": "8 passed (14.1s)"
+    },
+    {
+      "suite": "admin-users",
+      "round": 1,
+      "code": 0,
+      "seconds": 12,
+      "result": "3 passed (11.4s)"
+    },
+    {
+      "suite": "admin-memberships",
+      "round": 2,
+      "code": 0,
+      "seconds": 27,
+      "result": "24 passed (26.7s)"
+    },
+    {
+      "suite": "admin-trainers",
+      "round": 2,
+      "code": 0,
+      "seconds": 69,
+      "result": "67 passed (1.1m)"
+    },
+    {
+      "suite": "gym",
+      "round": 2,
+      "code": 0,
+      "seconds": 29,
+      "result": "25 passed (28.1s)"
+    },
+    {
+      "suite": "admin-dashboard",
+      "round": 2,
+      "code": 0,
+      "seconds": 29,
+      "result": "26 passed (28.3s)"
+    },
+    {
+      "suite": "manager-dashboard",
+      "round": 2,
+      "code": 0,
+      "seconds": 8,
+      "result": "5 passed (7.4s)"
+    },
+    {
+      "suite": "pt-dashboard",
+      "round": 2,
+      "code": 0,
+      "seconds": 8,
+      "result": "5 passed (6.9s)"
+    },
+    {
+      "suite": "customer-dashboard",
+      "round": 2,
+      "code": 0,
+      "seconds": 8,
+      "result": "5 passed (7.2s)"
+    },
+    {
+      "suite": "auth",
+      "round": 2,
+      "code": 0,
+      "seconds": 15,
+      "result": "8 passed (14.3s)"
+    },
+    {
+      "suite": "admin-users",
+      "round": 2,
+      "code": 0,
+      "seconds": 12,
+      "result": "3 passed (11.4s)"
+    }
+  ],
+  "scope": "Related suites only; not a full 24-suite/root QA run or deployment verification"
+}

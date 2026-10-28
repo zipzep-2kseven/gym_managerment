@@ -25,7 +25,7 @@ export * from './reports.js';
 // 9. relations
 export * from './relations.js';
 
-// Inferred TypeScript types for all 15 tables
+// Inferred TypeScript types for all tables
 import type { users, userProfiles, roles, userRoles } from './users.js';
 import type { gyms, gymManagers, gymTrainers } from './gyms.js';
 import type { packages } from './packages.js';
@@ -79,3 +79,24 @@ export type NewEquipment = typeof equipments.$inferInsert;
 
 export type GymReport = typeof gymReports.$inferSelect;
 export type NewGymReport = typeof gymReports.$inferInsert;
+
+export * from './discovery.js';
+import type { gymImages, consultationRequests } from './discovery.js';
+export type GymImagesRow = typeof gymImages.$inferSelect;
+export type NewGymImagesRow = typeof gymImages.$inferInsert;
+export type ConsultationRequestsRow = typeof consultationRequests.$inferSelect;
+export type NewConsultationRequestsRow = typeof consultationRequests.$inferInsert;
+
+export * from './trainer-profile.js';
+import type { ptSocialLinks, ptWorkingSchedules } from './trainer-profile.js';
+export type PtSocialLinksRow = typeof ptSocialLinks.$inferSelect;
+export type NewPtSocialLinksRow = typeof ptSocialLinks.$inferInsert;
+export type PtWorkingSchedulesRow = typeof ptWorkingSchedules.$inferSelect;
+export type NewPtWorkingSchedulesRow = typeof ptWorkingSchedules.$inferInsert;
+
+export * from './reviews.js';
+import type { gymReviews, trainerReviews } from './reviews.js';
+export type GymReviewsRow = typeof gymReviews.$inferSelect;
+export type NewGymReviewsRow = typeof gymReviews.$inferInsert;
+export type TrainerReviewsRow = typeof trainerReviews.$inferSelect;
+export type NewTrainerReviewsRow = typeof trainerReviews.$inferInsert;

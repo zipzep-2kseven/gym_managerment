@@ -1,0 +1,462 @@
+{
+  "createdOn": "2026-10-11",
+  "scope": "ADM-DESIGN-02 · pilot SCR-ADM-002",
+  "fileKey": "wqLL7irruGrJrybCgx6bop",
+  "url": "https://www.figma.com/design/wqLL7irruGrJrybCgx6bop",
+  "status": "PARTIAL_TOOL_LIMIT",
+  "counts": {
+    "wrappers": 33,
+    "populated": 24,
+    "empty": 9
+  },
+  "foundation": {
+    "createdNodeIds": [],
+    "mutatedNodeIds": [
+      "0:1"
+    ],
+    "pageId": "0:1",
+    "collections": [
+      "VariableCollectionId:2:2",
+      "VariableCollectionId:2:3",
+      "VariableCollectionId:2:4"
+    ],
+    "variables": {
+      "color/canvas": "VariableID:2:33",
+      "color/canvas/subtle": "VariableID:2:34",
+      "color/surface": "VariableID:2:35",
+      "color/surface/hover": "VariableID:2:36",
+      "color/border": "VariableID:2:37",
+      "color/border/subtle": "VariableID:2:38",
+      "color/border/strong": "VariableID:2:39",
+      "color/text/primary": "VariableID:2:40",
+      "color/text/secondary": "VariableID:2:41",
+      "color/text/muted": "VariableID:2:42",
+      "color/text/inverse": "VariableID:2:43",
+      "color/navy/900": "VariableID:2:44",
+      "color/navy/800": "VariableID:2:45",
+      "color/navy/700": "VariableID:2:46",
+      "color/crimson/700": "VariableID:2:47",
+      "color/crimson/600": "VariableID:2:48",
+      "color/crimson/500": "VariableID:2:49",
+      "color/crimson/50": "VariableID:2:50",
+      "color/success/text": "VariableID:2:51",
+      "color/success/bg": "VariableID:2:52",
+      "color/warning/text": "VariableID:2:53",
+      "color/warning/bg": "VariableID:2:54",
+      "color/error/text": "VariableID:2:55",
+      "color/error/bg": "VariableID:2:56",
+      "color/info/text": "VariableID:2:57",
+      "color/info/bg": "VariableID:2:58",
+      "color/neutral/text": "VariableID:2:59",
+      "color/neutral/bg": "VariableID:2:60"
+    },
+    "dimensions": {
+      "space/1": "VariableID:2:61",
+      "space/2": "VariableID:2:62",
+      "space/3": "VariableID:2:63",
+      "space/4": "VariableID:2:64",
+      "space/5": "VariableID:2:65",
+      "space/6": "VariableID:2:66",
+      "space/8": "VariableID:2:67",
+      "space/10": "VariableID:2:68",
+      "space/12": "VariableID:2:69",
+      "radius/sm": "VariableID:2:70",
+      "radius/md": "VariableID:2:71",
+      "radius/lg": "VariableID:2:72",
+      "radius/full": "VariableID:2:73"
+    },
+    "styles": {
+      "Heading/1": "S:8dbb2154700775832e596f71c24ff3f670fd7c18,",
+      "Heading/2": "S:010a8eff285c6dad8fbfa59ecaeaf9ee85b91f85,",
+      "Body": "S:bb5686dab9c6449a71bdd7047c1c95a5197652c1,",
+      "Body/strong": "S:98ebd8bb51076309df34fc1a2687d6165dbf851b,",
+      "Caption": "S:37f91c9e51ee5940495b13741f001dbcde071a04,",
+      "Caption/strong": "S:059bcc38e3b690c38a8d9e13bd2154877ce5ec19,",
+      "Control": "S:44c41a23e220de631cd9f522cea56b9138e8fc3d,"
+    },
+    "counts": {
+      "colors": 28,
+      "variables": 69,
+      "textStyles": 7
+    },
+    "font": "Roboto"
+  },
+  "components": {
+    "createdNodeIds": [
+      "3:17",
+      "3:2",
+      "3:18",
+      "3:3",
+      "3:19",
+      "3:4",
+      "3:20",
+      "3:5",
+      "3:21",
+      "3:6",
+      "3:22",
+      "3:7",
+      "3:23",
+      "3:8",
+      "3:24",
+      "3:9",
+      "3:25",
+      "3:10",
+      "3:26",
+      "3:11",
+      "3:27",
+      "3:12",
+      "3:28",
+      "3:13",
+      "3:29",
+      "3:14",
+      "3:30",
+      "3:15",
+      "3:31",
+      "3:16",
+      "3:32",
+      "3:33",
+      "3:34",
+      "3:35",
+      "3:36",
+      "3:37",
+      "3:38",
+      "3:39",
+      "3:40",
+      "3:41",
+      "3:42",
+      "3:43",
+      "3:44",
+      "3:45",
+      "3:46",
+      "3:47",
+      "3:48",
+      "3:49",
+      "3:50",
+      "3:51",
+      "3:52",
+      "3:53",
+      "3:54",
+      "3:55",
+      "3:56",
+      "3:57"
+    ],
+    "mutatedNodeIds": [],
+    "components": {
+      "Button": "3:17",
+      "Badge": "3:43",
+      "Input": "3:52",
+      "Identity": "3:53",
+      "Sidebar": "5:2",
+      "SidebarCollapsed": "5:50",
+      "Topbar": "5:83",
+      "Confirm": "6:87",
+      "SelectInput": "9:260"
+    },
+    "properties": {
+      "Button": {
+        "label": "Label#3:0"
+      },
+      "Badge": {
+        "label": "Label#3:16"
+      },
+      "Input": {
+        "value": "Value#3:22"
+      },
+      "Identity": {
+        "Name": "Name#3:27",
+        "Email": "Email#3:28",
+        "Phone": "Phone#3:29",
+        "hasPhone": "Has phone#3:30",
+        "Created": "Created#3:31"
+      },
+      "Confirm": {
+        "title": "Title#6:0",
+        "consequence": "Consequence#6:10",
+        "hasHint": "Show Manager hint#6:20"
+      },
+      "SelectInput": {
+        "value": "Value#9:0"
+      }
+    },
+    "counts": {
+      "buttonVariants": 15,
+      "badgeVariants": 5,
+      "inputVariants": 4,
+      "identity": 1
+    },
+    "bounds": [
+      {
+        "id": "3:17",
+        "name": "MG/Button",
+        "x": 200,
+        "y": -1500,
+        "width": 1184,
+        "height": 244
+      },
+      {
+        "id": "3:43",
+        "name": "MG/Badge",
+        "x": 1100,
+        "y": -1500,
+        "width": 744,
+        "height": 280
+      },
+      {
+        "id": "3:52",
+        "name": "MG/Input",
+        "x": 2100,
+        "y": -1500,
+        "width": 744,
+        "height": 280
+      },
+      {
+        "id": "3:53",
+        "name": "MG/AccountIdentity",
+        "x": 3100,
+        "y": -1500,
+        "width": 320,
+        "height": 92
+      }
+    ]
+  },
+  "frames": [
+    {
+      "id": "4:2",
+      "name": "SCR-ADM-002 / Accounts / 1440 / DEFAULT",
+      "state": "DEFAULT",
+      "width": 1440,
+      "status": "POPULATED_FINAL_SCREENSHOT_PENDING"
+    },
+    {
+      "id": "4:3",
+      "name": "SCR-ADM-002 / Accounts / 375 / DEFAULT",
+      "state": "DEFAULT",
+      "width": 375,
+      "status": "POPULATED_FINAL_SCREENSHOT_PENDING"
+    },
+    {
+      "id": "4:4",
+      "name": "SCR-ADM-002 / Accounts / 768 / DEFAULT",
+      "state": "DEFAULT",
+      "width": 768,
+      "status": "POPULATED_FINAL_SCREENSHOT_PENDING"
+    },
+    {
+      "id": "4:5",
+      "name": "SCR-ADM-002 / Accounts / 1024 / DEFAULT",
+      "state": "DEFAULT",
+      "width": 1024,
+      "status": "POPULATED_FINAL_SCREENSHOT_PENDING"
+    },
+    {
+      "id": "4:6",
+      "name": "SCR-ADM-002 / Accounts / 1440 / LOCK_CONFIRM",
+      "state": "LOCK_CONFIRM",
+      "width": 1440,
+      "status": "POPULATED_FINAL_SCREENSHOT_PENDING"
+    },
+    {
+      "id": "4:7",
+      "name": "SCR-ADM-002 / Accounts / 1440 / UNLOCK_CONFIRM",
+      "state": "UNLOCK_CONFIRM",
+      "width": 1440,
+      "status": "POPULATED_FINAL_SCREENSHOT_PENDING"
+    },
+    {
+      "id": "4:8",
+      "name": "SCR-ADM-002 / Accounts / 1440 / PENDING",
+      "state": "PENDING",
+      "width": 1440,
+      "status": "POPULATED_FINAL_SCREENSHOT_PENDING"
+    },
+    {
+      "id": "4:9",
+      "name": "SCR-ADM-002 / Accounts / 1440 / SUCCESS",
+      "state": "SUCCESS",
+      "width": 1440,
+      "status": "POPULATED_FINAL_SCREENSHOT_PENDING"
+    },
+    {
+      "id": "4:10",
+      "name": "SCR-ADM-002 / Accounts / 1440 / CONFLICT",
+      "state": "CONFLICT",
+      "width": 1440,
+      "status": "POPULATED_FINAL_SCREENSHOT_PENDING"
+    },
+    {
+      "id": "4:11",
+      "name": "SCR-ADM-002 / Accounts / 1440 / UNKNOWN_OUTCOME",
+      "state": "UNKNOWN_OUTCOME",
+      "width": 1440,
+      "status": "POPULATED_FINAL_SCREENSHOT_PENDING"
+    },
+    {
+      "id": "4:12",
+      "name": "SCR-ADM-002 / Accounts / 1440 / GET_ERROR",
+      "state": "GET_ERROR",
+      "width": 1440,
+      "status": "POPULATED_FINAL_SCREENSHOT_PENDING"
+    },
+    {
+      "id": "4:13",
+      "name": "SCR-ADM-002 / Accounts / 1440 / EMPTY",
+      "state": "EMPTY",
+      "width": 1440,
+      "status": "POPULATED_FINAL_SCREENSHOT_PENDING"
+    },
+    {
+      "id": "4:14",
+      "name": "SCR-ADM-002 / Accounts / 1440 / LOADING",
+      "state": "LOADING",
+      "width": 1440,
+      "status": "POPULATED_FINAL_SCREENSHOT_PENDING"
+    },
+    {
+      "id": "4:15",
+      "name": "SCR-ADM-002 / Accounts / 1440 / PERMISSION_LOSS",
+      "state": "PERMISSION_LOSS",
+      "width": 1440,
+      "status": "POPULATED_FINAL_SCREENSHOT_PENDING"
+    },
+    {
+      "id": "4:16",
+      "name": "SCR-ADM-002 / Accounts / 1440 / VALIDATION_ERROR",
+      "state": "VALIDATION_ERROR",
+      "width": 1440,
+      "status": "POPULATED_FINAL_SCREENSHOT_PENDING"
+    },
+    {
+      "id": "4:17",
+      "name": "SCR-ADM-002 / Accounts / 1440 / TARGET_GONE",
+      "state": "TARGET_GONE",
+      "width": 1440,
+      "status": "POPULATED_FINAL_SCREENSHOT_PENDING"
+    },
+    {
+      "id": "4:18",
+      "name": "SCR-ADM-002 / Accounts / 1440 / PROTECTED_CHANGED",
+      "state": "PROTECTED_CHANGED",
+      "width": 1440,
+      "status": "POPULATED_FINAL_SCREENSHOT_PENDING"
+    },
+    {
+      "id": "4:19",
+      "name": "SCR-ADM-002 / Accounts / 1440 / LAST_PAGE_RECOVERY",
+      "state": "LAST_PAGE_RECOVERY",
+      "width": 1440,
+      "status": "POPULATED_FINAL_SCREENSHOT_PENDING"
+    },
+    {
+      "id": "4:20",
+      "name": "SCR-ADM-002 / Accounts / 1440 / REFETCH",
+      "state": "REFETCH",
+      "width": 1440,
+      "status": "POPULATED_FINAL_SCREENSHOT_PENDING"
+    },
+    {
+      "id": "4:21",
+      "name": "SCR-ADM-002 / Accounts / 1440 / SAVE_READ_ERROR",
+      "state": "SAVE_READ_ERROR",
+      "width": 1440,
+      "status": "POPULATED_FINAL_SCREENSHOT_PENDING"
+    },
+    {
+      "id": "4:22",
+      "name": "SCR-ADM-002 / Accounts / 1440 / FILTERED",
+      "state": "FILTERED",
+      "width": 1440,
+      "status": "POPULATED_FINAL_SCREENSHOT_PENDING"
+    },
+    {
+      "id": "4:23",
+      "name": "SCR-ADM-002 / Accounts / 1440 / FOCUS",
+      "state": "FOCUS",
+      "width": 1440,
+      "status": "POPULATED_FINAL_SCREENSHOT_PENDING"
+    },
+    {
+      "id": "4:24",
+      "name": "SCR-ADM-002 / Accounts / 375 / LOCK_CONFIRM",
+      "state": "LOCK_CONFIRM",
+      "width": 375,
+      "status": "POPULATED_FINAL_SCREENSHOT_PENDING"
+    },
+    {
+      "id": "4:25",
+      "name": "SCR-ADM-002 / Accounts / 375 / UNLOCK_CONFIRM",
+      "state": "UNLOCK_CONFIRM",
+      "width": 375,
+      "status": "POPULATED_FINAL_SCREENSHOT_PENDING"
+    },
+    {
+      "id": "4:26",
+      "name": "SCR-ADM-002 / Accounts / 375 / PENDING",
+      "state": "PENDING",
+      "width": 375,
+      "status": "EMPTY_TOOL_LIMIT"
+    },
+    {
+      "id": "4:27",
+      "name": "SCR-ADM-002 / Accounts / 375 / CONFLICT",
+      "state": "CONFLICT",
+      "width": 375,
+      "status": "EMPTY_TOOL_LIMIT"
+    },
+    {
+      "id": "4:28",
+      "name": "SCR-ADM-002 / Accounts / 375 / DRAWER",
+      "state": "DRAWER",
+      "width": 375,
+      "status": "EMPTY_TOOL_LIMIT"
+    },
+    {
+      "id": "6:88",
+      "name": "SCR-ADM-002 / Accounts / 1440 / UNLOCK_PENDING",
+      "state": "UNLOCK_PENDING",
+      "width": 1440,
+      "status": "EMPTY_TOOL_LIMIT"
+    },
+    {
+      "id": "6:89",
+      "name": "SCR-ADM-002 / Accounts / 1440 / UNLOCK_SUCCESS",
+      "state": "UNLOCK_SUCCESS",
+      "width": 1440,
+      "status": "EMPTY_TOOL_LIMIT"
+    },
+    {
+      "id": "6:90",
+      "name": "SCR-ADM-002 / Accounts / 375 / UNLOCK_PENDING",
+      "state": "UNLOCK_PENDING",
+      "width": 375,
+      "status": "EMPTY_TOOL_LIMIT"
+    },
+    {
+      "id": "6:91",
+      "name": "SCR-ADM-002 / Accounts / 375 / UNLOCK_SUCCESS",
+      "state": "UNLOCK_SUCCESS",
+      "width": 375,
+      "status": "EMPTY_TOOL_LIMIT"
+    },
+    {
+      "id": "6:92",
+      "name": "SCR-ADM-002 / Accounts / 1440 / PAGING_LAST",
+      "state": "PAGING_LAST",
+      "width": 1440,
+      "status": "EMPTY_TOOL_LIMIT"
+    },
+    {
+      "id": "6:93",
+      "name": "SCR-ADM-002 / Accounts / 375 / PAGING_LAST",
+      "state": "PAGING_LAST",
+      "width": 375,
+      "status": "EMPTY_TOOL_LIMIT"
+    }
+  ],
+  "verification": {
+    "finalFigmaReadback": false,
+    "finalFigmaScreenshotAfterLayoutFix": false,
+    "reason": "Figma MCP Starter tool call limit",
+    "localPrototype": "index.html",
+    "productionImplementation": false
+  }
+}

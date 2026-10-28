@@ -1,0 +1,127 @@
+{
+  "task": "R19 Admin review moderation UX and read-back",
+  "date": "2026-10-12",
+  "environment": "Chromium and isolated API/PostgreSQL fixtures",
+  "command": "npm run test:e2e --workspace @multi-gym/web -- --suites=review-moderation,reviews,admin-dashboard,admin-reports,auth,admin-users --rounds=2",
+  "retries": 0,
+  "suite_count": 6,
+  "rounds": 2,
+  "passed_executions": 238,
+  "unique_browser_cases": 119,
+  "review_moderation_cases": {
+    "total": 36,
+    "mock": 34,
+    "live": 2
+  },
+  "backend": {
+    "review_moderation_groups": 6,
+    "review_groups": 8
+  },
+  "static": [
+    "lint",
+    "typecheck workspaces",
+    "typecheck API tests",
+    "typecheck E2E tests",
+    "build workspaces"
+  ],
+  "dashboard_cache": {
+    "passed": 4,
+    "failed": 0
+  },
+  "results": [
+    {
+      "suite": "review-moderation",
+      "round": 1,
+      "code": 0,
+      "seconds": 44,
+      "result": "36 passed (43.2s)"
+    },
+    {
+      "suite": "reviews",
+      "round": 1,
+      "code": 0,
+      "seconds": 9,
+      "result": "2 passed (8.8s)"
+    },
+    {
+      "suite": "admin-dashboard",
+      "round": 1,
+      "code": 0,
+      "seconds": 30,
+      "result": "26 passed (29.1s)"
+    },
+    {
+      "suite": "admin-reports",
+      "round": 1,
+      "code": 0,
+      "seconds": 47,
+      "result": "44 passed (46.0s)"
+    },
+    {
+      "suite": "auth",
+      "round": 1,
+      "code": 0,
+      "seconds": 15,
+      "result": "8 passed (14.4s)"
+    },
+    {
+      "suite": "admin-users",
+      "round": 1,
+      "code": 0,
+      "seconds": 12,
+      "result": "3 passed (11.4s)"
+    },
+    {
+      "suite": "review-moderation",
+      "round": 2,
+      "code": 0,
+      "seconds": 45,
+      "result": "36 passed (43.9s)"
+    },
+    {
+      "suite": "reviews",
+      "round": 2,
+      "code": 0,
+      "seconds": 9,
+      "result": "2 passed (8.8s)"
+    },
+    {
+      "suite": "admin-dashboard",
+      "round": 2,
+      "code": 0,
+      "seconds": 35,
+      "result": "26 passed (34.8s)"
+    },
+    {
+      "suite": "admin-reports",
+      "round": 2,
+      "code": 0,
+      "seconds": 58,
+      "result": "44 passed (57.3s)"
+    },
+    {
+      "suite": "auth",
+      "round": 2,
+      "code": 0,
+      "seconds": 15,
+      "result": "8 passed (14.6s)"
+    },
+    {
+      "suite": "admin-users",
+      "round": 2,
+      "code": 0,
+      "seconds": 12,
+      "result": "3 passed (11.3s)"
+    }
+  ],
+  "scope_limits": [
+    "Root QA-02 / all 25 browser suites not rerun in R19",
+    "Mounted state; no durable draft/unknown-result lock across navigation, reload or tabs",
+    "No deployment or Safari/Firefox verification"
+  ],
+  "evidence_notes": [
+    "409 regression failed on original enabled confirmation; passed after mounted screen read-back guard",
+    "Fixture active PT unique constraint retained; use a separate fixture PT",
+    "Dashboard mock PATCH now returns approved ReviewModerationView instead of empty object; total assertions preserved"
+  ]
+}

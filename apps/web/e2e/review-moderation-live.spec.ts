@@ -1,0 +1,35 @@
+import { openAudit } from './review-moderation-fixtures';
+import { expect, test } from '@playwright/test';
+import type { ModerationList, ModeratedReview } from '../src/services/review-moderation.service';
+const api = 'http://127.0.0.1:4103/api/v1';
+
+test('Live multi-page Gym selector, inactive Gym/PT history and immutable moderation via API/PostgreSQL', async ({ page }) => {
+  expect((await page.request.get(`${api}/admin/reviews`)).status()).toBe(401);
+  await page.goto('/login'); await page.locator('input[name=email]').fill('admin@gym03.test'); await page.locator('input[name=password]').fill('BrowserFixture@123');
+  await page.getByRole('button', { name: 'Đăng nhập', exact: true }).click(); await expect(page.getByRole('link', { name: 'Browser ADMIN', exact: true })).toBeVisible();
+  const target = (await (await page.request.get(`${api}/admin/gyms?search=Review%20Gym%2014`)).json()).data[0];
+  const get = async (kind = 'gym', status = '') => (await (await page.request.get(`${api}/admin/reviews?kind=${kind}&gym_id=${target.gym_id}${status ? `&status=${status}` : ''}&pageSize=50`)).json()).data as ModerationList;
+  const before = await get(); expect(before.total).toBe(13); expect(before.items.every(row => row.gym.status === 'INACTIVE')).toBe(true);
+  await page.goto('/admin/reviews'); const pager = page.getByRole('navigation', { name: 'Phân trang đánh giá quản trị' });
+  await page.getByRole('button', { name: /^Lọc theo Gym:/ }).click();
+  const picker = page.getByRole('dialog', { name: 'Bộ chọn Gym', exact: true });
+  await picker.getByRole('button', { name: 'Tải thêm Gym', exact: true }).click();
+  await picker.getByRole('button', { name: /Review Gym 14/ }).click();
+  await expect(page.getByText('13 đánh giá phù hợp', { exact: true })).toBeVisible(); await expect(page.locator('.admin-review-row')).toHaveCount(10);
+  await pager.getByRole('button', { name: 'Trang sau', exact: true }).click(); await expect(page.locator('.admin-review-row')).toHaveCount(3); await expect(page.getByText('Không có nhận xét.', { exact: true })).toBeVisible();
+  const entry = page.locator('.admin-review-row').filter({ hasText: 'Góp ý lịch sử Review 3' });
+  await entry.getByRole('button', { name: 'Ẩn đánh giá', exact: true }).click(); await page.getByLabel('Lý do ẩn', { exact: true }).fill('  Lý do kiểm thử lịch sử  '); await page.getByRole('button', { name: 'Tiếp tục', exact: true }).click(); await page.getByRole('button', { name: 'Xác nhận ẩn', exact: true }).click();
+  await expect(pager).toContainText('Trang 1 / 2'); await expect(page.getByRole('status').filter({ hasText: 'Đã ẩn đánh giá và lưu lịch sử xử lý.' })).toBeVisible();
+  const after = await get(), original = before.items.find(row => row.comment === 'Góp ý lịch sử Review 3')!, saved = after.items.find(row => row.review_id === original.review_id)!;
+  expect(saved.status).toBe('HIDDEN'); expect(saved.moderation?.hidden_reason).toBe('Lý do kiểm thử lịch sử');
+  const content = (row: ModeratedReview) => [row.kind, row.review_id, row.rating, row.comment, row.created_at, row.author]; expect(content(saved)).toEqual(content(original));
+  expect(after.items.filter(row => row.review_id !== original.review_id)).toEqual(before.items.filter(row => row.review_id !== original.review_id));
+  expect((await page.request.patch(`${api}/admin/reviews/gym/${saved.review_id}/hide`, { data: { hidden_reason: 'Ghi đè không được phép' } })).status()).toBe(409);
+  expect((await get()).items.find(row => row.review_id === saved.review_id)).toEqual(saved);
+  await page.getByRole('combobox', { name: 'Trạng thái đánh giá', exact: true }).selectOption('HIDDEN'); await expect(page.locator('.admin-review-row')).toHaveCount(4); await openAudit(page, 'Góp ý lịch sử Review 3'); await expect(page.getByText('Lý do kiểm thử lịch sử', { exact: true })).toBeVisible(); await page.keyboard.press('Escape');
+  await page.getByRole('combobox', { name: 'Loại đánh giá', exact: true }).selectOption('trainer'); await page.getByRole('combobox', { name: 'Trạng thái đánh giá', exact: true }).selectOption('VISIBLE');
+  await expect(page.locator('.admin-review-row')).toContainText('PT ngừng hoạt động'); await expect(page.getByText('Không có nhận xét.', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Ẩn đánh giá', exact: true }).click(); await page.getByLabel('Lý do ẩn', { exact: true }).fill('Nội dung PT vi phạm'); await page.getByRole('button', { name: 'Tiếp tục', exact: true }).click(); await page.getByRole('button', { name: 'Xác nhận ẩn', exact: true }).click();
+  await expect(page.getByText('Không có đánh giá phù hợp.', { exact: true })).toBeVisible(); expect((await get('trainer', 'HIDDEN')).total).toBe(1); expect((await get('gym', 'VISIBLE')).items.every(row => row.rating === 1)).toBe(true);
+  expect(await page.evaluate(() => [localStorage.length, sessionStorage.length])).toEqual([0, 0]);
+});
