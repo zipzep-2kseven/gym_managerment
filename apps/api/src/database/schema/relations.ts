@@ -1,5 +1,5 @@
 import { gymImages, consultationRequests } from './discovery.js';
-import { ptSocialLinks, ptWorkingSchedules } from './trainer-profile.js';
+import { ptSocialLinks } from './trainer-profile.js';
 import { gymReviews, trainerReviews } from './reviews.js';
 import { relations } from 'drizzle-orm';
 import { users, userProfiles, roles, userRoles } from './users.js';
@@ -8,7 +8,6 @@ import { packages } from './packages.js';
 import { payments } from './payments.js';
 import { memberships } from './memberships.js';
 import { ptRegistrations, ptAppointments } from './pt.js';
-import { equipmentTypes, equipments } from './equipments.js';
 import { gymReports } from './reports.js';
 
 // users relations
@@ -67,7 +66,6 @@ export const gymsRelations = relations(gyms, ({ many }) => ({
   packages: many(packages),
   payments: many(payments),
   memberships: many(memberships),
-  equipments: many(equipments),
   reports: many(gymReports),
 }));
 
@@ -94,7 +92,6 @@ export const gymTrainersRelations = relations(gymTrainers, ({ one, many }) => ({
     references: [users.userId],
   }),
   socialLinks: many(ptSocialLinks),
-  workingSchedules: many(ptWorkingSchedules),
   reviews: many(trainerReviews),
   ptRegistrations: many(ptRegistrations),
 }));
@@ -171,24 +168,6 @@ export const ptAppointmentsRelations = relations(ptAppointments, ({ one }) => ({
   }),
 }));
 
-// equipment_types relations
-export const equipmentTypesRelations = relations(equipmentTypes, ({ many }) => ({
-  equipments: many(equipments),
-}));
-
-// equipments relations
-export const equipmentsRelations = relations(equipments, ({ one, many }) => ({
-  gym: one(gyms, {
-    fields: [equipments.gymId],
-    references: [gyms.gymId],
-  }),
-  equipmentType: one(equipmentTypes, {
-    fields: [equipments.equipmentTypeId],
-    references: [equipmentTypes.equipmentTypeId],
-  }),
-  reports: many(gymReports),
-}));
-
 // gym_reports relations
 export const gymReportsRelations = relations(gymReports, ({ one }) => ({
   user: one(users, {
@@ -199,10 +178,6 @@ export const gymReportsRelations = relations(gymReports, ({ one }) => ({
   gym: one(gyms, {
     fields: [gymReports.gymId],
     references: [gyms.gymId],
-  }),
-  equipment: one(equipments, {
-    fields: [gymReports.equipmentId],
-    references: [equipments.equipmentId],
   }),
   resolver: one(users, {
     fields: [gymReports.resolvedBy],
@@ -223,10 +198,6 @@ export const consultationRequestsRelations = relations(consultationRequests, ({ 
 
 export const ptSocialLinksRelations = relations(ptSocialLinks, ({ one }) => ({
   trainer: one(gymTrainers, { fields: [ptSocialLinks.gymTrainerId], references: [gymTrainers.gymTrainerId] }),
-}));
-
-export const ptWorkingSchedulesRelations = relations(ptWorkingSchedules, ({ one }) => ({
-  trainer: one(gymTrainers, { fields: [ptWorkingSchedules.gymTrainerId], references: [gymTrainers.gymTrainerId] }),
 }));
 
 export const gymReviewsRelations = relations(gymReviews, ({ one }) => ({

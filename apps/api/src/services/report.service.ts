@@ -35,8 +35,10 @@ export const createReportService = (database: typeof db = db, images = createRep
       try {
         return await database.transaction(async tx => {
           const gym = await canCreate(tx, actor, gymId);
-          const row = await createReportRepository(tx).insert({ reportId: id, gymId, userId: actor, equipmentId: null,
-            reportType: 'OTHER', title: body.content.slice(0, 80), content: body.content, imageUrl: name });
+          const row = await createReportRepository(tx).insert({
+            reportId: id, gymId, userId: actor,
+            reportType: 'OTHER', title: body.content.slice(0, 80), content: body.content, imageUrl: name
+          });
           return reportDto(row, gym.gymName);
         });
       } catch (error) {
@@ -51,8 +53,12 @@ export const createReportService = (database: typeof db = db, images = createRep
         if (gymId) await internal(tx, actor, gymId); else await account(tx, actor);
         const result = await createReportRepository(tx).list(gymId ? eq(gymReports.gymId, gymId) : eq(gymReports.userId, actor), query);
         const totalPages = Math.ceil(result.total / query.pageSize);
-        return { data: result.rows.map(r => reportDto(r.report, r.gymName)), pagination: { ...query, totalItems: result.total, totalPages,
-          hasNextPage: query.page < totalPages, hasPreviousPage: query.page > 1 } };
+        return {
+          data: result.rows.map(r => reportDto(r.report, r.gymName)), pagination: {
+            ...query, totalItems: result.total, totalPages,
+            hasNextPage: query.page < totalPages, hasPreviousPage: query.page > 1
+          }
+        };
       }, { isolationLevel: 'repeatable read' }).catch(staffingDatabaseError);
     },
     change: async (actor: string, gymId: string, id: string, action: 'investigate' | 'resolve' | 'reject', input: unknown) => {
@@ -64,8 +70,10 @@ export const createReportService = (database: typeof db = db, images = createRep
         if (!row || row.gymId !== gymId) throw new AppError(404, 'NOT_FOUND', 'Không tìm thấy báo cáo.');
         const allowed = action === 'investigate' ? ['PENDING'] : action === 'resolve' ? ['IN_PROGRESS'] : ['PENDING', 'IN_PROGRESS'];
         if (!allowed.includes(row.status)) throw new AppError(409, 'INVALID_STATUS_TRANSITION', 'Báo cáo đã được xử lý hoặc trạng thái không phù hợp. Hãy tải lại.');
-        const updated = await repo.change(gymId, id, { status: action === 'investigate' ? 'IN_PROGRESS' : action === 'resolve' ? 'RESOLVED' : 'REJECTED',
-          ...(note ? { resolutionNote: note, resolvedBy: actor, resolvedAt: action === 'resolve' ? new Date() : null } : {}) });
+        const updated = await repo.change(gymId, id, {
+          status: action === 'investigate' ? 'IN_PROGRESS' : action === 'resolve' ? 'RESOLVED' : 'REJECTED',
+          ...(note ? { resolutionNote: note, resolvedBy: actor, resolvedAt: action === 'resolve' ? new Date() : null } : {})
+        });
         return reportDto(updated, gym!.gymName);
       }).catch(staffingDatabaseError);
     },

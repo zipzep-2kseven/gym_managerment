@@ -98,7 +98,6 @@ const setupPtMocks = async (
           status: 'ACTIVE',
           updated_at: '2026-10-01T00:00:00Z',
           social_links: [],
-          working_schedules: [],
         }),
       });
     }

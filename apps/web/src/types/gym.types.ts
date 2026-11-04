@@ -12,9 +12,8 @@ export interface Trainer {
   availability: 'ACCEPTING' | 'ALMOST_FULL' | 'NOT_ACCEPTING'; joined_at: string;
   profile: { full_name: string | null; avatar_url: string | null } | null;
   social_links: { social_link_id: string; platform: string; url: string }[];
-  working_schedules: { schedule_id: string; day_of_week: string; start_time: string; end_time: string; status: Status }[];
 }
-export interface ManagedTrainer extends Omit<Trainer, 'profile' | 'social_links' | 'working_schedules'> { user_id: string }
+export interface ManagedTrainer extends Omit<Trainer, 'profile' | 'social_links'> { user_id: string }
 export interface ManagerAssignment {
   gym_manager_id: string; gym_id: string; user_id: string; status: Status; assigned_at: string;
 }

@@ -11,7 +11,6 @@ import {
 import { sql } from 'drizzle-orm';
 import { users } from './users.js';
 import { gyms } from './gyms.js';
-import { equipments } from './equipments.js';
 
 // 15. gym_reports
 export const gymReports = pgTable(
@@ -20,7 +19,6 @@ export const gymReports = pgTable(
     reportId: uuid('report_id').primaryKey().defaultRandom(),
     userId: uuid('user_id').notNull(),
     gymId: uuid('gym_id').notNull(),
-    equipmentId: uuid('equipment_id'),
     reportType: varchar('report_type', { length: 20 }).notNull(),
     title: text('title').notNull(),
     content: text('content').notNull(),
@@ -44,13 +42,6 @@ export const gymReports = pgTable(
       name: 'gym_reports_gym_fk',
       columns: [table.gymId],
       foreignColumns: [gyms.gymId],
-    })
-      .onDelete('restrict')
-      .onUpdate('restrict'),
-    foreignKey({
-      name: 'gym_reports_equipment_gym_fk',
-      columns: [table.equipmentId, table.gymId],
-      foreignColumns: [equipments.equipmentId, equipments.gymId],
     })
       .onDelete('restrict')
       .onUpdate('restrict'),
@@ -79,7 +70,6 @@ export const gymReports = pgTable(
       table.reportType,
       table.createdAt.desc()
     ),
-    index('gym_reports_equipment_gym_idx').on(table.equipmentId, table.gymId),
     index('gym_reports_user_created_idx').on(table.userId, table.createdAt.desc()),
     index('gym_reports_resolver_idx').on(table.resolvedBy),
   ]

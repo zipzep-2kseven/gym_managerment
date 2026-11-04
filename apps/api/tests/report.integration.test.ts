@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { once } from 'node:events';
-import { mkdtemp, readdir, rm, readFile } from 'node:fs/promises';
+import { mkdtemp, readdir, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import express from 'express';
@@ -23,8 +23,10 @@ app.use(errorHandler);
 const server = app.listen(0, '127.0.0.1'); await once(server, 'listening');
 const port = (server.address() as { port: number }).port;
 const request = async (method: string, path: string, actor: string | null, body?: unknown) => {
-  const response = await fetch(`http://127.0.0.1:${port}/api/v1${path}`, { method,
-    headers: { 'Content-Type': 'application/json', ...(actor ? { Cookie: `${config.cookie.name}=${signJwt({ sub: actor, email: 'report@test.local', roles: ['ADMIN'] })}` } : {}) }, body: body === undefined ? undefined : JSON.stringify(body) });
+  const response = await fetch(`http://127.0.0.1:${port}/api/v1${path}`, {
+    method,
+    headers: { 'Content-Type': 'application/json', ...(actor ? { Cookie: `${config.cookie.name}=${signJwt({ sub: actor, email: 'report@test.local', roles: ['ADMIN'] })}` } : {}) }, body: body === undefined ? undefined : JSON.stringify(body)
+  });
   const contentType = response.headers.get('content-type') || '';
   return { status: response.status, headers: response.headers, body: contentType.includes('json') ? await response.json() as { data: { report_id: string; has_image: boolean; length: number }; error: { code: string } } : undefined };
 };
@@ -48,7 +50,7 @@ try {
     assert.equal(response.status, 201); id = response.body!.data.report_id;
     assert.equal(response.headers.get('cache-control'), 'no-store'); assert.equal(response.body!.data.has_image, true);
     const [row] = await h.database.select().from(gymReports).where(eq(gymReports.reportId, id));
-    assert.equal(row.equipmentId, null); assert.equal(row.userId, customer); assert.equal(row.status, 'PENDING');
+    assert.equal(row.userId, customer); assert.equal(row.status, 'PENDING');
     assert.ok(!JSON.stringify(response.body).includes(row.imageUrl!)); assert.equal((await readdir(directory)).length, 1);
   });
   await run('Owner/local Manager/Admin may read private image; others never receive bytes', async () => {
@@ -91,14 +93,12 @@ try {
     await h.database.update(users).set({ status: 'INACTIVE' }).where(eq(users.userId, customer));
     assert.equal((await request('GET', '/reports/me', customer)).status, 403);
   });
-  await run('Migration allows unlinked equipment reports and rollback preserves incompatible data', async () => {
-    const legacy = (await h.pool.query("INSERT INTO gym_reports(user_id,gym_id,report_type,title,content) VALUES($1,$2,'EQUIPMENT','Legacy','Unlinked machine report') RETURNING report_id", [customer, f.gymA.gymId])).rows[0];
-    const rollback = await readFile(new URL('../drizzle/rollback/0004_report_without_equipment.sql', import.meta.url), 'utf8');
-    await assert.rejects(h.pool.query(rollback));
-    assert.equal((await h.pool.query('SELECT report_id FROM gym_reports WHERE report_id=$1', [legacy.report_id])).rowCount, 1);
-    await h.pool.query('DELETE FROM gym_reports WHERE report_id=$1', [legacy.report_id]);
-    await h.pool.query(rollback);
-    await h.pool.query('ALTER TABLE gym_reports DROP CONSTRAINT gym_reports_equipment_required_check');
-  });
-  console.log(`PASS: ${checks} report integration groups.`);
-} finally { await new Promise<void>(resolve => server.close(() => resolve())); await h.close(); await rm(directory, { recursive: true, force: true }); }
+    await run('Reports support EQUIPMENT and other report types without equipment entity', async () => {
+      const legacy = (await h.pool.query("INSERT INTO gym_reports(user_id,gym_id,report_type,title,content) VALUES($1,$2,'EQUIPMENT','Legacy','Unlinked machine report') RETURNING report_id", [customer, f.gymA.gymId])).rows[0];
+      const [row] = await h.database.select().from(gymReports).where(eq(gymReports.reportId, legacy.report_id));
+      assert.equal(row.reportType, 'EQUIPMENT');
+      assert.equal(row.title, 'Legacy');
+      await h.pool.query('DELETE FROM gym_reports WHERE report_id=$1', [legacy.report_id]);
+    });
+    console.log(`PASS: ${checks} report integration groups.`);
+  } finally { await new Promise<void>(resolve => server.close(() => resolve())); await h.close(); await rm(directory, { recursive: true, force: true }); }

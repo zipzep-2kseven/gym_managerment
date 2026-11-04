@@ -4,7 +4,7 @@ import { once } from 'node:events';
 import express from 'express';
 import { eq } from 'drizzle-orm';
 import type { db as applicationDb } from '../src/database/index.js';
-import { gyms, users, userProfiles, gymTrainers, ptSocialLinks, ptWorkingSchedules } from '../src/database/schema/index.js';
+import { gyms, users, userProfiles, gymTrainers, ptSocialLinks } from '../src/database/schema/index.js';
 import { createPublicTrainerRepository } from '../src/repositories/public-trainer.repository.js';
 import { createPublicTrainerService } from '../src/services/public-trainer.service.js';
 import { createPublicTrainerRouter } from '../src/routes/public-trainer.routes.js';
@@ -12,7 +12,7 @@ import { errorHandler } from '../src/middleware/error-handler.js';
 
 type TrainerDto = { gym_trainer_id: string; gym_id: string; availability: string;
   profile: { full_name: string; avatar_url: string | null } | null;
-  social_links: Record<string, unknown>[]; working_schedules: Record<string, unknown>[] };
+  social_links: Record<string, unknown>[] };
 type Envelope<T> = { success: boolean; data: T; error: { code: string }; pagination: {
   page: number; pageSize: number; totalItems: number; totalPages: number; hasNextPage: boolean; hasPreviousPage: boolean;
 } };
@@ -35,11 +35,6 @@ export async function testPublicTrainerIntegration(db: typeof applicationDb) {
   await db.insert(ptSocialLinks).values([
     { gymTrainerId: active[0].gymTrainerId, platform: 'WEBSITE', url: 'https://example.test/public' },
     { gymTrainerId: outsider.gymTrainerId, platform: 'WEBSITE', url: 'https://example.test/other-gym' },
-  ]);
-  await db.insert(ptWorkingSchedules).values([
-    { gymTrainerId: active[0].gymTrainerId, dayOfWeek: 'MONDAY', startTime: '09:00', endTime: '10:00', status: 'ACTIVE' },
-    { gymTrainerId: active[0].gymTrainerId, dayOfWeek: 'TUESDAY', startTime: '12:00', endTime: '13:00', status: 'INACTIVE' },
-    { gymTrainerId: outsider.gymTrainerId, dayOfWeek: 'FRIDAY', startTime: '09:00', endTime: '10:00', status: 'ACTIVE' },
   ]);
   const repository = createPublicTrainerRepository(db);
   const app = express();
@@ -65,7 +60,7 @@ export async function testPublicTrainerIntegration(db: typeof applicationDb) {
       assert.equal(result.headers.get('cache-control'), 'no-store');
       for (const row of result.body.data) {
         assert.deepEqual(Object.keys(row).sort(), ['gym_trainer_id', 'gym_id', 'specialization', 'experience_years', 'bio',
-          'status', 'availability', 'joined_at', 'profile', 'social_links', 'working_schedules'].sort());
+          'status', 'availability', 'joined_at', 'profile', 'social_links'].sort());
         if (row.profile) assert.deepEqual(Object.keys(row.profile).sort(), ['avatar_url', 'full_name']);
       }
       const serialized = JSON.stringify(result.body);
@@ -73,20 +68,15 @@ export async function testPublicTrainerIntegration(db: typeof applicationDb) {
         assert.ok(!serialized.includes(forbidden), forbidden);
       }
     }],
-    ['Detail includes only this PT social links and ACTIVE schedules; missing profile is safe', async () => {
+    ['Detail includes only this PT social links; missing profile is safe', async () => {
       const detail = await request<TrainerDto>(`${path}/${active[0].gymTrainerId}`);
       assert.equal(detail.status, 200); assert.equal(detail.body.data.profile?.full_name, 'Alpha');
-      assert.equal(detail.body.data.social_links.length, 1); assert.equal(detail.body.data.working_schedules.length, 1);
+      assert.equal(detail.body.data.social_links.length, 1);
       assert.equal(detail.body.data.social_links[0].url, 'https://example.test/public');
-      assert.equal(detail.body.data.working_schedules[0].day_of_week, 'MONDAY');
-      assert.equal(detail.body.data.working_schedules[0].gym_trainer_id, active[0].gymTrainerId);
       assert.deepEqual(Object.keys(detail.body.data.social_links[0]).sort(),
         ['social_link_id', 'gym_trainer_id', 'platform', 'url', 'created_at', 'updated_at'].sort());
-      assert.deepEqual(Object.keys(detail.body.data.working_schedules[0]).sort(),
-        ['schedule_id', 'gym_trainer_id', 'day_of_week', 'start_time', 'end_time', 'status', 'created_at', 'updated_at'].sort());
       const missing = await request<TrainerDto>(`${path}/${active[2].gymTrainerId}`);
       assert.equal(missing.body.data.profile, null); assert.deepEqual(missing.body.data.social_links, []);
-      assert.deepEqual(missing.body.data.working_schedules, []);
       assert.deepEqual((await request(path)).body.data.find(row => row.gym_trainer_id === active[0].gymTrainerId), detail.body.data);
     }],
     ['Inactive, foreign Gym, User ID and nonexistent trainer IDs return the same 404', async () => {

@@ -1,6 +1,6 @@
 import { and, asc, count, desc, eq, ilike, inArray, or } from 'drizzle-orm';
 import { db } from '../database/index.js';
-import { gyms, gymTrainers, userProfiles, ptSocialLinks, ptWorkingSchedules } from '../database/schema/index.js';
+import { gyms, gymTrainers, userProfiles, ptSocialLinks } from '../database/schema/index.js';
 import type { PublicTrainerQuery } from '../validators/public-trainer.validator.js';
 
 type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -17,19 +17,11 @@ const selectTrainers = (tx: Transaction) => tx.select(columns).from(gymTrainers)
 const enrich = async <T extends { gym_trainer_id: string }>(tx: Transaction, rows: T[]) => {
   const ids = rows.map(row => row.gym_trainer_id);
   if (!ids.length) return [];
-  // Two batch reads per page, not a query per PT; never select the full User/profile.
   const links = await tx.select({ social_link_id: ptSocialLinks.socialLinkId,
     gym_trainer_id: ptSocialLinks.gymTrainerId, platform: ptSocialLinks.platform, url: ptSocialLinks.url,
     created_at: ptSocialLinks.createdAt, updated_at: ptSocialLinks.updatedAt }).from(ptSocialLinks)
     .where(inArray(ptSocialLinks.gymTrainerId, ids)).orderBy(ptSocialLinks.platform, ptSocialLinks.socialLinkId);
-  const schedules = await tx.select({ schedule_id: ptWorkingSchedules.scheduleId,
-    gym_trainer_id: ptWorkingSchedules.gymTrainerId, day_of_week: ptWorkingSchedules.dayOfWeek,
-    start_time: ptWorkingSchedules.startTime, end_time: ptWorkingSchedules.endTime, status: ptWorkingSchedules.status,
-    created_at: ptWorkingSchedules.createdAt, updated_at: ptWorkingSchedules.updatedAt }).from(ptWorkingSchedules)
-    .where(and(inArray(ptWorkingSchedules.gymTrainerId, ids), eq(ptWorkingSchedules.status, 'ACTIVE')))
-    .orderBy(ptWorkingSchedules.dayOfWeek, ptWorkingSchedules.startTime, ptWorkingSchedules.scheduleId);
-  return rows.map(row => ({ ...row, social_links: links.filter(link => link.gym_trainer_id === row.gym_trainer_id),
-    working_schedules: schedules.filter(schedule => schedule.gym_trainer_id === row.gym_trainer_id) }));
+  return rows.map(row => ({ ...row, social_links: links.filter(link => link.gym_trainer_id === row.gym_trainer_id) }));
 };
 export const createPublicTrainerRepository = (database: typeof db = db) => {
   const read = <T>(gymId: string, run: (tx: Transaction) => Promise<T>) => database.transaction(async tx => {

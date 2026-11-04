@@ -5,7 +5,7 @@ import hooks from 'eslint-plugin-react-hooks';
 import a11y from 'eslint-plugin-jsx-a11y';
 
 export default tseslint.config(
-  { ignores: ['**/node_modules/**', '**/dist/**', '**/drizzle/**', '**/playwright-report/**', '**/test-results/**', '**/.qa-artifacts/**', '.taste-skill/**', '.agent/**', '.agents/**', 'agentic-awesome-skills/**'] },
+  { ignores: ['**/node_modules/**', '**/dist/**', '**/drizzle/**', '**/playwright-report/**', '**/test-results/**', '**/.qa-artifacts/**', '.taste-skill/**', '.agent/**', '.agents/**', 'agentic-awesome-skills/**', 'docs/design/**'] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {

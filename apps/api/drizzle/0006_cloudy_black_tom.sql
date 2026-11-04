@@ -1,0 +1,1 @@
+DROP TABLE "pt_working_schedules" CASCADE;

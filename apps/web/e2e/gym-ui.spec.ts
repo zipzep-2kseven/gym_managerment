@@ -8,8 +8,7 @@ const gym = { gym_id: gymId, gym_name: 'Gym Bình An', address: '12 Nguyễn Tr�
   opening_time: '06:00:00', closing_time: '22:00:00', status: 'ACTIVE', created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' };
 const trainer = { gym_trainer_id: trainerId, gym_id: gymId, specialization: 'Sức mạnh', experience_years: 4, bio: 'Tập luyện an toàn.',
   status: 'ACTIVE', availability: 'ALMOST_FULL', joined_at: '2026-01-01T00:00:00Z', profile: { full_name: 'Trần An', avatar_url: null },
-  social_links: [{ social_link_id: 'link', platform: 'Website', url: 'https://example.com' }],
-  working_schedules: [{ schedule_id: 'slot', day_of_week: 'MONDAY', start_time: '08:00:00', end_time: '12:00:00', status: 'ACTIVE' }] };
+  social_links: [{ social_link_id: 'link', platform: 'Website', url: 'https://example.com' }] };
 const paged = (data: unknown[], page = 1, total = data.length) => ({ success: true, data, pagination: { page, pageSize: 12, totalItems: total, totalPages: Math.ceil(total / 12), hasNextPage: page < Math.ceil(total / 12), hasPreviousPage: page > 1 } });
 const ok = (data: unknown) => ({ success: true, data });
 const failure = (code: string, message: string, details?: object) => ({ success: false, error: { code, message, details } });

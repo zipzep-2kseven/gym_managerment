@@ -16,10 +16,7 @@ export * from './memberships.js';
 // 6. pt_registrations, pt_appointments
 export * from './pt.js';
 
-// 7. equipment_types, equipments
-export * from './equipments.js';
-
-// 8. gym_reports
+// 7. gym_reports
 export * from './reports.js';
 
 // 9. relations
@@ -32,7 +29,6 @@ import type { packages } from './packages.js';
 import type { payments } from './payments.js';
 import type { memberships } from './memberships.js';
 import type { ptRegistrations, ptAppointments } from './pt.js';
-import type { equipmentTypes, equipments } from './equipments.js';
 import type { gymReports } from './reports.js';
 
 export type User = typeof users.$inferSelect;
@@ -71,12 +67,6 @@ export type NewPtRegistration = typeof ptRegistrations.$inferInsert;
 export type PtAppointment = typeof ptAppointments.$inferSelect;
 export type NewPtAppointment = typeof ptAppointments.$inferInsert;
 
-export type EquipmentType = typeof equipmentTypes.$inferSelect;
-export type NewEquipmentType = typeof equipmentTypes.$inferInsert;
-
-export type Equipment = typeof equipments.$inferSelect;
-export type NewEquipment = typeof equipments.$inferInsert;
-
 export type GymReport = typeof gymReports.$inferSelect;
 export type NewGymReport = typeof gymReports.$inferInsert;
 
@@ -88,11 +78,9 @@ export type ConsultationRequestsRow = typeof consultationRequests.$inferSelect;
 export type NewConsultationRequestsRow = typeof consultationRequests.$inferInsert;
 
 export * from './trainer-profile.js';
-import type { ptSocialLinks, ptWorkingSchedules } from './trainer-profile.js';
+import type { ptSocialLinks } from './trainer-profile.js';
 export type PtSocialLinksRow = typeof ptSocialLinks.$inferSelect;
 export type NewPtSocialLinksRow = typeof ptSocialLinks.$inferInsert;
-export type PtWorkingSchedulesRow = typeof ptWorkingSchedules.$inferSelect;
-export type NewPtWorkingSchedulesRow = typeof ptWorkingSchedules.$inferInsert;
 
 export * from './reviews.js';
 import type { gymReviews, trainerReviews } from './reviews.js';

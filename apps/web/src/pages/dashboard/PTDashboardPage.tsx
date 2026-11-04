@@ -227,7 +227,7 @@ export const PTDashboardPage: React.FC = () => {
                 </svg>
               </Link>
               <Link to="/pt/profile" className="management-quick-link">
-                <span>Cập nhật giờ làm việc & liên kết</span>
+                <span>Cập nhật hồ sơ & liên kết</span>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <polyline points="9 18 15 12 9 6" />
                 </svg>
