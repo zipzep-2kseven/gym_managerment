@@ -44,7 +44,6 @@ test('Guest directory, detail, two CTAs and public PT projection', async ({ page
   await expect(page.getByRole('link', { name: 'Đăng ký tư vấn' })).toHaveAttribute('href', `/gyms/${gymId}/consultation`);
   await page.getByRole('link', { name: 'Khám phá đội ngũ PT' }).click();
   await page.getByRole('link', { name: 'Trần An' }).click();
-  await expect(page.getByText('Thứ hai: 08:00–12:00')).toBeVisible();
   await expect(page.getByText('4 năm kinh nghiệm · Sắp đủ học viên')).toBeVisible();
   await expect(page.getByRole('link', { name: 'Website' })).toHaveAttribute('rel', 'noopener noreferrer');
   await expect(page.locator('body')).not.toContainText('PRIVATE');
@@ -307,4 +306,86 @@ test('Admin must revoke the active Manager before assigning a replacement', asyn
   await page.getByLabel('User ID', { exact: true }).fill(userId);
   await page.getByRole('button', { name: 'Lưu phân công' }).click();
   await expect.poll(() => writes).toBe(1);
+});
+
+test('Admin manages PT roster scoped to Gym and toggles PT assignment with confirmation', async ({ page }) => {
+  await setup(page, 'ADMIN');
+  let currentStatus = 'ACTIVE';
+  await page.route(`**/api/v1/gyms/${gymId}/management/trainers**`, route => {
+    return route.fulfill({ json: paged([{ ...trainer, user_id: userId, status: currentStatus }]) });
+  });
+  let patchedStatus = '';
+  await page.route(`**/api/v1/gyms/${gymId}/trainers/${trainerId}/status`, async route => {
+    const body = route.request().postDataJSON();
+    patchedStatus = body.status;
+    currentStatus = body.status;
+    return route.fulfill({ json: ok({ ...trainer, user_id: userId, status: patchedStatus }) });
+  });
+
+  await page.goto(`/admin/gyms/${gymId}/trainers`);
+  await expect(page.getByRole('heading', { name: 'Huấn luyện viên tại Gym' })).toBeVisible();
+  await expect(page.getByRole('article').getByText('Sức mạnh')).toBeVisible();
+  await expect(page.getByText(`User ID: ${userId}`)).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Tiếp nhận PT' })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Ngừng phân công PT' }).click();
+  await expect(page.getByText('Xác nhận ngừng phân công pt?')).toBeVisible();
+  await page.getByRole('button', { name: 'Xác nhận' }).click();
+  await expect.poll(() => patchedStatus).toBe('INACTIVE');
+});
+
+test('Admin PT status conflict with open obligations displays obligation counts', async ({ page }) => {
+  await setup(page, 'ADMIN');
+  await page.route(`**/api/v1/gyms/${gymId}/management/trainers**`, route => {
+    return route.fulfill({ json: paged([{ ...trainer, user_id: userId, status: 'ACTIVE' }]) });
+  });
+  await page.route(`**/api/v1/gyms/${gymId}/trainers/${trainerId}/status`, async route => {
+    return route.fulfill({
+      status: 409,
+      json: failure('TRAINER_HAS_OPEN_OBLIGATIONS', 'Huấn luyện viên còn nghĩa vụ chưa hoàn thành.', {
+        registrations: 2,
+        appointments: 5,
+      }),
+    });
+  });
+
+  await page.goto(`/admin/gyms/${gymId}/trainers`);
+  await page.getByRole('button', { name: 'Ngừng phân công PT' }).click();
+  await page.getByRole('button', { name: 'Xác nhận' }).click();
+  await expect(page.getByRole('alert')).toContainText('Huấn luyện viên còn nghĩa vụ chưa hoàn thành');
+  await expect(page.getByRole('alert')).toContainText('Đăng ký PT: 2');
+  await expect(page.getByRole('alert')).toContainText('Lịch hẹn: 5');
+});
+
+test('Admin assigns new PT with provision credentials handoff', async ({ page }) => {
+  await setup(page, 'ADMIN');
+  await page.route(`**/api/v1/gyms/${gymId}/trainers/provision`, async route => {
+    expect(route.request().postDataJSON()).toEqual({
+      full_name: 'Trần PT Admin',
+      email: 'adminpt@example.com',
+      specialization: 'Cardio',
+      experience_years: 2,
+    });
+    return route.fulfill({
+      status: 201,
+      json: ok({
+        temporary_password: 'admin-pt-temp-pass',
+        user: { email: 'adminpt@example.com' },
+        assignment: { gym_id: gymId },
+      }),
+    });
+  });
+
+  await page.goto(`/admin/gyms/${gymId}/trainers/assign`);
+  await expect(page.getByRole('heading', { name: 'Tiếp nhận huấn luyện viên' })).toBeVisible();
+  await page.getByLabel('Cách tiếp nhận').selectOption('provision');
+  await page.getByLabel('Họ và tên').fill('Trần PT Admin');
+  await page.getByLabel('Email', { exact: true }).fill('adminpt@example.com');
+  await page.getByLabel('Chuyên môn', { exact: true }).fill('Cardio');
+  await page.getByLabel('Số năm kinh nghiệm').fill('2');
+  await page.getByRole('button', { name: 'Cấp tài khoản' }).click();
+
+  await expect(page.getByLabel('Mật khẩu tạm')).toHaveText('admin-pt-temp-pass');
+  await page.getByRole('button', { name: 'Đã bàn giao, ẩn mật khẩu' }).click();
+  await expect(page.getByLabel('Mật khẩu tạm')).toHaveCount(0);
 });

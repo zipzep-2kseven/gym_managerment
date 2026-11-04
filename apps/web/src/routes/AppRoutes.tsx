@@ -26,6 +26,7 @@ import { ManagerGymPage } from '../pages/gym/ManagerGymPage';
 import { ManagerLayout } from '../layouts/ManagerLayout';
 import { ManagerDashboardPage } from '../pages/dashboard/ManagerDashboardPage';
 import { AdminGymsPage, CreateGymPage, AdminGymPage } from '../pages/gym/AdminGymsPage';
+import { AdminTrainersPage, AdminAssignTrainerPage } from '../pages/gym/AdminTrainersPage';
 import { AdminManagersPage } from '../pages/gym/AdminManagersPage';
 import { AdminLayout } from '../layouts/AdminLayout';
 import { AdminDashboardPage } from '../pages/dashboard/AdminDashboardPage';
@@ -142,6 +143,8 @@ export const AppRoutes: React.FC = () => {
             <Route path="/admin/gyms/:gymId/packages" element={<ManagedPackagesPage admin />} />
             <Route path="/admin/gyms/:gymId/gallery" element={<GalleryPage admin />} />
             <Route path="/admin/gyms/:gymId/reports" element={<ReportsPage mode="admin" />} />
+            <Route path="/admin/gyms/:gymId/trainers" element={<AdminTrainersPage />} />
+            <Route path="/admin/gyms/:gymId/trainers/assign" element={<AdminAssignTrainerPage />} />
             <Route path="/admin/managers" element={<AdminManagersPage />} />
           </Route>
         </Route>

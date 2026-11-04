@@ -30,7 +30,7 @@ export const AdminGymPage = () => {
     <QueryState pending={gym.isPending} error={gym.error} retry={gym.refetch} />
     {gym.data && !gym.isError && <>
       <section className="admin-scope" aria-label="Cơ sở đang chọn"><h2>{gym.data.gym_name}</h2><StatusBadge status={gym.data.status} /><p>{gym.data.address}</p>
-        <div className="gym-actions"><Link className="btn-secondary" to={`/admin/gyms/${gymId}/gallery`}>Ảnh phòng Gym</Link><Link className="btn-secondary" to={`/admin/gyms/${gymId}/packages`}>Quản lý gói tập</Link><Link className="btn-secondary" to={`/admin/gyms/${gymId}/reports`}>Báo cáo sự cố</Link><Link className="btn-secondary" to={`/admin/gyms/${gymId}/pt`}>Giám sát PT và lịch tập</Link></div>
+        <div className="gym-actions"><Link className="btn-secondary" to={`/admin/gyms/${gymId}/gallery`}>Ảnh phòng Gym</Link><Link className="btn-secondary" to={`/admin/gyms/${gymId}/packages`}>Quản lý gói tập</Link><Link className="btn-secondary" to={`/admin/gyms/${gymId}/reports`}>Báo cáo sự cố</Link><Link className="btn-secondary" to={`/admin/gyms/${gymId}/pt`}>Giám sát PT và lịch tập</Link><Link className="btn-secondary" to={`/admin/gyms/${gymId}/trainers`}>Quản lý HLV (PT)</Link></div>
       </section>
       <div className="admin-columns"><GymForm key={gym.data.gym_id} gym={gym.data} /><section className="management-card"><h2>Trạng thái cơ sở</h2><p>Ngừng hoạt động yêu cầu cơ sở không còn nghĩa vụ đang mở. Thông tin và lịch sử cơ sở được giữ nguyên.</p><MutationError error={mutation.error} /><ConfirmAction label={gym.data.status === 'ACTIVE' ? 'Ngừng Gym' : 'Kích hoạt Gym'} pending={mutation.isPending} onConfirm={() => mutation.mutate(gym.data.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE')} /></section></div>
     </>}
